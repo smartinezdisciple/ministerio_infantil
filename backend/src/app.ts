@@ -30,17 +30,21 @@ const app = express();
 app.use(helmet());
 
 // ── CORS con origen explícito (nunca * en producción — CLAUDE.md §4.4) ──
-const origenPermitido = process.env.CORS_ORIGEN;
+const origenPermitidoRaw = process.env.CORS_ORIGEN;
+const origenPermitido = origenPermitidoRaw ? origenPermitidoRaw.replace(/\/$/, '') : undefined;
+
 app.use(cors({
   origin: function (origin, callback) {
+    const originNormalizado = origin ? origin.replace(/\/$/, '') : '';
     const esLocalhost = !origin
-      || origin.startsWith('http://localhost:')
-      || origin.startsWith('http://127.0.0.1:');
-    const esProduccion = !!origenPermitido && origin === origenPermitido;
+      || originNormalizado.startsWith('http://localhost:')
+      || originNormalizado.startsWith('http://127.0.0.1:');
+    const esProduccion = !!origenPermitido && originNormalizado === origenPermitido;
 
     if (esLocalhost || esProduccion) {
       callback(null, true);
     } else {
+      console.warn(`⚠️ Origen rechazado por CORS. Esperado: "${origenPermitido}", Recibido: "${originNormalizado}"`);
       callback(new Error(`Origen no permitido por CORS: ${origin}`));
     }
   },
