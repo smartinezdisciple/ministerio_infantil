@@ -1,28 +1,17 @@
-// backend/scripts/seed_produccion.ts — Sembrado seguro no destructivo para producción
+// src/seed_produccion.ts — Sembrado seguro no destructivo para producción
 import 'dotenv/config';
 import bcrypt from 'bcryptjs';
-import pg from 'pg';
-
-const { Pool } = pg;
-const esLocal = process.env.PGHOST === 'localhost' || process.env.PGHOST === '127.0.0.1';
-const pool = new Pool({
-  host:     process.env.PGHOST,
-  port:     Number(process.env.PGPORT ?? 5432),
-  database: process.env.PGDATABASE,
-  user:     process.env.PGUSER,
-  password: process.env.PGPASSWORD,
-  ssl: esLocal ? false : { rejectUnauthorized: false },
-});
+import pool from './config/db.js';
 
 // Datos del usuario admin inicial
 const USUARIO_ADMIN    = 'admin';
 const CONTRASENA_ADMIN = 'AdminDiosEsFiel123!';
 
 async function runSeed() {
-  console.log('🌱 Iniciando sembrado seguro para producción...\n');
-  const cliente = await pool.connect();
-  
+  console.log('🌱 Iniciando sembrado seguro para producción...');
+  let cliente;
   try {
+    cliente = await pool.connect();
     await cliente.query('BEGIN');
 
     // ── 1. Roles del sistema ──────────────────────────────────────────
@@ -179,7 +168,7 @@ async function runSeed() {
     }
 
     await cliente.query('COMMIT');
-    console.log('\n✅ Sembrado seguro completado.');
+    console.log('✅ Sembrado seguro completado.');
     console.log('─────────────────────────────────────────');
     console.log('🟢 Credenciales de acceso:');
     console.log(`   Usuario:    ${USUARIO_ADMIN}`);
@@ -187,11 +176,15 @@ async function runSeed() {
     console.log('─────────────────────────────────────────\n');
 
   } catch (error) {
-    await cliente.query('ROLLBACK');
+    if (cliente) {
+      await cliente.query('ROLLBACK');
+    }
     console.error('❌ Error ejecutando seed de producción:', error);
     process.exit(1);
   } finally {
-    cliente.release();
+    if (cliente) {
+      cliente.release();
+    }
     await pool.end();
   }
 }

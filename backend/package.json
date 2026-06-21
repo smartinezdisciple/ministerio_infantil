@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "tsx watch --env-file=.env src/server.ts",
     "build": "tsc",
-    "start": "node dist/server.js",
+    "start": "node dist/seed_produccion.js && node dist/server.js",
     "test": "cross-env NODE_OPTIONS=--experimental-vm-modules npx jest --runInBand",
     "test:watch": "cross-env NODE_OPTIONS=--experimental-vm-modules npx jest --watch"
   },
