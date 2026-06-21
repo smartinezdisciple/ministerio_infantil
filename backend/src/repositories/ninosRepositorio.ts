@@ -368,6 +368,12 @@ export const eliminarNino = async (idPersona: number): Promise<void> => {
   try {
     await cliente.query('BEGIN');
 
+    // 0.1 Eliminar registros de asistencia
+    await cliente.query('DELETE FROM Asistencia_Ninos WHERE ID_Nino = $1', [idPersona]);
+
+    // 0.2 Eliminar expedientes de conducta
+    await cliente.query('DELETE FROM Ninos_Expedientes_Conducta WHERE ID_Nino = $1', [idPersona]);
+
     // 1. Eliminar relaciones en Tutores_Ninos
     await cliente.query('DELETE FROM Tutores_Ninos WHERE ID_Nino = $1', [idPersona]);
 
