@@ -1,7 +1,8 @@
 // servicioAutenticacion.ts — Llamada al API de login (CLAUDE.md §3.1: async/await con try/catch)
 import type { RespuestaLogin } from './tipos';
 
-const URL_BASE_API = 'http://localhost:3001/api/auth';
+const URL_BASE_API = `${import.meta.env.VITE_API_URL ?? 'http://localhost:3001/api'}/auth`;
+
 
 /**
  * Envía las credenciales al backend para autenticación.
