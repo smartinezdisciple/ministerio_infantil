@@ -8,7 +8,7 @@ import app from './app.js';
 
 verificarConexionDB();
 
-const PUERTO = Number(process.env.PUERTO ?? 3001);
+const PUERTO = Number(process.env.PORT ?? process.env.PUERTO ?? 3001);
 
 app.listen(PUERTO, () => {
   console.log(`🚀 Servidor escuchando en http://localhost:${PUERTO}`);
