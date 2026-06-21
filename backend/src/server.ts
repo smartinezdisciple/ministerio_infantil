@@ -10,7 +10,7 @@ verificarConexionDB();
 
 const PUERTO = Number(process.env.PORT ?? process.env.PUERTO ?? 3001);
 
-app.listen(PUERTO, () => {
+app.listen(PUERTO, '0.0.0.0', () => {
   console.log(`🚀 Servidor escuchando en http://localhost:${PUERTO}`);
   console.log(`🌍 Entorno: ${process.env.NODE_ENV ?? 'development'}`);
   console.log(`📋 Health check: http://localhost:${PUERTO}/api/salud`);
