@@ -6,12 +6,14 @@ import bcrypt from 'bcryptjs';
 import pg from 'pg';
 
 const { Pool } = pg;
+const esLocal = process.env.PGHOST === 'localhost' || process.env.PGHOST === '127.0.0.1';
 const pool = new Pool({
   host:     process.env.PGHOST,
   port:     Number(process.env.PGPORT ?? 5432),
   database: process.env.PGDATABASE,
   user:     process.env.PGUSER,
   password: process.env.PGPASSWORD,
+  ssl: esLocal ? false : { rejectUnauthorized: false },
 });
 
 // Datos del usuario admin inicial

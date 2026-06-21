@@ -14,6 +14,9 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     const resultado = await iniciarSesion(usuario, contrasena);
     respuestaExito(res, resultado, 200);
   } catch (error) {
+    // Loguear el error para depuración en producción (ej. Railway console)
+    console.error('❌ Error en login:', error);
+
     // Error genérico — no revelar detalles internos (anti-enumeración)
     const mensaje = error instanceof Error ? error.message : 'Error al iniciar sesión.';
     respuestaError(res, mensaje, 401);
