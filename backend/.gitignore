@@ -1,0 +1,16 @@
+# Dependencias
+node_modules/
+
+# Compilado
+dist/
+
+# Variables de entorno (NUNCA commitear — CLAUDE.md §7)
+.env
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db

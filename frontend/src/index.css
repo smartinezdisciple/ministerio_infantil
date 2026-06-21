@@ -1,0 +1,254 @@
+/* index.css — Estilos globales del frontend (CLAUDE.md §2: Tailwind CSS) */
+@import "tailwindcss";
+
+/*
+ * Paleta de colores unificada — Sistema Escuela Dominical (CLAUDE.md §8.1)
+ * Tokens Material Design 3 alineados a la paleta Stitch de los módulos internos.
+ * Primary: #2a7de1 (azul sistema), Secondary: #8f4e00 (ámbar advertencia)
+ */
+@theme {
+  /* ── Colores primarios ─────────────────────────── */
+  --color-primary:                  #2a7de1;
+  --color-primary-container:        #d6e4ff;
+  --color-primary-fixed:            #d6e4ff;
+  --color-primary-fixed-dim:        #a8c8ff;
+  --color-on-primary:               #ffffff;
+  --color-on-primary-container:     #003575;
+  --color-on-primary-fixed:         #001b45;
+  --color-on-primary-fixed-variant: #004590;
+
+  /* ── Colores secundarios (ámbar — estados de advertencia) ── */
+  --color-secondary:                  #8f4e00;
+  --color-secondary-container:        #fc9d41;
+  --color-secondary-fixed:            #ffdcbe;
+  --color-secondary-fixed-dim:        #ffb77a;
+  --color-on-secondary:               #ffffff;
+  --color-on-secondary-container:     #2e1500;
+  --color-on-secondary-fixed:         #2e1500;
+  --color-on-secondary-fixed-variant: #6c3900;
+
+  /* ── Colores terciarios (verde — estados de éxito) ─────── */
+  --color-tertiary:                  #006a35;
+  --color-tertiary-container:        #97f2b3;
+  --color-tertiary-fixed:            #97f2b3;
+  --color-tertiary-fixed-dim:        #6dd594;
+  --color-on-tertiary:               #ffffff;
+  --color-on-tertiary-container:     #00210e;
+  --color-on-tertiary-fixed:         #00210e;
+  --color-on-tertiary-fixed-variant: #005129;
+
+  /* ── Error ─────────────────────────────────────── */
+  --color-error:             #ba1a1a;
+  --color-error-container:   #ffdad6;
+  --color-on-error:          #ffffff;
+  --color-on-error-container: #93000a;
+
+  /* ── Superficie y fondo ─────────────────────────── */
+  --color-background:                #f8f9ff;
+  --color-on-background:             #0b1c30;
+  --color-surface:                   #f8f9ff;
+  --color-surface-dim:               #d8dae8;
+  --color-surface-bright:            #f8f9ff;
+  --color-surface-tint:              #2a7de1;
+  --color-surface-variant:           #dde3f3;
+  --color-surface-container:         #e5eeff;
+  --color-surface-container-low:     #eff4ff;
+  --color-surface-container-high:    #dce9ff;
+  --color-surface-container-highest: #d6e4ff;
+  --color-surface-container-lowest:  #ffffff;
+  --color-on-surface:                #0b1c30;
+  --color-on-surface-variant:        #414753;
+
+  /* ── Contornos ──────────────────────────────────── */
+  --color-outline:         #717784;
+  --color-outline-variant: #c1c6d5;
+  --color-inverse-surface:    #2c3141;
+  --color-inverse-on-surface: #eef0ff;
+  --color-inverse-primary:    #a8c8ff;
+
+  /* ── Tipografía — Familias (CLAUDE.md §8.2) ─────── */
+  --font-display-lg:        "Plus Jakarta Sans", sans-serif;
+  --font-headline-lg:       "Plus Jakarta Sans", sans-serif;
+  --font-headline-lg-mobile: "Plus Jakarta Sans", sans-serif;
+  --font-headline-md:       "Plus Jakarta Sans", sans-serif;
+  --font-label-md:          "Inter", sans-serif;
+  --font-label-sm:          "Inter", sans-serif;
+  --font-body-lg:           "Inter", sans-serif;
+  --font-body-md:           "Inter", sans-serif;
+  --font-body-sm:           "Inter", sans-serif;
+
+  /* ── Espaciado personalizado (CLAUDE.md §8.4) ────── */
+  --spacing-stack-sm:                4px;
+  --spacing-base:                    8px;
+  --spacing-stack-md:                12px;
+  --spacing-gutter:                  16px;
+  --spacing-stack-lg:                24px;
+  --spacing-container-margin-desktop: 32px;
+}
+
+/* ═══════════════════════════════════════════════════════
+   Utilidades tipográficas (CLAUDE.md §8.2)
+   ═══════════════════════════════════════════════════════ */
+
+@utility text-display-lg {
+  font-size: 48px;
+  line-height: 56px;
+  letter-spacing: -0.02em;
+  font-weight: 800;
+}
+
+@utility text-headline-lg {
+  font-size: 32px;
+  line-height: 40px;
+  font-weight: 700;
+}
+
+@utility text-headline-lg-mobile {
+  font-size: 28px;
+  line-height: 36px;
+  font-weight: 700;
+}
+
+@utility text-headline-md {
+  font-size: 24px;
+  line-height: 32px;
+  font-weight: 700;
+}
+
+@utility text-body-lg {
+  font-size: 18px;
+  line-height: 28px;
+  font-weight: 400;
+}
+
+@utility text-body-md {
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 400;
+}
+
+@utility text-body-sm {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 400;
+}
+
+@utility text-label-md {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 600;
+}
+
+@utility text-label-sm {
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+}
+
+/* ═══════════════════════════════════════════════════════
+   Animaciones globales
+   ═══════════════════════════════════════════════════════ */
+
+@keyframes aparecer {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulsar-alerta {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.55; }
+}
+
+/* ═══════════════════════════════════════════════════════
+   Reset y base
+   ═══════════════════════════════════════════════════════ */
+
+body {
+  font-family: "Inter", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #f8f9ff;
+  color: #0b1c30;
+}
+
+/* Iconos Material Symbols — variante por defecto (outline) */
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+/* Iconos con FILL activo (sidebar item activo, etc.) */
+.material-symbols-filled {
+  font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+/* ═══════════════════════════════════════════════════════
+   Estilos de Impresión / Generación de PDF
+   ═══════════════════════════════════════════════════════ */
+@media print {
+  /* Resetear contenedores flex y scroll para permitir impresión multipágina */
+  html, body, #root, .h-screen, .overflow-hidden, main, #contenido-principal {
+    height: auto !important;
+    overflow: visible !important;
+    position: static !important;
+    background-color: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  /* Ocultar elementos de navegación, filtros y botones */
+  aside,
+  header,
+  .no-print,
+  button,
+  select,
+  input,
+  .material-symbols-outlined {
+    display: none !important;
+  }
+
+  /* Contenedor principal de impresión */
+  #printable-report-area {
+    display: block !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 20px !important;
+  }
+
+  /* Estilos para las tarjetas de grupo impresas */
+  .print-card {
+    page-break-inside: avoid;
+    break-inside: avoid;
+    margin-bottom: 30px;
+    border: 1px solid #c1c6d5 !important;
+    border-radius: 12px !important;
+    padding: 20px !important;
+    background-color: #ffffff !important;
+  }
+
+  .print-card-title {
+    color: #2a7de1 !important;
+    font-size: 16pt !important;
+    font-weight: bold !important;
+    border-bottom: 2px solid #2a7de1 !important;
+    padding-bottom: 5px !important;
+    margin-bottom: 15px !important;
+  }
+
+  /* Tabla de niños para impresión */
+  .print-table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    margin-top: 10px !important;
+  }
+
+  .print-table th, .print-table td {
+    border-bottom: 1px solid #c1c6d5 !important;
+    padding: 8px 10px !important;
+    text-align: left !important;
+    font-size: 10pt !important;
+  }
+
+  .print-table th {
+    font-weight: bold !important;
+    background-color: #f8f9ff !important;
+  }
+}

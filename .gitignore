@@ -1,0 +1,30 @@
+# ── Dependencias ─────────────────────────────────────────────────
+node_modules/
+
+# ── Compilados ───────────────────────────────────────────────────
+dist/
+build/
+
+# ── Variables de entorno (NUNCA commitear) ───────────────────────
+.env
+.env.local
+.env.*.local
+
+# ── Logs ─────────────────────────────────────────────────────────
+*.log
+npm-debug.log*
+
+# ── OS ───────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ── Editores ─────────────────────────────────────────────────────
+.vscode/
+.idea/
+
+# ── Archivos temporales del proyecto ─────────────────────────────
+*.xlsm
+*.xlsx
+basedatos.txt
+basedatosv5.txt
+generate_docx.js
