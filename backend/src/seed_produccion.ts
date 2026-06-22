@@ -75,7 +75,7 @@ async function runSeed() {
     if (countTurnosRes.rows[0].count === 0) {
       console.log('👉 Sembrando turnos...');
       const turnosBase = [
-        { nombre: 'Miercoles',    dia: 3, hora: '19:00:00' },
+        { nombre: 'Miercoles',    dia: 3, hora: '18:30:00' },
         { nombre: 'Domingo_8am',  dia: 0, hora: '08:00:00' },
         { nombre: 'Domingo_11am', dia: 0, hora: '11:00:00' },
         { nombre: 'Domingo_5pm',  dia: 0, hora: '17:00:00' },
