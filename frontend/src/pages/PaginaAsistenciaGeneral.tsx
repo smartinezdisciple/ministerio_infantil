@@ -8,7 +8,7 @@ import ModalCheckOut from '../components/ModalCheckOut';
 import { useAuth } from '../contexts/ContextoAuth';
 import type { RegistroAsistenciaNino, EstadoAsistencia, DatosCheckIn } from '../services/tipos';
 import { listarAsistenciaDia, registrarCheckIn, eliminarAsistencia, listarTurnos } from '../services/servicioApi';
-import { fechaLocalHoy } from '../services/fechaUtils';
+import { fechaLocalHoy, parsearFechaUsuario } from '../services/fechaUtils';
 import { formatearTurno } from '../services/turnoUtils';
 import ModalEditarAsistencia from '../components/ModalEditarAsistencia';
 import ModalBase from '../components/ModalBase';
@@ -206,6 +206,15 @@ const PaginaAsistenciaGeneral: React.FC = () => {
   const [filtroTurno, setFiltroTurno]       = useState('');
   const [filtroEstado, setFiltroEstado]     = useState<'todos' | 'Pendiente'>('todos');
   const [filtroFecha, setFiltroFecha]       = useState(fechaLocalHoy());
+  const [inputFecha, setInputFecha]         = useState(() => {
+    const hoy = fechaLocalHoy(); // YYYY-MM-DD
+    const partes = hoy.split('-');
+    if (partes.length === 3) {
+      const [yyyy, mm, dd] = partes;
+      return `${dd}-${mm}-${yyyy.substring(2)}`;
+    }
+    return hoy;
+  });
   const [busqueda, setBusqueda]             = useState('');
 
   // Estado de catálogo de turnos
@@ -540,9 +549,18 @@ const PaginaAsistenciaGeneral: React.FC = () => {
               </label>
               <input
                 id="filtro-fecha"
-                type="date"
-                value={filtroFecha}
-                onChange={(e) => { setFiltroFecha(e.target.value); setPagina(1); }}
+                type="text"
+                placeholder="DD-MM-AA"
+                value={inputFecha}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setInputFecha(val);
+                  const parsed = parsearFechaUsuario(val);
+                  if (parsed) {
+                    setFiltroFecha(parsed);
+                    setPagina(1);
+                  }
+                }}
                 className="w-full bg-surface-container-low border border-outline-variant rounded-xl px-4 py-3 text-body-md focus:ring-2 focus:ring-primary focus:outline-none transition-all"
               />
             </div>
