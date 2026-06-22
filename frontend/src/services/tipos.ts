@@ -126,7 +126,7 @@ export interface UsuarioAutenticado {
 /** Grupo de la escuela dominical — Spec §2.5.2 */
 export interface Grupo {
   idGrupo: number;
-  nombre: string;      // '2-6 años' | '7-9 años' | '10-12 años'
+  nombre: string;      // '4-6 años' | '7-9 años' | '10-12 años'
   edadMinima: number;
   edadMaxima: number;
 }

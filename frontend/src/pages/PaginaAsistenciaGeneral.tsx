@@ -472,7 +472,7 @@ const PaginaAsistenciaGeneral: React.FC = () => {
                   className="w-full bg-surface-container-low border border-outline-variant rounded-xl pl-4 pr-10 py-3 text-body-md focus:ring-2 focus:ring-primary focus:outline-none transition-all appearance-none"
                 >
                   <option value="">Todos los Grupos</option>
-                  <option value="1">2-6 años</option>
+                  <option value="1">4-6 años</option>
                   <option value="2">7-9 años</option>
                   <option value="3">10-12 años</option>
                 </select>

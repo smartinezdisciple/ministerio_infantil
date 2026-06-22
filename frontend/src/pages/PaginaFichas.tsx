@@ -172,7 +172,7 @@ const PaginaFichas: React.FC = () => {
             <select value={filtroGrupo} onChange={(e) => { setFiltroGrupo(e.target.value); setPagina(1); }}
               className="bg-surface-container-low border border-outline-variant rounded-md px-3 py-2 font-body-sm text-on-surface focus:outline-none focus:border-primary">
               <option value="">Todos los grupos</option>
-              <option value="1">2-6 años</option>
+              <option value="1">4-6 años</option>
               <option value="2">7-9 años</option>
               <option value="3">10-12 años</option>
             </select>
@@ -216,7 +216,7 @@ const PaginaFichas: React.FC = () => {
                 <label className="block text-label-sm text-on-surface-variant mb-1">Grupo</label>
                 <select value={nuevaFixture.idGrupo} onChange={(e) => setNuevaFixture(p => ({ ...p, idGrupo: Number(e.target.value) }))}
                   className="w-full bg-surface-container-low border border-outline-variant rounded-lg px-4 py-3 text-body-md focus:ring-2 focus:ring-primary focus:border-primary focus:outline-none">
-                  <option value={1}>2-6 años</option>
+                  <option value={1}>4-6 años</option>
                   <option value={2}>7-9 años</option>
                   <option value={3}>10-12 años</option>
                 </select>
@@ -265,7 +265,7 @@ const PaginaFichas: React.FC = () => {
                 <label className="block text-label-sm text-on-surface-variant mb-1">Grupo</label>
                 <select value={fixtureEditando.idGrupo ?? 1} onChange={(e) => setFixtureEditando(p => p ? { ...p, idGrupo: Number(e.target.value) } : null)}
                   className="w-full bg-surface-container-low border border-outline-variant rounded-lg px-4 py-3 text-body-md focus:ring-2 focus:ring-primary focus:border-primary focus:outline-none">
-                  <option value={1}>2-6 años</option>
+                  <option value={1}>4-6 años</option>
                   <option value={2}>7-9 años</option>
                   <option value={3}>10-12 años</option>
                 </select>

@@ -22,7 +22,7 @@ const TIPOS_REPORTE: TipoReporte[] = [
     colorIcono: 'text-primary',
     fondoIcono: 'bg-primary/10',
     filtros: [
-      { id: 'grupo', label: 'Grupo', tipo: 'select', opciones: ['Todos', '2-6 años', '7-9 años', '10-12 años'] },
+      { id: 'grupo', label: 'Grupo', tipo: 'select', opciones: ['Todos', '4-6 años', '7-9 años', '10-12 años'] },
       { id: 'desde', label: 'Desde', tipo: 'date' },
       { id: 'hasta', label: 'Hasta', tipo: 'date' },
     ],
@@ -37,7 +37,7 @@ const TIPOS_REPORTE: TipoReporte[] = [
     filtros: [
       { id: 'fecha', label: 'Fecha', tipo: 'date' },
       { id: 'turno', label: 'Turno', tipo: 'select', opciones: ['Todos', 'Miércoles', 'Domingo 8am', 'Domingo 11am', 'Domingo 5pm'] },
-      { id: 'grupo', label: 'Grupo', tipo: 'select', opciones: ['Todos', '2-6 años', '7-9 años', '10-12 años'] },
+      { id: 'grupo', label: 'Grupo', tipo: 'select', opciones: ['Todos', '4-6 años', '7-9 años', '10-12 años'] },
     ],
   },
   {
@@ -74,7 +74,7 @@ const TIPOS_REPORTE: TipoReporte[] = [
     colorIcono: 'text-on-surface',
     fondoIcono: 'bg-surface-container-high',
     filtros: [
-      { id: 'grupo', label: 'Grupo', tipo: 'select', opciones: ['Todos', '2-6 años', '7-9 años', '10-12 años'] },
+      { id: 'grupo', label: 'Grupo', tipo: 'select', opciones: ['Todos', '4-6 años', '7-9 años', '10-12 años'] },
       { id: 'estado', label: 'Estado', tipo: 'select', opciones: ['Todos', 'Activa', 'Inactiva', 'Extraviada'] },
     ],
   },
@@ -161,14 +161,14 @@ const PaginaReportes: React.FC = () => {
     if (reporteSeleccionado?.id !== 'ninos-por-grupo') return [];
     
     const agrupado: Record<string, DatosNinoPorGrupoReporte[]> = {
-      '2-6 años': [],
+      '4-6 años': [],
       '7-9 años': [],
       '10-12 años': [],
     };
     
     datosNinosGrupo.forEach(n => {
       const nombre = n.nombreGrupo;
-      if (nombre.includes('2-6')) agrupado['2-6 años'].push(n);
+      if (nombre.includes('4-6') || nombre.includes('2-6')) agrupado['4-6 años'].push(n);
       else if (nombre.includes('7-9')) agrupado['7-9 años'].push(n);
       else if (nombre.includes('10-12')) agrupado['10-12 años'].push(n);
     });
@@ -309,7 +309,14 @@ const PaginaReportes: React.FC = () => {
                         <div className="space-y-3 max-h-96 overflow-y-auto pr-1">
                           {grupo.lista.map(n => (
                             <div key={n.idPersona} className="bg-surface-container-lowest p-3 rounded-xl border border-outline-variant/20 flex flex-col gap-1">
-                              <p className="text-label-md font-bold text-on-surface">{n.nombreCompleto}</p>
+                              <p className="text-label-md font-bold text-on-surface flex items-center justify-between gap-2 flex-wrap">
+                                <span>{n.nombreCompleto}</span>
+                                {n.idGrupo === 1 && n.edad < 4 && (
+                                  <span className="text-[10px] bg-secondary-container text-on-secondary-container px-2 py-0.5 rounded-full font-medium inline-block">
+                                    Menor de 4 años
+                                  </span>
+                                )}
+                              </p>
                               <div className="flex justify-between text-body-sm text-on-surface-variant">
                                 <span>Edad: {n.edad} años</span>
                                 <span className="flex items-center gap-1 font-medium">
@@ -373,7 +380,14 @@ const PaginaReportes: React.FC = () => {
                   <tbody>
                     {grupo.lista.map((n) => (
                       <tr key={n.idPersona}>
-                        <td><strong>{n.nombreCompleto}</strong></td>
+                        <td>
+                          <strong>{n.nombreCompleto}</strong>
+                          {n.idGrupo === 1 && n.edad < 4 && (
+                            <span style={{ marginLeft: '8px', fontSize: '8pt', backgroundColor: '#e8def8', color: '#1d192b', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>
+                              Menor de 4 años
+                            </span>
+                          )}
+                        </td>
                         <td>{n.edad} años</td>
                         <td>{obtenerFechaCumpleanos(n.fechaNacimiento)}</td>
                         <td>{n.familiarIngreso || '-'}</td>
