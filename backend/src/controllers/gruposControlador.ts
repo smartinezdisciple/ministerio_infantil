@@ -90,8 +90,8 @@ export const asistenciaGrupoHoy = async (req: Request, res: Response) => {
         an.ID_Turno                                  AS "idTurno",
         t.Nombre                                     AS "turno",
         an.Estado                                    AS "estado",
-        to_char(an.Hora_Entrada, 'HH12:MI AM')      AS "horaEntrada",
-        to_char(an.Hora_Salida,  'HH12:MI AM')      AS "horaSalida"
+        to_char(an.Hora_Entrada - INTERVAL '5 hours', 'HH12:MI AM')      AS "horaEntrada",
+        to_char(an.Hora_Salida - INTERVAL '5 hours',  'HH12:MI AM')      AS "horaSalida"
       FROM Personas p
       JOIN Ninos ni ON ni.ID_Persona = p.ID_Persona
       JOIN Asistencia_Ninos an

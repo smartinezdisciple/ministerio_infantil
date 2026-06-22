@@ -81,7 +81,7 @@ export const misTurnos = async (req: Request, res: Response) => {
 export const registrarAsistenciaPersonal = async (req: Request, res: Response) => {
   const { idPersona, estadoLlegada, idTurno, idGrupo, razonAusencia } = req.body;
   const hoy  = new Date().toISOString().split('T')[0];
-  const hora = new Date().toTimeString().slice(0, 8);
+  const hora = new Date().toISOString().slice(11, 19);
 
   if (!idPersona || !estadoLlegada || !idTurno) {
     return res.status(400).json({ exito: false, mensaje: 'Faltan idPersona, estadoLlegada e idTurno.' });
@@ -113,7 +113,7 @@ export const registrarAsistenciaPersonal = async (req: Request, res: Response) =
                     Razon_Ausencia = EXCLUDED.Razon_Ausencia
       RETURNING ID_Asistencia_Maestro AS "idAsistencia",
                 Fecha                  AS "fecha",
-                to_char(Hora_Llegada, 'HH12:MI AM') AS "horaLlegada",
+                to_char(Hora_Llegada - INTERVAL '5 hours', 'HH12:MI AM') AS "horaLlegada",
                 Estado_Llegada         AS "estadoLlegada"
     `, [hoy, idTurno, idPersona, grupoId, estadoLlegada, hora, razonAusencia ?? null]);
 
