@@ -1,7 +1,7 @@
 // PaginaReportes.tsx — Módulo de Reportes (Spec §9.12)
 import React, { useState, useEffect, useMemo } from 'react';
 import LayoutPrincipal from '../components/LayoutPrincipal';
-import { fechaLocalHoy, parsearFechaUsuario } from '../services/fechaUtils';
+import { fechaLocalHoy } from '../services/fechaUtils';
 import { exportarReporteCSV, exportarReporteExcel, obtenerNinosPorGrupoDatos, type DatosNinoPorGrupoReporte } from '../services/servicioApi';
 
 interface TipoReporte {
@@ -116,16 +116,6 @@ const TIPOS_REPORTE: TipoReporte[] = [
   },
 ];
 
-const deDbAInputFecha = (fechaDb: string): string => {
-  if (!fechaDb) return '';
-  const partes = fechaDb.trim().split('T')[0].split('-');
-  if (partes.length === 3) {
-    const [yyyy, mm, dd] = partes;
-    return `${dd}-${mm}-${yyyy.substring(2)}`;
-  }
-  return fechaDb;
-};
-
 const PaginaReportes: React.FC = () => {
   const [reporteSeleccionado, setReporteSeleccionado] = useState<TipoReporte | null>(null);
   const [filtros, setFiltros] = useState<Record<string, string>>({});
@@ -138,7 +128,7 @@ const PaginaReportes: React.FC = () => {
       const iniciales: Record<string, string> = {};
       reporteSeleccionado.filtros.forEach(f => {
         if (f.tipo === 'date') {
-          iniciales[f.id] = deDbAInputFecha(fechaLocalHoy());
+          iniciales[f.id] = fechaLocalHoy();
         } else {
           iniciales[f.id] = '';
         }
@@ -155,7 +145,7 @@ const PaginaReportes: React.FC = () => {
         setCargandoNinosGrupo(true);
         try {
           const t = filtros.turno || 'Todos';
-          const f = parsearFechaUsuario(filtros.fecha) || filtros.fecha || new Date().toISOString().split('T')[0];
+          const f = filtros.fecha || new Date().toISOString().split('T')[0];
           const res = await obtenerNinosPorGrupoDatos(t, f);
           setDatosNinosGrupo(res);
         } catch (err) {
@@ -216,14 +206,7 @@ const PaginaReportes: React.FC = () => {
     if (!reporteSeleccionado) return;
     const params: Record<string, string> = {};
     Object.entries(filtros).forEach(([k, v]) => {
-      if (v) {
-        const configFiltro = reporteSeleccionado.filtros.find(f => f.id === k);
-        if (configFiltro && configFiltro.tipo === 'date') {
-          params[k] = parsearFechaUsuario(v) || v;
-        } else {
-          params[k] = v;
-        }
-      }
+      if (v) params[k] = v;
     });
     if (formato === 'csv') exportarReporteCSV(reporteSeleccionado.id, params);
     else exportarReporteExcel(reporteSeleccionado.id, params);
@@ -296,13 +279,8 @@ const PaginaReportes: React.FC = () => {
                       {f.opciones?.map(o => <option key={o} value={o === 'Todos' ? '' : o}>{o}</option>)}
                     </select>
                   ) : (
-                    <input
-                      type={f.tipo === 'date' ? 'text' : f.tipo}
-                      placeholder={f.tipo === 'date' ? 'DD-MM-AA' : undefined}
-                      value={filtros[f.id] ?? ''}
-                      onChange={(e) => setFiltros(p => ({ ...p, [f.id]: e.target.value }))}
-                      className="w-full bg-surface-container-low border border-outline-variant rounded-lg px-4 py-2.5 text-body-sm text-on-surface focus:ring-2 focus:ring-primary focus:border-primary focus:outline-none"
-                    />
+                    <input type={f.tipo} value={filtros[f.id] ?? ''} onChange={(e) => setFiltros(p => ({ ...p, [f.id]: e.target.value }))}
+                      className="w-full bg-surface-container-low border border-outline-variant rounded-lg px-4 py-2.5 text-body-sm text-on-surface focus:ring-2 focus:ring-primary focus:border-primary focus:outline-none" />
                   )}
                 </div>
               ))}
