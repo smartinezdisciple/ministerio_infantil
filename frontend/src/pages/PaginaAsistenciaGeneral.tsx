@@ -57,10 +57,7 @@ const construirColumnas = (
               <span className="material-symbols-outlined text-error text-[14px]" title="Alerta médica alta">warning</span>
             )}
             {esCumpleanosHoy(r.nino.fechaNacimiento, filtroFecha) && (
-              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400 rounded-md border border-emerald-200 dark:border-emerald-800/50">
-                <span className="material-symbols-outlined text-[12px]" style={{ fontVariationSettings: "'FILL' 1" }}>cake</span>
-                ¡Cumple!
-              </span>
+              <span className="material-symbols-outlined text-emerald-600 text-[14px]" style={{ fontVariationSettings: "'FILL' 1" }} title="Cumpleaños hoy">cake</span>
             )}
           </p>
           <p className="text-[11px] text-on-surface-variant">{r.nino.grupo.nombre}</p>
@@ -469,11 +466,11 @@ const PaginaAsistenciaGeneral: React.FC = () => {
         </div>
 
         {/* ── Filtros Agrupados ──────────────────────── */}
-        <div className="bg-surface-container-lowest p-6 rounded-2xl border border-outline-variant shadow-sm">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+        <div className="bg-surface-container-lowest p-5 rounded-2xl border border-outline-variant shadow-sm">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             {/* Filtro Grupo */}
             <div className="flex flex-col">
-              <label htmlFor="filtro-grupo" className="text-label-md font-label-md text-on-surface mb-2">
+              <label htmlFor="filtro-grupo" className="text-label-sm font-label-sm text-on-surface mb-1.5">
                 Grupo
               </label>
               <div className="relative">
@@ -481,20 +478,20 @@ const PaginaAsistenciaGeneral: React.FC = () => {
                   id="filtro-grupo"
                   value={filtroGrupo}
                   onChange={(e) => { setFiltroGrupo(e.target.value); setPagina(1); }}
-                  className="w-full bg-surface-container-low border border-outline-variant rounded-xl pl-4 pr-10 py-3 text-body-md focus:ring-2 focus:ring-primary focus:outline-none transition-all appearance-none"
+                  className="w-full bg-surface-container-low border border-outline-variant rounded-xl pl-3 pr-8 py-2 text-[13px] h-[38px] focus:ring-2 focus:ring-primary focus:outline-none transition-all appearance-none"
                 >
                   <option value="">Todos los Grupos</option>
                   <option value="1">4-6 años</option>
                   <option value="2">7-9 años</option>
                   <option value="3">10-12 años</option>
                 </select>
-                <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none text-[20px]">expand_more</span>
+                <span className="material-symbols-outlined absolute right-2.5 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none text-[18px]">expand_more</span>
               </div>
             </div>
 
             {/* Filtro Turno */}
             <div className="flex flex-col">
-              <label htmlFor="filtro-turno" className="text-label-md font-label-md text-on-surface mb-2">
+              <label htmlFor="filtro-turno" className="text-label-sm font-label-sm text-on-surface mb-1.5">
                 Turno
               </label>
               <div className="relative">
@@ -502,7 +499,7 @@ const PaginaAsistenciaGeneral: React.FC = () => {
                   id="filtro-turno"
                   value={filtroTurno}
                   onChange={(e) => { setFiltroTurno(e.target.value); setPagina(1); }}
-                  className="w-full bg-surface-container-low border border-outline-variant rounded-xl pl-4 pr-10 py-3 text-body-md focus:ring-2 focus:ring-primary focus:outline-none transition-all appearance-none"
+                  className="w-full bg-surface-container-low border border-outline-variant rounded-xl pl-3 pr-8 py-2 text-[13px] h-[38px] focus:ring-2 focus:ring-primary focus:outline-none transition-all appearance-none"
                 >
                   <option value="">Todos los Turnos</option>
                   {turnos.map((t) => (
@@ -511,17 +508,17 @@ const PaginaAsistenciaGeneral: React.FC = () => {
                     </option>
                   ))}
                 </select>
-                <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none text-[20px]">expand_more</span>
+                <span className="material-symbols-outlined absolute right-2.5 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none text-[18px]">expand_more</span>
               </div>
             </div>
 
             {/* Filtro Estado */}
             <div className="flex flex-col">
-              <span className="text-label-md font-label-md text-on-surface mb-2">Estado</span>
-              <div className="grid grid-cols-2 gap-3">
+              <span className="text-label-sm font-label-sm text-on-surface mb-1.5">Estado</span>
+              <div className="grid grid-cols-2 gap-2">
                 <button
                   onClick={() => { setFiltroEstado('todos'); setPagina(1); }}
-                  className={`px-4 py-3 rounded-xl text-label-md font-label-md transition-all ${
+                  className={`px-2 py-2 rounded-xl text-label-sm font-label-sm h-[38px] flex items-center justify-center transition-all ${
                     filtroEstado === 'todos'
                       ? 'bg-primary text-on-primary shadow-sm'
                       : 'bg-surface-container-low border border-outline-variant text-on-surface-variant hover:bg-surface-container-high'
@@ -532,7 +529,7 @@ const PaginaAsistenciaGeneral: React.FC = () => {
                 </button>
                 <button
                   onClick={() => { setFiltroEstado('Pendiente'); setPagina(1); }}
-                  className={`px-4 py-3 rounded-xl text-label-md font-label-md transition-all ${
+                  className={`px-2 py-2 rounded-xl text-label-sm font-label-sm h-[38px] flex items-center justify-center transition-all ${
                     filtroEstado === 'Pendiente'
                       ? 'bg-primary text-on-primary shadow-sm'
                       : 'bg-surface-container-low border border-outline-variant text-on-surface-variant hover:bg-surface-container-high'
@@ -546,7 +543,7 @@ const PaginaAsistenciaGeneral: React.FC = () => {
 
             {/* Filtro Fecha */}
             <div className="flex flex-col">
-              <label htmlFor="filtro-fecha" className="text-label-md font-label-md text-on-surface mb-2">
+              <label htmlFor="filtro-fecha" className="text-label-sm font-label-sm text-on-surface mb-1.5">
                 Fecha
               </label>
               <input
@@ -554,24 +551,24 @@ const PaginaAsistenciaGeneral: React.FC = () => {
                 type="date"
                 value={filtroFecha}
                 onChange={(e) => { setFiltroFecha(e.target.value); setPagina(1); }}
-                className="w-full bg-surface-container-low border border-outline-variant rounded-xl px-4 py-3 text-body-md focus:ring-2 focus:ring-primary focus:outline-none transition-all"
+                className="w-full bg-surface-container-low border border-outline-variant rounded-xl px-3 py-2 text-[13px] h-[38px] focus:ring-2 focus:ring-primary focus:outline-none transition-all"
               />
             </div>
 
             {/* Filtro Cumpleaños */}
             <div className="flex flex-col">
-              <span className="text-label-md font-label-md text-on-surface mb-2">Cumpleaños</span>
+              <span className="text-label-sm font-label-sm text-on-surface mb-1.5">Cumpleaños</span>
               <button
                 type="button"
                 onClick={() => { setFiltroCumpleanos(p => !p); setPagina(1); }}
-                className={`w-full px-4 py-3 rounded-xl text-label-md font-label-md transition-all flex items-center justify-center gap-2 h-[46px] border ${
+                className={`w-fit px-3 py-2 rounded-xl text-label-sm font-label-sm transition-all flex items-center justify-center gap-1.5 h-[38px] border ${
                   filtroCumpleanos
                     ? 'bg-emerald-600 border-emerald-600 text-white shadow-sm hover:bg-emerald-700'
                     : 'bg-surface-container-low border-outline-variant text-on-surface-variant hover:bg-surface-container-high'
                 }`}
                 aria-pressed={filtroCumpleanos}
               >
-                <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: filtroCumpleanos ? "'FILL' 1" : "'FILL' 0" }}>cake</span>
+                <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: filtroCumpleanos ? "'FILL' 1" : "'FILL' 0" }}>cake</span>
                 {filtroCumpleanos ? 'Solo Cumpleañeros' : 'Todos'}
               </button>
             </div>
@@ -616,6 +613,11 @@ const PaginaAsistenciaGeneral: React.FC = () => {
               onCambiarPorPagina={setPorPagina}
               cargando={cargando}
               mensajeVacio="No hay registros de asistencia para los filtros seleccionados."
+              obtenerFilaClase={(r) =>
+                esCumpleanosHoy(r.nino.fechaNacimiento, filtroFecha)
+                  ? 'bg-emerald-50/70 dark:bg-emerald-950/30 hover:bg-emerald-100/50 dark:hover:bg-emerald-950/50 transition-colors'
+                  : ''
+              }
             />
           </div>
         </div>

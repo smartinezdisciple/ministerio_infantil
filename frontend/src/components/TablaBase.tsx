@@ -40,6 +40,8 @@ interface PropsTablaBase<T> {
     onEditar?: (fila: T) => void;
     onEliminar?: (fila: T) => void;
   };
+  /** Función para retornar clases CSS adicionales para cada fila tr */
+  obtenerFilaClase?: (fila: T) => string;
 }
 
 const OPCIONES_POR_PAGINA = [10, 25, 50, 100];
@@ -62,6 +64,7 @@ function TablaBase<T>({
   cargando = false,
   mensajeVacio = 'No hay registros para mostrar.',
   acciones,
+  obtenerFilaClase,
 }: PropsTablaBase<T>) {
   const [columnaOrden, setColumnaOrden] = useState<string | null>(null);
   const [direccionOrden, setDireccionOrden] = useState<DireccionOrden>(null);
@@ -230,71 +233,75 @@ function TablaBase<T>({
                 </td>
               </tr>
             ) : (
-              filasOrdenadas.map((fila) => (
-                <tr
-                  key={obtenerClave(fila)}
-                  className="hover:bg-surface-container-high transition-colors"
-                >
-                  {columnas.map((col) => (
-                   <td
-                     key={col.id}
-                     className={`px-2 py-1 sm:py-1.5 text-body-sm sm:text-body-md text-on-surface align-top ${
-                       col.alineaDerecha ? 'text-right' : ''
-                     }`}
-                   >
-                       {col.render(fila)}
-                     </td>
-                  ))}
-                  {acciones && (
-                    <td className="px-2 py-1 sm:py-1.5 text-right align-top">
-                      <div className="flex flex-wrap items-center justify-start gap-1 max-w-[100px] md:max-w-none ml-auto">
-                        {acciones.onVer && (
-                          <div className="relative group inline-block">
-                            <button
-                              onClick={() => acciones.onVer!(fila)}
-                              className="w-[28px] h-[28px] rounded-lg border-[3px] border-sky-500 bg-sky-50 text-sky-600 hover:bg-sky-500 hover:border-sky-500 hover:text-black flex items-center justify-center transition-all cursor-pointer"
-                              aria-label="Ver"
-                            >
-                              <span className="material-symbols-outlined" style={{ fontSize: '13px', fontVariationSettings: "'FILL' 0, 'wght' 700, 'GRAD' 0, 'opsz' 24" }}>visibility</span>
-                            </button>
-                            <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:block bg-inverse-surface text-inverse-on-surface text-[11px] font-medium px-2 py-0.5 rounded shadow-lg whitespace-nowrap pointer-events-none z-50">
-                              ver
-                            </span>
-                          </div>
-                        )}
-                        {acciones.onEditar && (
-                          <div className="relative group inline-block">
-                            <button
-                              onClick={() => acciones.onEditar!(fila)}
-                              className="w-[28px] h-[28px] rounded-lg border-[3px] border-blue-500 bg-blue-50 text-blue-600 hover:bg-blue-600 hover:border-blue-600 hover:text-white flex items-center justify-center transition-all cursor-pointer"
-                              aria-label="Editar"
-                            >
-                              <span className="material-symbols-outlined" style={{ fontSize: '13px', fontVariationSettings: "'FILL' 0, 'wght' 700, 'GRAD' 0, 'opsz' 24" }}>edit</span>
-                            </button>
-                            <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:block bg-inverse-surface text-inverse-on-surface text-[11px] font-medium px-2 py-0.5 rounded shadow-lg whitespace-nowrap pointer-events-none z-50">
-                              editar
-                            </span>
-                          </div>
-                        )}
-                        {acciones.onEliminar && (
-                          <div className="relative group inline-block">
-                            <button
-                              onClick={() => acciones.onEliminar!(fila)}
-                              className="w-[28px] h-[28px] rounded-lg border-[3px] border-red-500 bg-red-50 text-red-600 hover:bg-red-600 hover:border-red-600 hover:text-white flex items-center justify-center transition-all cursor-pointer"
-                              aria-label="Eliminar"
-                            >
-                              <span className="material-symbols-outlined" style={{ fontSize: '13px', fontVariationSettings: "'FILL' 0, 'wght' 700, 'GRAD' 0, 'opsz' 24" }}>delete</span>
-                            </button>
-                            <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:block bg-inverse-surface text-inverse-on-surface text-[11px] font-medium px-2 py-0.5 rounded shadow-lg whitespace-nowrap pointer-events-none z-50">
-                              eliminar
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    </td>
-                  )}
-                </tr>
-              ))
+              filasOrdenadas.map((fila) => {
+                const clasesFila = obtenerFilaClase ? obtenerFilaClase(fila) : '';
+                const clasesHoverPorDefecto = clasesFila ? '' : 'hover:bg-surface-container-high';
+                return (
+                  <tr
+                    key={obtenerClave(fila)}
+                    className={`transition-colors ${clasesHoverPorDefecto} ${clasesFila}`}
+                  >
+                    {columnas.map((col) => (
+                     <td
+                       key={col.id}
+                       className={`px-2 py-1 sm:py-1.5 text-body-sm sm:text-body-md text-on-surface align-top ${
+                         col.alineaDerecha ? 'text-right' : ''
+                       }`}
+                     >
+                         {col.render(fila)}
+                       </td>
+                    ))}
+                    {acciones && (
+                      <td className="px-2 py-1 sm:py-1.5 text-right align-top">
+                        <div className="flex flex-wrap items-center justify-start gap-1 max-w-[100px] md:max-w-none ml-auto">
+                          {acciones.onVer && (
+                            <div className="relative group inline-block">
+                              <button
+                                onClick={() => acciones.onVer!(fila)}
+                                className="w-[28px] h-[28px] rounded-lg border-[3px] border-sky-500 bg-sky-50 text-sky-600 hover:bg-sky-500 hover:border-sky-500 hover:text-black flex items-center justify-center transition-all cursor-pointer"
+                                aria-label="Ver"
+                              >
+                                <span className="material-symbols-outlined" style={{ fontSize: '13px', fontVariationSettings: "'FILL' 0, 'wght' 700, 'GRAD' 0, 'opsz' 24" }}>visibility</span>
+                              </button>
+                              <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:block bg-inverse-surface text-inverse-on-surface text-[11px] font-medium px-2 py-0.5 rounded shadow-lg whitespace-nowrap pointer-events-none z-50">
+                                ver
+                              </span>
+                            </div>
+                          )}
+                          {acciones.onEditar && (
+                            <div className="relative group inline-block">
+                              <button
+                                onClick={() => acciones.onEditar!(fila)}
+                                className="w-[28px] h-[28px] rounded-lg border-[3px] border-blue-500 bg-blue-50 text-blue-600 hover:bg-blue-600 hover:border-blue-600 hover:text-white flex items-center justify-center transition-all cursor-pointer"
+                                aria-label="Editar"
+                              >
+                                <span className="material-symbols-outlined" style={{ fontSize: '13px', fontVariationSettings: "'FILL' 0, 'wght' 700, 'GRAD' 0, 'opsz' 24" }}>edit</span>
+                              </button>
+                              <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:block bg-inverse-surface text-inverse-on-surface text-[11px] font-medium px-2 py-0.5 rounded shadow-lg whitespace-nowrap pointer-events-none z-50">
+                                editar
+                              </span>
+                            </div>
+                          )}
+                          {acciones.onEliminar && (
+                            <div className="relative group inline-block">
+                              <button
+                                onClick={() => acciones.onEliminar!(fila)}
+                                className="w-[28px] h-[28px] rounded-lg border-[3px] border-red-500 bg-red-50 text-red-600 hover:bg-red-600 hover:border-red-600 hover:text-white flex items-center justify-center transition-all cursor-pointer"
+                                aria-label="Eliminar"
+                              >
+                                <span className="material-symbols-outlined" style={{ fontSize: '13px', fontVariationSettings: "'FILL' 0, 'wght' 700, 'GRAD' 0, 'opsz' 24" }}>delete</span>
+                              </button>
+                              <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:block bg-inverse-surface text-inverse-on-surface text-[11px] font-medium px-2 py-0.5 rounded shadow-lg whitespace-nowrap pointer-events-none z-50">
+                                eliminar
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                    )}
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>
