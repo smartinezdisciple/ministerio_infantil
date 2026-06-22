@@ -215,9 +215,10 @@ const PaginaReportes: React.FC = () => {
   return (
     <LayoutPrincipal titulo="Reportes">
       <div className="space-y-stack-lg max-w-[1440px]">
-
-        {/* Grid de tipos de reporte */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-gutter">
+        {/* Contenido en pantalla (oculto en impresión para que empiece en la página 1) */}
+        <div className="no-print space-y-stack-lg">
+          {/* Grid de tipos de reporte */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-gutter">
           {TIPOS_REPORTE.map((r) => (
             <button
               key={r.id}
@@ -353,6 +354,7 @@ const PaginaReportes: React.FC = () => {
             )}
           </div>
         )}
+        </div>
 
         {/* Área de Impresión (PDF) Oculta en pantalla */}
         {reporteSeleccionado?.id === 'ninos-por-grupo' && gruposConNinos.length > 0 && (
