@@ -9,6 +9,7 @@ import { useAuth } from '../contexts/ContextoAuth';
 import type { RegistroAsistenciaNino, EstadoAsistencia, DatosCheckIn } from '../services/tipos';
 import { listarAsistenciaDia, registrarCheckIn, eliminarAsistencia, listarTurnos } from '../services/servicioApi';
 import { fechaLocalHoy } from '../services/fechaUtils';
+import { formatearTurno } from '../services/turnoUtils';
 import ModalEditarAsistencia from '../components/ModalEditarAsistencia';
 import ModalBase from '../components/ModalBase';
 import ModalConfirmar from '../components/ModalConfirmar';
@@ -495,7 +496,7 @@ const PaginaAsistenciaGeneral: React.FC = () => {
                   <option value="">Todos los Turnos</option>
                   {turnos.map((t) => (
                     <option key={t.idTurno} value={t.idTurno}>
-                      {t.nombre} · {t.horaInicio}
+                      {formatearTurno(t.nombre)}
                     </option>
                   ))}
                 </select>

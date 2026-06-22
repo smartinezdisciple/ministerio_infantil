@@ -36,7 +36,7 @@ const TIPOS_REPORTE: TipoReporte[] = [
     fondoIcono: 'bg-error/10',
     filtros: [
       { id: 'fecha', label: 'Fecha', tipo: 'date' },
-      { id: 'turno', label: 'Turno', tipo: 'select', opciones: ['Todos', 'Miércoles', 'Domingo 8am', 'Domingo 11am', 'Domingo 5pm'] },
+      { id: 'turno', label: 'Turno', tipo: 'select', opciones: ['Todos', 'Miercoles 6:30pm', 'Domingo 8am', 'Domingo 11am', 'Domingo 5pm'] },
       { id: 'grupo', label: 'Grupo', tipo: 'select', opciones: ['Todos', '4-6 años', '7-9 años', '10-12 años'] },
     ],
   },
@@ -49,7 +49,7 @@ const TIPOS_REPORTE: TipoReporte[] = [
     fondoIcono: 'bg-tertiary/10',
     filtros: [
       { id: 'fecha', label: 'Fecha', tipo: 'date' },
-      { id: 'turno', label: 'Turno', tipo: 'select', opciones: ['Todos', 'Miércoles', 'Domingo 8am', 'Domingo 11am', 'Domingo 5pm'] },
+      { id: 'turno', label: 'Turno', tipo: 'select', opciones: ['Todos', 'Miercoles 6:30pm', 'Domingo 8am', 'Domingo 11am', 'Domingo 5pm'] },
       { id: 'estado', label: 'Estado', tipo: 'select', opciones: ['Todos', 'Presente', 'Retirado'] },
     ],
   },
@@ -62,7 +62,7 @@ const TIPOS_REPORTE: TipoReporte[] = [
     fondoIcono: 'bg-secondary/10',
     filtros: [
       { id: 'fecha', label: 'Fecha', tipo: 'date' },
-      { id: 'turno', label: 'Turno', tipo: 'select', opciones: ['Todos', 'Miércoles', 'Domingo 8am', 'Domingo 11am', 'Domingo 5pm'] },
+      { id: 'turno', label: 'Turno', tipo: 'select', opciones: ['Todos', 'Miercoles 6:30pm', 'Domingo 8am', 'Domingo 11am', 'Domingo 5pm'] },
       { id: 'rol', label: 'Rol', tipo: 'select', opciones: ['Todos', 'Colaborador', 'Maestro', 'Staff'] },
     ],
   },

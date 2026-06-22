@@ -142,3 +142,4 @@ export const formatearFechaConMesTexto = (fechaDb: string): string => {
   return `${dd}-${mesCap}-${yyyy}`;
 };
 
+

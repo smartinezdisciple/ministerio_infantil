@@ -18,6 +18,7 @@ import {
   type GrupoApi
 } from '../services/servicioApi';
 import { fechaLocalHoy, calcularEdad } from '../services/fechaUtils';
+import { formatearTurno } from '../services/turnoUtils';
 import { filtrarSoloLetras, formatearTelefono } from '../services/validacionEntrada';
 
 interface NinoCheckIn {
@@ -691,7 +692,7 @@ const ModalCheckIn: React.FC<PropsModalCheckIn> = ({ abierto, fecha, onCerrar, o
                   <option value="">Seleccionar turno...</option>
                   {turnos.map((t) => (
                     <option key={t.idTurno} value={String(t.idTurno)}>
-                      {t.nombre}
+                      {formatearTurno(t.nombre)}
                     </option>
                   ))}
                 </select>

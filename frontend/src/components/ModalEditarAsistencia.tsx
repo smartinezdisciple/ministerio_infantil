@@ -13,6 +13,7 @@ import {
   type TurnoApi
 } from '../services/servicioApi';
 import { formatearTelefono } from '../services/validacionEntrada';
+import { formatearTurno } from '../services/turnoUtils';
 
 interface PropsModalEditarAsistencia {
   abierto: boolean;
@@ -350,7 +351,7 @@ const ModalEditarAsistencia: React.FC<PropsModalEditarAsistencia> = ({
                 >
                   {turnos.map((t) => (
                     <option key={t.idTurno} value={String(t.idTurno)}>
-                      {t.nombre}
+                      {formatearTurno(t.nombre)}
                     </option>
                   ))}
                 </select>

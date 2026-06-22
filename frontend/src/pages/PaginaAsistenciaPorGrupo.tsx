@@ -14,6 +14,7 @@ import {
   listarAsistenciaDia,
 } from '../services/servicioApi';
 import { fechaLocalHoy } from '../services/fechaUtils';
+import { formatearTurno } from '../services/turnoUtils';
 
 // ── Helpers ───────────────────────────────────────────────────────
 const colorAvatar = (nombre: string) => {
@@ -338,7 +339,7 @@ const PaginaAsistenciaPorGrupo: React.FC = () => {
                     )}
                     {turnos.map((t) => (
                       <option key={t.idTurno} value={t.idTurno}>
-                        {t.nombre} · {t.horaInicio}
+                        {formatearTurno(t.nombre)}
                       </option>
                     ))}
                   </select>
@@ -355,7 +356,7 @@ const PaginaAsistenciaPorGrupo: React.FC = () => {
                   ) : turnoActual ? (
                     <span className="flex items-center gap-2">
                       <span className="material-symbols-outlined text-[18px] text-primary">schedule</span>
-                      {turnoActual.nombre} · {turnoActual.horaInicio}
+                      {formatearTurno(turnoActual.nombre)}
                     </span>
                   ) : (
                     <span className="text-on-surface-variant/60 italic text-body-sm">Sin turno asignado</span>
@@ -436,7 +437,7 @@ const PaginaAsistenciaPorGrupo: React.FC = () => {
             </h3>
             {turnoActual && (
               <span className="text-label-sm text-on-surface-variant bg-surface-container-low px-3 py-1 rounded-full border border-outline-variant">
-                {turnoActual.nombre}
+                {formatearTurno(turnoActual.nombre)}
               </span>
             )}
           </div>
