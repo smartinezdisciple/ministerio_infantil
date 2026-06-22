@@ -27,7 +27,7 @@ async function run() {
 
     // 2. Obtener asistencias del 2026-06-21 en ese turno que estén en estado 'Presente'
     const asistenciasRes = await pool.query(
-      `SELECT ID_Asistencia AS "idAsistencia", ID_Nino AS "idNino" 
+      `SELECT ID_Asistencia AS "idAsistencia", ID_Nino AS "idNino", Hora_Entrada AS "horaEntrada" 
        FROM Asistencia_Ninos 
        WHERE Fecha = '2026-06-21' AND ID_Turno = $1 AND Estado = 'Presente'`,
       [idTurno]
@@ -40,6 +40,7 @@ async function run() {
     for (const row of asistenciasRes.rows) {
       const idAsistencia = row.idAsistencia;
       const idNino = row.idNino;
+      const horaEntrada = row.horaEntrada;
 
       // 3. Buscar el primer tutor asignado al niño en Tutores_Ninos
       const tutorRes = await pool.query(
@@ -65,14 +66,26 @@ async function run() {
         continue;
       }
 
+      // Calcular hora de salida dinámica para no violar la restricción: Hora_Salida > Hora_Entrada
+      let horaSalida = '19:00:00';
+      if (horaEntrada >= '19:00:00') {
+        const [h, m, s] = horaEntrada.split(':').map(Number);
+        let checkOutH = h + 2;
+        if (checkOutH >= 24) {
+          horaSalida = '23:59:59';
+        } else {
+          horaSalida = `${String(checkOutH).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+        }
+      }
+
       // 4. Hacer el UPDATE. Esto activará el trigger fn_validar_retiro_nino. 
       await pool.query(
         `UPDATE Asistencia_Ninos
-         SET Hora_Salida = '19:00:00',
-             ID_Retirado_Por = $1,
+         SET Hora_Salida = $1,
+             ID_Retirado_Por = $2,
              Estado = 'Retirado'
-         WHERE ID_Asistencia = $2`,
-        [idTutor, idAsistencia]
+         WHERE ID_Asistencia = $3`,
+        [horaSalida, idTutor, idAsistencia]
       );
       actualizados++;
     }
