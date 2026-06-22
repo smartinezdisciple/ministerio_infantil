@@ -215,8 +215,6 @@ body {
 
   /* Estilos para las tarjetas de grupo impresas */
   .print-card {
-    page-break-inside: avoid;
-    break-inside: avoid;
     margin-bottom: 30px;
     border: 1px solid #c1c6d5 !important;
     border-radius: 12px !important;
@@ -238,6 +236,11 @@ body {
     width: 100% !important;
     border-collapse: collapse !important;
     margin-top: 10px !important;
+  }
+
+  .print-table tr {
+    page-break-inside: avoid;
+    break-inside: avoid;
   }
 
   .print-table th, .print-table td {
