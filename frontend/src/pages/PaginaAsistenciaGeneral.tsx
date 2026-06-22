@@ -42,25 +42,26 @@ const construirColumnas = (
   {
     id: 'estudiante',
     encabezado: 'Estudiante',
+    ancho: 'w-[190px]',
     ordenablePor: (r) => r.nino.nombreCompleto,
     render: (r) => (
       <div className="flex items-center gap-2">
         <div className="w-7 h-7 rounded-full bg-surface-container-highest flex items-center justify-center shrink-0 text-[10px] font-bold text-primary">
           {r.nino.nombres[0]}{r.nino.apellidos[0]}
         </div>
-        <div>
-          <p className="text-[12px] font-semibold text-on-surface flex items-center gap-1.5 flex-wrap">
-            <span className="max-w-[125px] truncate block" title={r.nino.nombreCompleto}>
+        <div className="flex flex-col min-w-0">
+          <div className="flex items-center gap-1.5 text-[12px] font-semibold text-on-surface flex-nowrap">
+            <span className="truncate max-w-[120px]" title={r.nino.nombreCompleto}>
               {r.nino.nombreCompleto}
             </span>
             {r.nino.alertasMedicas.some((a) => a.severidad === 'Alta') && (
-              <span className="material-symbols-outlined text-error text-[14px]" title="Alerta médica alta">warning</span>
+              <span className="material-symbols-outlined text-error shrink-0" style={{ fontSize: '13px' }} title="Alerta médica alta">warning</span>
             )}
             {esCumpleanosHoy(r.nino.fechaNacimiento, filtroFecha) && (
-              <span className="material-symbols-outlined text-emerald-600 text-[14px]" style={{ fontVariationSettings: "'FILL' 1" }} title="Cumpleaños hoy">cake</span>
+              <span className="material-symbols-outlined text-emerald-600 shrink-0" style={{ fontSize: '14px', fontVariationSettings: "'FILL' 1" }} title="Cumpleaños hoy">cake</span>
             )}
-          </p>
-          <p className="text-[11px] text-on-surface-variant">{r.nino.grupo.nombre}</p>
+          </div>
+          <p className="text-[11px] text-on-surface-variant truncate">{r.nino.grupo.nombre}</p>
         </div>
       </div>
     ),
@@ -68,19 +69,21 @@ const construirColumnas = (
   {
     id: 'fecha',
     encabezado: 'Fecha',
+    ancho: 'w-[95px]',
     ordenablePor: 'fecha',
     render: (r) => <span className="text-[12px] text-on-surface">{formatearFecha(r.fecha)}</span>,
   },
   {
     id: 'fichaEntrada',
     encabezado: 'F.Entrada',
+    ancho: 'w-[85px]',
     ordenablePor: 'codigoFichaEntrada',
     render: (r) => <span className="font-mono text-[12px] text-on-surface">{r.codigoFichaEntrada}</span>,
   },
   {
     id: 'acompanante',
     encabezado: 'Acompañante',
-    ancho: 'w-[75px]',
+    ancho: 'w-[105px]',
     ordenablePor: (r) => r.acompananteEnAula ? 0 : 1,
     render: (r) => (
       <span className="flex items-center justify-center">
@@ -99,6 +102,7 @@ const construirColumnas = (
   {
     id: 'fichaSalida',
     encabezado: 'F.Salida',
+    ancho: 'w-[85px]',
     ordenablePor: (r) => r.codigoFichaSalida ?? '',
     render: (r) => (
       <span className="font-mono text-[12px] text-on-surface">
@@ -109,6 +113,7 @@ const construirColumnas = (
   {
     id: 'horaSalida',
     encabezado: 'Salida',
+    ancho: 'w-[85px]',
     ordenablePor: (r) => r.horaSalida ?? '',
     render: (r) => (
       <span className="text-[12px] text-on-surface">
@@ -119,19 +124,21 @@ const construirColumnas = (
   {
     id: 'estado',
     encabezado: 'Estado',
+    ancho: 'w-[95px]',
     ordenablePor: 'estado',
     render: (r) => <BadgeEstado estado={r.estado} />,
   },
   {
     id: 'acciones',
     encabezado: 'Acciones',
+    ancho: 'w-[130px]',
     alineaDerecha: true,
     render: (r) => {
       const puedeEditarBorrar = nivelJerarquico >= 3;
       const completado = r.estado === 'Completado' || r.estado === 'Retirado';
       
       return (
-        <div className="flex flex-wrap items-center justify-start gap-1 max-w-[100px] md:max-w-none ml-auto">
+        <div className="flex items-center justify-end gap-1 ml-auto">
           <div className="relative group inline-block">
             <button
               onClick={() => onVerDetalles(r)}

@@ -242,14 +242,14 @@ function TablaBase<T>({
                     className={`transition-colors ${clasesHoverPorDefecto} ${clasesFila}`}
                   >
                     {columnas.map((col) => (
-                     <td
-                       key={col.id}
-                       className={`px-2 py-1 sm:py-1.5 text-body-sm sm:text-body-md text-on-surface align-top ${
-                         col.alineaDerecha ? 'text-right' : ''
-                       }`}
-                     >
-                         {col.render(fila)}
-                       </td>
+                      <td
+                        key={col.id}
+                        className={`px-2 py-1 sm:py-1.5 text-body-sm sm:text-body-md text-on-surface align-top ${
+                          col.alineaDerecha ? 'text-right' : ''
+                        } ${col.ancho ?? ''}`}
+                      >
+                        {col.render(fila)}
+                      </td>
                     ))}
                     {acciones && (
                       <td className="px-2 py-1 sm:py-1.5 text-right align-top">
