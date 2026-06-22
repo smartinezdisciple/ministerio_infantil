@@ -24,7 +24,7 @@ import {
   type TutorApi,
   type ContactoGlobalApi,
 } from '../services/servicioApi';
-import { parsearFechaUsuario, formatearFechaConMesTexto, calcularEdad } from '../services/fechaUtils';
+import { parsearFechaUsuario, formatearFechaConMesTexto, calcularEdad, fechaLocalHoy, dateToLocalString } from '../services/fechaUtils';
 
 interface CampoPadre extends DatosPadreNuevo {
   id: number;
@@ -915,6 +915,15 @@ const RegistroNinos: React.FC = () => {
     );
   }, [registros, busqueda]);
 
+  const totalHoy = useMemo(() => {
+    const hoyStr = fechaLocalHoy();
+    return registros.filter(r => {
+      if (!r.creadoEn) return false;
+      const fechaNinoStr = dateToLocalString(new Date(r.creadoEn));
+      return fechaNinoStr === hoyStr;
+    }).length;
+  }, [registros]);
+
   const registrosPaginados = useMemo(() => {
     const inicio = (pagina - 1) * porPagina;
     return registrosFiltrados.slice(inicio, inicio + porPagina);
@@ -1033,24 +1042,47 @@ const RegistroNinos: React.FC = () => {
     <LayoutPrincipal titulo="Ingreso de Niños" accionBarra={botonIngresar}>
       <div className="space-y-stack-lg max-w-[1440px]">
 
-        <div className="grid grid-cols-1 gap-gutter">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-gutter">
+          {/* Tarjeta 1: Niños en el sistema */}
+          <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 shadow-sm flex flex-col justify-between">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 bg-surface-container-highest rounded-full text-primary">
+                <span className="material-symbols-outlined" aria-hidden="true">groups</span>
+              </div>
+              <h3 className="font-headline-md text-headline-md text-on-background">Niños en el Sistema</h3>
+            </div>
+            <div className="flex items-end gap-2">
+              {cargandoTabla ? (
+                <div className="h-12 w-20 bg-surface-container-high rounded-lg animate-pulse" />
+              ) : (
+                <span className="font-display-lg text-display-lg text-primary">
+                  {registros.length}
+                </span>
+              )}
+              <span className="font-body-sm text-on-surface-variant pb-2">
+                niños registrados en total
+              </span>
+            </div>
+          </div>
+
+          {/* Tarjeta 2: Ingresos del día */}
           <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 shadow-sm flex flex-col justify-between">
             <div className="flex items-center gap-3 mb-4">
               <div className="p-2 bg-surface-container-highest rounded-full text-tertiary">
                 <span className="material-symbols-outlined" aria-hidden="true">fact_check</span>
               </div>
-              <h3 className="font-headline-md text-headline-md text-on-background">Total Hoy</h3>
+              <h3 className="font-headline-md text-headline-md text-on-background">Ingresos ({fechaLocalHoy()})</h3>
             </div>
             <div className="flex items-end gap-2">
               {cargandoTabla ? (
                 <div className="h-12 w-20 bg-surface-container-high rounded-lg animate-pulse" />
               ) : (
                 <span className="font-display-lg text-display-lg text-tertiary">
-                  {registros.length}
+                  {totalHoy}
                 </span>
               )}
               <span className="font-body-sm text-on-surface-variant pb-2">
-                ingresos registrados hoy
+                nuevos ingresos hoy
               </span>
             </div>
           </div>
