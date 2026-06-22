@@ -8,7 +8,7 @@ import ModalCheckOut from '../components/ModalCheckOut';
 import { useAuth } from '../contexts/ContextoAuth';
 import type { RegistroAsistenciaNino, EstadoAsistencia, DatosCheckIn } from '../services/tipos';
 import { listarAsistenciaDia, registrarCheckIn, eliminarAsistencia, listarTurnos } from '../services/servicioApi';
-import { fechaLocalHoy } from '../services/fechaUtils';
+import { fechaLocalHoy, esCumpleanosHoy } from '../services/fechaUtils';
 import { formatearTurno } from '../services/turnoUtils';
 import ModalEditarAsistencia from '../components/ModalEditarAsistencia';
 import ModalBase from '../components/ModalBase';
@@ -36,7 +36,8 @@ const construirColumnas = (
   onEditar: (registro: RegistroAsistenciaNino) => void,
   onEliminar: (registro: RegistroAsistenciaNino) => void,
   puedeCheckOut: boolean,
-  nivelJerarquico: number
+  nivelJerarquico: number,
+  filtroFecha: string
 ): ColumnaTabla<RegistroAsistenciaNino>[] => [
   {
     id: 'estudiante',
@@ -48,12 +49,18 @@ const construirColumnas = (
           {r.nino.nombres[0]}{r.nino.apellidos[0]}
         </div>
         <div>
-          <p className="text-[12px] font-semibold text-on-surface flex items-center gap-1.5">
+          <p className="text-[12px] font-semibold text-on-surface flex items-center gap-1.5 flex-wrap">
             <span className="max-w-[125px] truncate block" title={r.nino.nombreCompleto}>
               {r.nino.nombreCompleto}
             </span>
             {r.nino.alertasMedicas.some((a) => a.severidad === 'Alta') && (
               <span className="material-symbols-outlined text-error text-[14px]" title="Alerta médica alta">warning</span>
+            )}
+            {esCumpleanosHoy(r.nino.fechaNacimiento, filtroFecha) && (
+              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400 rounded-md border border-emerald-200 dark:border-emerald-800/50">
+                <span className="material-symbols-outlined text-[12px]" style={{ fontVariationSettings: "'FILL' 1" }}>cake</span>
+                ¡Cumple!
+              </span>
             )}
           </p>
           <p className="text-[11px] text-on-surface-variant">{r.nino.grupo.nombre}</p>
@@ -206,6 +213,7 @@ const PaginaAsistenciaGeneral: React.FC = () => {
   const [filtroTurno, setFiltroTurno]       = useState('');
   const [filtroEstado, setFiltroEstado]     = useState<'todos' | 'Pendiente'>('todos');
   const [filtroFecha, setFiltroFecha]       = useState(fechaLocalHoy());
+  const [filtroCumpleanos, setFiltroCumpleanos] = useState(false);
   const [busqueda, setBusqueda]             = useState('');
 
   // Estado de catálogo de turnos
@@ -272,9 +280,11 @@ const PaginaAsistenciaGeneral: React.FC = () => {
       const coincideEstado =
         filtroEstado === 'todos' ||
         (filtroEstado === 'Pendiente' && (r.estado === 'Pendiente' || r.estado === 'Presente'));
-      return coincideBusqueda && coincideEstado;
+      const coincideCumple =
+        !filtroCumpleanos || esCumpleanosHoy(r.nino.fechaNacimiento, filtroFecha);
+      return coincideBusqueda && coincideEstado && coincideCumple;
     });
-  }, [registros, busqueda, filtroEstado]);
+  }, [registros, busqueda, filtroEstado, filtroCumpleanos, filtroFecha]);
 
   // Paginación
   const registrosPaginados = useMemo(() => {
@@ -380,9 +390,10 @@ const PaginaAsistenciaGeneral: React.FC = () => {
       handleAbrirEditar,
       handleEliminarAsistencia,
       puedeCheckOut,
-      usuario?.nivelJerarquico ?? 1
+      usuario?.nivelJerarquico ?? 1,
+      filtroFecha
     ),
-    [handleAbrirDetalles, handleAbrirCheckOut, handleAbrirEditar, handleEliminarAsistencia, puedeCheckOut, usuario?.nivelJerarquico]
+    [handleAbrirDetalles, handleAbrirCheckOut, handleAbrirEditar, handleEliminarAsistencia, puedeCheckOut, usuario?.nivelJerarquico, filtroFecha]
   );
 
    // Botón de acción en la barra superior
@@ -459,7 +470,7 @@ const PaginaAsistenciaGeneral: React.FC = () => {
 
         {/* ── Filtros Agrupados ──────────────────────── */}
         <div className="bg-surface-container-lowest p-6 rounded-2xl border border-outline-variant shadow-sm">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
             {/* Filtro Grupo */}
             <div className="flex flex-col">
               <label htmlFor="filtro-grupo" className="text-label-md font-label-md text-on-surface mb-2">
@@ -545,6 +556,24 @@ const PaginaAsistenciaGeneral: React.FC = () => {
                 onChange={(e) => { setFiltroFecha(e.target.value); setPagina(1); }}
                 className="w-full bg-surface-container-low border border-outline-variant rounded-xl px-4 py-3 text-body-md focus:ring-2 focus:ring-primary focus:outline-none transition-all"
               />
+            </div>
+
+            {/* Filtro Cumpleaños */}
+            <div className="flex flex-col">
+              <span className="text-label-md font-label-md text-on-surface mb-2">Cumpleaños</span>
+              <button
+                type="button"
+                onClick={() => { setFiltroCumpleanos(p => !p); setPagina(1); }}
+                className={`w-full px-4 py-3 rounded-xl text-label-md font-label-md transition-all flex items-center justify-center gap-2 h-[46px] border ${
+                  filtroCumpleanos
+                    ? 'bg-emerald-600 border-emerald-600 text-white shadow-sm hover:bg-emerald-700'
+                    : 'bg-surface-container-low border-outline-variant text-on-surface-variant hover:bg-surface-container-high'
+                }`}
+                aria-pressed={filtroCumpleanos}
+              >
+                <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: filtroCumpleanos ? "'FILL' 1" : "'FILL' 0" }}>cake</span>
+                {filtroCumpleanos ? 'Solo Cumpleañeros' : 'Todos'}
+              </button>
             </div>
           </div>
         </div>

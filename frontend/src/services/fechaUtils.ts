@@ -142,4 +142,22 @@ export const formatearFechaConMesTexto = (fechaDb: string): string => {
   return `${dd}-${mesCap}-${yyyy}`;
 };
 
+/**
+ * Compara el mes y día de una fecha de nacimiento con una fecha de referencia.
+ * Retorna true si coinciden (es decir, el niño cumple años en la fecha de referencia).
+ */
+export const esCumpleanosHoy = (fechaNacimientoStr: string, fechaReferenciaStr: string): boolean => {
+  if (!fechaNacimientoStr || !fechaReferenciaStr) return false;
+  
+  const partesNac = fechaNacimientoStr.split('T')[0].split('-');
+  const partesRef = fechaReferenciaStr.split('T')[0].split('-');
+  if (partesNac.length !== 3 || partesRef.length !== 3) return false;
+  
+  const [_, mesNac, diaNac] = partesNac;
+  const [__, mesRef, diaRef] = partesRef;
+  
+  return mesNac === mesRef && diaNac === diaRef;
+};
+
+
 
