@@ -93,12 +93,26 @@ const sanitizarCamposSolicitud = (body: any): any => {
 
   // 8. fechaBautismoPrecision
   if (body.fechaBautismoPrecision !== undefined) {
-    clean.fechaBautismoPrecision = toEnum(body.fechaBautismoPrecision, ['Dia', 'Mes', 'Ano']);
+    const rawVal = typeof body.fechaBautismoPrecision === 'string' ? body.fechaBautismoPrecision.trim() : '';
+    if (rawVal === 'Exacta' || rawVal === 'Aproximada' || rawVal === 'Dia') {
+      clean.fechaBautismoPrecision = 'Dia';
+    } else if (rawVal === 'Anio' || rawVal === 'Ano') {
+      clean.fechaBautismoPrecision = 'Ano';
+    } else {
+      clean.fechaBautismoPrecision = toEnum(body.fechaBautismoPrecision, ['Dia', 'Mes', 'Ano']);
+    }
   }
 
   // 9. circuloAmistadPrecision
   if (body.circuloAmistadPrecision !== undefined) {
-    clean.circuloAmistadPrecision = toEnum(body.circuloAmistadPrecision, ['Dia', 'Mes', 'Ano']);
+    const rawVal = typeof body.circuloAmistadPrecision === 'string' ? body.circuloAmistadPrecision.trim() : '';
+    if (rawVal === 'Exacta' || rawVal === 'Aproximada' || rawVal === 'Dia') {
+      clean.circuloAmistadPrecision = 'Dia';
+    } else if (rawVal === 'Anio' || rawVal === 'Ano') {
+      clean.circuloAmistadPrecision = 'Ano';
+    } else {
+      clean.circuloAmistadPrecision = toEnum(body.circuloAmistadPrecision, ['Dia', 'Mes', 'Ano']);
+    }
   }
 
   // 10. General string inputs: convert empty string to null
@@ -752,7 +766,30 @@ export const aprobarSolicitud = async (req: Request, res: Response): Promise<voi
              ID_Resuelto_Por   = $1,
              Fecha_Resolucion  = NOW(),
              Notas_Coordinador = $2,
-             ID_Rol_Solicitado = COALESCE($3, ID_Rol_Solicitado)
+             ID_Rol_Solicitado = COALESCE($3, ID_Rol_Solicitado),
+             Estado_Civil      = COALESCE(Estado_Civil, 'Soltero'::estado_civil),
+             Condicion_Civil   = COALESCE(Condicion_Civil, 'Ninguna'::condicion_civil),
+             Tiene_Hijos       = COALESCE(Tiene_Hijos, FALSE),
+             Fecha_Bautismo_Precision = CASE 
+                 WHEN Fecha_Bautismo IS NOT NULL AND Fecha_Bautismo_Precision IS NULL 
+                 THEN 'Dia'::tipo_precision_fecha 
+                 ELSE Fecha_Bautismo_Precision 
+             END,
+             Circulo_Amistad_Precision = CASE 
+                 WHEN Circulo_Amistad_Desde IS NOT NULL AND Circulo_Amistad_Precision IS NULL 
+                 THEN 'Dia'::tipo_precision_fecha 
+                 ELSE Circulo_Amistad_Precision 
+             END,
+             Clases_Biblicas_Detalle = CASE 
+                 WHEN Clases_Biblicas_Ninos = TRUE AND Clases_Biblicas_Detalle IS NULL 
+                 THEN 'Completado' 
+                 ELSE Clases_Biblicas_Detalle 
+             END,
+             Capacitacion_Detalle = CASE 
+                 WHEN Capacitacion_Ensenanza = TRUE AND Capacitacion_Detalle IS NULL 
+                 THEN 'Completado' 
+                 ELSE Capacitacion_Detalle 
+             END
          WHERE ID_Solicitud = $4`,
         [idResueltoPor, notas ?? null, idRolSolicitado ?? null, id]
       );
