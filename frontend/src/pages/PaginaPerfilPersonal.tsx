@@ -130,7 +130,7 @@ const PaginaPerfilPersonal: React.FC = () => {
   useEffect(() => {
     if (!id) return;
     setCargando(true);
-    const token = localStorage.getItem('token') ?? '';
+    const token = localStorage.getItem('ed_token') ?? '';
     fetch(`/api/personal/${id}/perfil`, {
       headers: { Authorization: `Bearer ${token}` },
     })
