@@ -120,6 +120,10 @@ export const actualizarNino = async (req: Request, res: Response): Promise<void>
     respuestaExito(res, nino);
   } catch (error) {
     const mensaje = error instanceof Error ? error.message : 'Error al actualizar el niño.';
+    if (mensaje.includes('CONCURRENCY_CONFLICT')) {
+      respuestaError(res, 'Los datos del niño han sido actualizados por otro usuario. Por favor recarga e intenta de nuevo.', 409);
+      return;
+    }
     respuestaError(res, mensaje, 400);
   }
 };

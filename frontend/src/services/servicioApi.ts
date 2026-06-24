@@ -183,6 +183,7 @@ export interface NinoCompletoApi {
   padres:                 Array<{ idPersona: number; nombres: string; apellidos: string; telefono: string }>;
   sexo?:                  'Masculino' | 'Femenino' | null;
   activo?:                boolean;
+  version?:               number;
 }
 
 export const obtenerNinoCompleto = (id: number) => get<NinoCompletoApi>(`/ninos/${id}/completo`);
@@ -236,6 +237,7 @@ export interface DatosNinoConPadres {
   padres:                DatosPadreNuevo[];
   sexo?:                 'Masculino' | 'Femenino' | null;
   activo?:               boolean;
+  version?:              number;
 }
 
 export interface RespuestaNinoConPadres {
@@ -468,6 +470,7 @@ export interface DatosPersonalNuevo {
   /** Grupo asignado (requerido si el rol es Maestro) */
   idGrupoAsignado?: number;
   idTurnos: number[];
+  version?: number;
 }
 
 export const registrarPersonal = (datos: DatosPersonalNuevo) =>
@@ -489,6 +492,7 @@ export interface PersonalCompletoApi {
   idGrupoAsignado:   number | null;
   grupoAsignado:     string | null;
   idTurnos?:         number[];
+  version?:          number;
 }
 
 export const obtenerPersonalCompleto = (id: number) =>

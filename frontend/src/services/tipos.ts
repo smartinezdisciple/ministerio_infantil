@@ -276,6 +276,7 @@ export interface DatosRegistroPersonal {
   /** Grupo asignado (requerido si el rol es Maestro) */
   idGrupoAsignado?: number;
   idTurnos: number[];
+  version?: number;
 }
 
 // ── Nuevos Tipos v5.1 ──────────────────────────────────────────

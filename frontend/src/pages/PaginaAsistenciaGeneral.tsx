@@ -1,5 +1,6 @@
 // PaginaAsistenciaGeneral.tsx — Módulo de Asistencia General (Spec §4, Plan Maestro Fase 4)
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import useSWR from 'swr';
 import LayoutPrincipal from '../components/LayoutPrincipal';
 import TablaBase, { type ColumnaTabla } from '../components/TablaBase';
 import BadgeEstado from '../components/BadgeEstado';
@@ -237,23 +238,40 @@ const PaginaAsistenciaGeneral: React.FC = () => {
   // Permisos: todos los roles pueden hacer check-in/check-out (nivel ≥ 1)
   const puedeOperar = (usuario?.nivelJerarquico ?? 0) >= 1;
 
-  /**
-   * Carga registros del día desde el backend.
-   * GET /api/asistencia?fecha={filtroFecha}&grupo={filtroGrupo}
-   */
+  // ── Carga de registros con SWR ────────────────
+  const { data: swrRegistros, isLoading: isLoadingRegistros, mutate: mutateRegistros } = useSWR(
+    ['/asistencia/general', filtroFecha, filtroGrupo, filtroTurno],
+    async () => {
+      const res = await listarAsistenciaDia(filtroFecha, filtroGrupo || undefined, filtroTurno || undefined);
+      return res as unknown as RegistroAsistenciaNino[];
+    },
+    {
+      refreshInterval: 15000, // 15 segundos
+      revalidateOnFocus: true,
+      dedupingInterval: 2000,
+    }
+  );
+
   const cargarRegistros = useCallback(async () => {
-    setCargando(true);
-    try {
-      const datos = await listarAsistenciaDia(filtroFecha, filtroGrupo || undefined, filtroTurno || undefined);
-      setRegistros(datos as unknown as RegistroAsistenciaNino[]);
-      setPagina(1);
-    } catch (err) {
-      console.error('Error cargando asistencia:', err);
-      // Sin datos del servidor, mostrar lista vacía
-      setRegistros([]);
-    } finally {
+    mutateRegistros();
+  }, [mutateRegistros]);
+
+  useEffect(() => {
+    if (swrRegistros) {
+      setRegistros(swrRegistros);
+    }
+  }, [swrRegistros]);
+
+  useEffect(() => {
+    if (isLoadingRegistros && !swrRegistros) {
+      setCargando(true);
+    } else {
       setCargando(false);
     }
+  }, [isLoadingRegistros, swrRegistros]);
+
+  useEffect(() => {
+    setPagina(1);
   }, [filtroFecha, filtroGrupo, filtroTurno]);
 
   // Cargar catálogo de turnos al montar
@@ -268,10 +286,6 @@ const PaginaAsistenciaGeneral: React.FC = () => {
     };
     cargarTurnos();
   }, []);
-
-  useEffect(() => {
-    cargarRegistros();
-  }, [cargarRegistros]);
 
   // Filtrado local (búsqueda + estado)
   const registrosFiltrados = useMemo(() => {

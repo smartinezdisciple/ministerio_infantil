@@ -1,6 +1,7 @@
 // PaginaDirectorioContactos.tsx — Fase 7: Directorio global de contactos (Spec §9.6)
 // Lista todos los padres, tutores y temporales activos del día, con búsqueda y acceso a ficha individual
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import useSWR from 'swr';
 import { useNavigate } from 'react-router-dom';
 import LayoutPrincipal from '../components/LayoutPrincipal';
 import ModalEditarTutor from '../components/ModalEditarTutor';
@@ -32,20 +33,32 @@ const PaginaDirectorioContactos: React.FC = () => {
     tipoTutor?: string;
   } | null>(null);
 
-  const cargarContactos = useCallback(async () => {
-    setCargando(true);
-    try {
-      const datos = await listarContactos();
-      setContactos(datos as unknown as ContactoGlobal[]);
-    } catch (err) {
-      console.error('Error cargando contactos:', err);
-      setContactos([]);
-    } finally {
+  // ── Carga de contactos con SWR ────────────────
+  const { data: swrContactos, isLoading: isLoadingContactos } = useSWR(
+    '/contactos',
+    async () => {
+      const res = await listarContactos();
+      return res as unknown as ContactoGlobal[];
+    },
+    {
+      revalidateOnFocus: true,
+      dedupingInterval: 2000,
+    }
+  );
+
+  useEffect(() => {
+    if (swrContactos) {
+      setContactos(swrContactos);
+    }
+  }, [swrContactos]);
+
+  useEffect(() => {
+    if (isLoadingContactos && !swrContactos) {
+      setCargando(true);
+    } else {
       setCargando(false);
     }
-  }, []);
-
-  useEffect(() => { cargarContactos(); }, [cargarContactos]);
+  }, [isLoadingContactos, swrContactos]);
 
   // Filtrado y búsqueda — activos siempre primero (Spec §9.6)
   const contactosFiltrados = useMemo(() => {

@@ -208,6 +208,7 @@ export const obtenerNinos = async (): Promise<unknown[]> => {
         p.Sexo                                           AS "sexo",
         n.Observaciones_Generales                        AS "observacionesGenerales",
         n.Activo                                         AS "activo",
+        n.version                                        AS "version",
         g.ID_Grupo                                       AS "idGrupo",
         CASE 
           WHEN g.ID_Grupo = 1 AND EXTRACT(YEAR FROM AGE(CURRENT_DATE, p.Fecha_Nacimiento)) < 4 THEN 'Menores de 4 años'
@@ -238,6 +239,7 @@ export const obtenerNinosIngreso = async (): Promise<unknown[]> => {
        n_p.Creado_En        AS "creadoEn",
        n_p.Fecha_Nacimiento AS "fechaNacimiento",
        n.Activo             AS "activo",
+       n.version            AS "version",
        (
          SELECT CONCAT(p2.Nombres, ' ', p2.Apellidos)
          FROM Tutores_Ninos tn2
@@ -262,7 +264,8 @@ export const obtenerNinoPorId = async (idPersona: number): Promise<unknown | nul
         p.Apellidos        AS "apellidos",
         p.Fecha_Nacimiento AS "fechaNacimiento",
         n.Observaciones_Generales AS "observacionesGenerales",
-        n.Activo             AS "activo"
+        n.Activo             AS "activo",
+        n.version            AS "version"
       FROM Personas p
       JOIN Ninos n ON n.ID_Persona = p.ID_Persona
       WHERE p.ID_Persona = $1`,
@@ -296,23 +299,39 @@ export const actualizarNino = async (idPersona: number, datos: {
   motivoExcepcion?: string;
   sexo?: 'Masculino' | 'Femenino' | null;
   activo?: boolean;
+  version?: number;
 }): Promise<NinoDB> => {
   const cliente = await pool.connect();
   try {
     await cliente.query('BEGIN');
 
-    // 1. Actualizar Personas
+    // 1. Actualizar Ninos (y validar versión de concurrencia optimista)
+    if (datos.version !== undefined) {
+      const resNino = await cliente.query(
+        `UPDATE Ninos 
+         SET Observaciones_Generales = $1, Activo = $2, version = version + 1 
+         WHERE ID_Persona = $3 AND version = $4
+         RETURNING version`,
+        [datos.observacionesGenerales ?? null, datos.activo ?? true, idPersona, datos.version]
+      );
+      if ((resNino.rowCount ?? 0) === 0) {
+        throw new Error('CONCURRENCY_CONFLICT: El registro fue modificado por otro usuario.');
+      }
+    } else {
+      await cliente.query(
+        `UPDATE Ninos 
+         SET Observaciones_Generales = $1, Activo = $2, version = version + 1 
+         WHERE ID_Persona = $3`,
+        [datos.observacionesGenerales ?? null, datos.activo ?? true, idPersona]
+      );
+    }
+
+    // 2. Actualizar Personas
     await cliente.query(
       `UPDATE Personas 
        SET Nombres = $1, Apellidos = $2, Fecha_Nacimiento = $3, Sexo = $4, Actualizado_En = NOW()
        WHERE ID_Persona = $5`,
       [datos.nombres, datos.apellidos, datos.fechaNacimiento, datos.sexo ?? null, idPersona]
-    );
-
-    // 2. Actualizar Ninos
-    await cliente.query(
-      `UPDATE Ninos SET Observaciones_Generales = $1, Activo = $2 WHERE ID_Persona = $3`,
-      [datos.observacionesGenerales ?? null, datos.activo ?? true, idPersona]
     );
 
     // 3. Actualizar grupo (upsert en Ninos_Grupos)
@@ -409,6 +428,7 @@ export const obtenerNinoCompleto = async (idPersona: number): Promise<unknown | 
           TO_CHAR(p.Fecha_Nacimiento, 'YYYY-MM-DD')        AS "fechaNacimiento",
           n.Observaciones_Generales                        AS "observacionesGenerales",
           n.Activo                                         AS "activo",
+          n.version                                        AS "version",
           g.ID_Grupo                                      AS "idGrupo",
           CASE 
             WHEN g.ID_Grupo = 1 AND EXTRACT(YEAR FROM AGE(CURRENT_DATE, p.Fecha_Nacimiento)) < 4 THEN 'Menores de 4 años'

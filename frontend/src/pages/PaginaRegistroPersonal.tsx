@@ -1,5 +1,6 @@
 // PaginaRegistroPersonal.tsx — Ingreso de Personal con tabla y modal (Spec §9.5)
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import useSWR from 'swr';
 import LayoutPrincipal from '../components/LayoutPrincipal';
 import TablaBase, { type ColumnaTabla } from '../components/TablaBase';
 import ModalConfirmar from '../components/ModalConfirmar';
@@ -39,6 +40,7 @@ const FORM_INICIAL: DatosRegistroPersonal = {
   idAutorizadoPor:    undefined,
   idGrupoAsignado:    undefined,
   idTurnos:           [],
+  version:            undefined,
 };
 
 const validarContrasena = (valor: string): ValidacionContrasena => ({
@@ -117,6 +119,7 @@ const ModalRegistroPersonal: React.FC<PropsModalRegistro> = ({
           idAutorizadoPor: undefined,
           idGrupoAsignado: datosCompletos.idGrupoAsignado ?? undefined,
           idTurnos: datosCompletos.idTurnos ?? [],
+          version: datosCompletos.version,
         });
       } else {
         setForm(FORM_INICIAL);
@@ -206,6 +209,7 @@ const ModalRegistroPersonal: React.FC<PropsModalRegistro> = ({
           idRol,
           idGrupoAsignado: form.idGrupoAsignado ?? undefined,
           idTurnos: form.idTurnos,
+          version: form.version,
         });
         toast.success('¡Personal actualizado exitosamente!');
       } else {
@@ -524,30 +528,57 @@ const PaginaRegistroPersonal: React.FC = () => {
   const [modalConfirmarEliminar, setModalConfirmarEliminar] = useState(false);
   const [personalAEliminar, setPersonalAEliminar] = useState<PersonalAsistenciaApi | null>(null);
 
+  // ── Carga de personal con SWR ────────────────
+  const { data: swrPersonal, isLoading: isLoadingPersonal, mutate: mutatePersonal } = useSWR(
+    '/personal/asistencia-hoy',
+    async () => {
+      const res = await listarPersonalHoy();
+      return res as unknown as PersonalAsistenciaApi[];
+    },
+    {
+      revalidateOnFocus: true,
+      dedupingInterval: 2000,
+    }
+  );
+
   const cargarDatos = useCallback(async () => {
-    setCargando(true);
-    try {
-      const [datosPersonal, datosCoord, datosGrupos, datosTurnos, datosRoles] = await Promise.all([
-        listarPersonalHoy(),
-        listarCoordinadores(),
-        listarGrupos(),
-        listarTurnos(),
-        listarRoles(),
-      ]);
-      setPersonal(datosPersonal as unknown as PersonalAsistenciaApi[]);
-      setCoordinadores(datosCoord);
-      setGrupos(datosGrupos);
-      setTurnos(datosTurnos.filter(t => t.activo));
-      setRoles(datosRoles.filter(r => r.activo));
-    } catch (err) {
-      console.error('Error cargando personal:', err);
-      setPersonal([]);
-    } finally {
+    mutatePersonal();
+  }, [mutatePersonal]);
+
+  useEffect(() => {
+    if (swrPersonal) {
+      setPersonal(swrPersonal);
+    }
+  }, [swrPersonal]);
+
+  useEffect(() => {
+    if (isLoadingPersonal && !swrPersonal) {
+      setCargando(true);
+    } else {
       setCargando(false);
     }
-  }, []);
+  }, [isLoadingPersonal, swrPersonal]);
 
-  useEffect(() => { cargarDatos(); }, [cargarDatos]);
+  // Cargar catálogos una sola vez al montar
+  useEffect(() => {
+    const cargarCatalogos = async () => {
+      try {
+        const [datosCoord, datosGrupos, datosTurnos, datosRoles] = await Promise.all([
+          listarCoordinadores(),
+          listarGrupos(),
+          listarTurnos(),
+          listarRoles(),
+        ]);
+        setCoordinadores(datosCoord);
+        setGrupos(datosGrupos);
+        setTurnos(datosTurnos.filter(t => t.activo));
+        setRoles(datosRoles.filter(r => r.activo));
+      } catch (err) {
+        console.error('Error cargando catálogos:', err);
+      }
+    };
+    cargarCatalogos();
+  }, []);
 
   const personalFiltrado = useMemo(() => {
     const normalizar = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();

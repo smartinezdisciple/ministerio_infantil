@@ -139,7 +139,7 @@ const PaginaPerfilPersonal: React.FC = () => {
         if (data.exito) setPerfil(data.datos);
         else toast.error(data.mensaje ?? 'No se pudo cargar el perfil.');
       })
-      .catch(() => toast.error('Error de conexión con el servidor.'))
+      .catch(() => toast.error('Error de conexión con el servidor si.'))
       .finally(() => setCargando(false));
   }, [id]);
 
@@ -231,9 +231,8 @@ const PaginaPerfilPersonal: React.FC = () => {
               <span className="bg-surface-container text-on-surface px-3 py-1 rounded-full font-semibold">
                 {perfil.rol}
               </span>
-              <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full font-semibold ${
-                perfil.activo ? 'bg-tertiary/10 text-tertiary' : 'bg-error/10 text-error'
-              }`}>
+              <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full font-semibold ${perfil.activo ? 'bg-tertiary/10 text-tertiary' : 'bg-error/10 text-error'
+                }`}>
                 <Icono nombre={perfil.activo ? 'check_circle' : 'cancel'} size={14} />
                 {perfil.activo ? 'Activo' : 'Inactivo'}
               </span>
@@ -253,10 +252,10 @@ const PaginaPerfilPersonal: React.FC = () => {
 
         {/* ── Layout Principal (Grid de 2 Columnas) ────────── */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-gutter items-start">
-          
+
           {/* ── Columna Izquierda: Identificación y Contacto ── */}
           <div className="lg:col-span-4 space-y-stack-lg">
-            
+
             {/* Identidad */}
             <div className="bg-surface-container-lowest p-gutter rounded-xl shadow-sm border border-outline-variant/30">
               <h3 className="text-label-md font-bold text-on-surface flex items-center gap-2 mb-stack-md border-b border-outline-variant/20 pb-2">
@@ -372,7 +371,7 @@ const PaginaPerfilPersonal: React.FC = () => {
 
           {/* ── Columna Derecha: Información Personal y Eclesiástica ── */}
           <div className="lg:col-span-8 space-y-stack-lg">
-            
+
             {/* Familiar y Laboral */}
             <div className="bg-surface-container-lowest p-gutter rounded-xl shadow-sm border border-outline-variant/30">
               <h3 className="text-label-md font-bold text-on-surface flex items-center gap-2 mb-stack-lg border-b border-outline-variant/20 pb-2">
@@ -422,7 +421,7 @@ const PaginaPerfilPersonal: React.FC = () => {
                       }
                     />
                     <CampoInfo etiqueta="Ministerio Adicional" valor={perfil.infoIglesia.ministerioAdicional} />
-                    
+
                     <CampoInfo
                       etiqueta="Líder Directo"
                       valor={
@@ -438,7 +437,7 @@ const PaginaPerfilPersonal: React.FC = () => {
                         ) : null
                       }
                     />
-                    
+
                     <CampoInfo
                       etiqueta="Círculo de Amistad"
                       valor={
@@ -545,9 +544,8 @@ const PaginaPerfilPersonal: React.FC = () => {
               {/* Progress bar */}
               <div className="w-full bg-surface-container-high h-2.5 rounded-full overflow-hidden mb-gutter">
                 <div
-                  className={`h-full transition-all duration-500 rounded-full ${
-                    porcReq === 100 ? 'bg-tertiary' : 'bg-primary'
-                  }`}
+                  className={`h-full transition-all duration-500 rounded-full ${porcReq === 100 ? 'bg-tertiary' : 'bg-primary'
+                    }`}
                   style={{ width: `${porcReq}%` }}
                 />
               </div>
@@ -587,9 +585,8 @@ const PaginaPerfilPersonal: React.FC = () => {
                             )}
                           </td>
                           <td className="p-3 text-center">
-                            <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-label-sm font-semibold ${
-                              req.cumplido ? 'bg-tertiary/10 text-tertiary' : 'bg-error/10 text-error'
-                            }`}>
+                            <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-label-sm font-semibold ${req.cumplido ? 'bg-tertiary/10 text-tertiary' : 'bg-error/10 text-error'
+                              }`}>
                               <span className="material-symbols-outlined text-[14px]">
                                 {req.cumplido ? 'check_circle' : 'cancel'}
                               </span>

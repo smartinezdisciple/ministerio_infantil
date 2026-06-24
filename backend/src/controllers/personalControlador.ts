@@ -184,6 +184,7 @@ export const obtenerPersonalCompleto = async (req: Request, res: Response) => {
         p.Sexo                                           AS "sexo",
         p.Cedula                                         AS "cedula",
         ps.Usuario                                       AS "usuario",
+        ps.version                                       AS "version",
         r.Nombre_Rol                                     AS "rol",
         r.ID_Rol                                         AS "idRol",
         ps.Fecha_Ingreso_Servicio                        AS "fechaIngreso",
@@ -383,17 +384,23 @@ export const registrarPersonal = async (req: Request, res: Response) => {
  */
 export const actualizarPersonal = async (req: Request, res: Response) => {
   const id = Number(req.params.id);
-  const { nombres, apellidos, usuario, contrasena, idRol, idGrupoAsignado, idTurnos, idAutorizadoPor } = req.body;
+  const { nombres, apellidos, usuario, contrasena, idRol, idGrupoAsignado, idTurnos, idAutorizadoPor, version } = req.body;
 
   if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ exito: false, mensaje: 'ID de personal invalido.' });
 
   const cliente = await pool.connect();
   try {
     await cliente.query('BEGIN');
-    const existeRes = await cliente.query('SELECT ID_Persona FROM Personal_Sistema WHERE ID_Persona = $1 AND Activo = TRUE', [id]);
+    const existeRes = await cliente.query('SELECT ID_Persona, version FROM Personal_Sistema WHERE ID_Persona = $1 AND Activo = TRUE', [id]);
     if ((existeRes.rowCount ?? 0) === 0) {
       await cliente.query('ROLLBACK');
       return res.status(404).json({ exito: false, mensaje: 'Personal no encontrado.' });
+    }
+
+    const versionActual = existeRes.rows[0]?.version;
+    if (version !== undefined && Number(version) !== versionActual) {
+      await cliente.query('ROLLBACK');
+      return res.status(409).json({ exito: false, mensaje: 'Los datos del personal han sido actualizados por otro usuario. Por favor recarga e intenta de nuevo.' });
     }
 
     if (nombres || apellidos) {
@@ -408,14 +415,17 @@ export const actualizarPersonal = async (req: Request, res: Response) => {
     const camposPS: string[] = [];
     const valoresPS: unknown[] = [];
 
+    // Siempre incrementamos la versión del personal al actualizar
+    camposPS.push(`version = version + 1`);
+
     if (usuario) {
       const dupRes = await cliente.query('SELECT 1 FROM Personal_Sistema WHERE Usuario = $1 AND ID_Persona != $2', [usuario, id]);
       if ((dupRes.rowCount ?? 0) > 0) { await cliente.query('ROLLBACK'); return res.status(409).json({ exito: false, mensaje: 'Usuario ya en uso.' }); }
-      camposPS.push(`Usuario = $${camposPS.length + 1}`); valoresPS.push(usuario);
+      camposPS.push(`Usuario = $${valoresPS.length + 1}`); valoresPS.push(usuario);
     }
     if (contrasena) {
       const hash = await bcrypt.hash(contrasena, 12);
-      camposPS.push(`Password_Hash = $${camposPS.length + 1}`); valoresPS.push(hash);
+      camposPS.push(`Password_Hash = $${valoresPS.length + 1}`); valoresPS.push(hash);
     }
     if (idRol) {
       // El trigger trg_auditoria_cambio_rol requiere app.id_autorizador en la sesión
@@ -425,13 +435,11 @@ export const actualizarPersonal = async (req: Request, res: Response) => {
         return res.status(400).json({ exito: false, mensaje: 'Se requiere idAutorizadoPor para cambiar el rol.' });
       }
       await cliente.query(`SET LOCAL app.id_autorizador = '${autorizador}'`);
-      camposPS.push(`ID_Rol = $${camposPS.length + 1}`); valoresPS.push(idRol);
+      camposPS.push(`ID_Rol = $${valoresPS.length + 1}`); valoresPS.push(idRol);
     }
 
-    if (camposPS.length > 0) {
-      valoresPS.push(id);
-      await cliente.query(`UPDATE Personal_Sistema SET ${camposPS.join(', ')} WHERE ID_Persona = $${valoresPS.length}`, valoresPS);
-    }
+    valoresPS.push(id);
+    await cliente.query(`UPDATE Personal_Sistema SET ${camposPS.join(', ')} WHERE ID_Persona = $${valoresPS.length}`, valoresPS);
 
     if (idTurnos !== undefined) {
       await cliente.query('DELETE FROM Personal_Turnos WHERE ID_Personal = $1', [id]);
@@ -479,7 +487,7 @@ export const obtenerPerfilPersonal = async (req: Request, res: Response) => {
     const baseRes = await pool.query(`
       SELECT p.ID_Persona AS "idPersona", p.Nombres AS "nombres", p.Apellidos AS "apellidos",
              p.Sexo AS "sexo", p.Cedula AS "cedula",
-             ps.Usuario AS "usuario", r.ID_Rol AS "idRol", r.Nombre_Rol AS "rol",
+             ps.Usuario AS "usuario", ps.version AS "version", r.ID_Rol AS "idRol", r.Nombre_Rol AS "rol",
              r.Nivel_Jerarquico AS "nivelJerarquico",
              ps.Fecha_Ingreso_Servicio AS "fechaIngreso", ps.Activo AS "activo"
       FROM Personal_Sistema ps

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import useSWR from 'swr';
 import { useNavigate } from 'react-router-dom';
 import LayoutPrincipal from '../components/LayoutPrincipal';
 import ModalFichaMedica from '../components/ModalFichaMedica';
@@ -128,26 +129,37 @@ const PaginaAsistenciaPorGrupo: React.FC = () => {
     cargar();
   }, [esCoordinador]);
 
-  // ── Carga de asistencia del grupo + turno ────────────────────────
-  const cargarAsistencia = useCallback(async (idGrupo: number, idTurno: number | null) => {
-    if (!idGrupo) return;
-    setCargando(true);
-    try {
-      const datos = await listarAsistenciaGrupo(idGrupo, idTurno ?? undefined);
-      setFilas(datos);
-    } catch (err) {
-      console.error('Error cargando asistencia del grupo:', err);
-      setFilas([]);
-    } finally {
-      setCargando(false);
+  // ── Carga de asistencia del grupo + turno con SWR ────────────────
+  const { data: swrDatos, isLoading: isLoadingAsistencia, mutate: mutateAsistencia } = useSWR(
+    grupoSeleccionado && !cargandoTurnos ? ['/asistencia/grupo', grupoSeleccionado, turnoSeleccionado] : null,
+    async () => {
+      const res = await listarAsistenciaGrupo(grupoSeleccionado!, turnoSeleccionado ?? undefined);
+      return res;
+    },
+    {
+      refreshInterval: 15000, // 15 segundos
+      revalidateOnFocus: true,
+      dedupingInterval: 2000,
     }
-  }, []);
+  );
+
+  const cargarAsistencia = useCallback(async (_idGrupo?: number, _idTurno?: number | null) => {
+    mutateAsistencia();
+  }, [mutateAsistencia]);
 
   useEffect(() => {
-    if (grupoSeleccionado && !cargandoTurnos) {
-      cargarAsistencia(grupoSeleccionado, turnoSeleccionado);
+    if (swrDatos) {
+      setFilas(swrDatos);
     }
-  }, [grupoSeleccionado, turnoSeleccionado, cargandoTurnos, cargarAsistencia]);
+  }, [swrDatos]);
+
+  useEffect(() => {
+    if (isLoadingAsistencia && !swrDatos) {
+      setCargando(true);
+    } else {
+      setCargando(false);
+    }
+  }, [isLoadingAsistencia, swrDatos]);
 
   // ── Búsqueda en tiempo real de niños en otros grupos ─────────────
   useEffect(() => {

@@ -1,5 +1,6 @@
 // PaginaSolicitudes.tsx — Página de Solicitudes de Personal (Spec §5.2)
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import useSWR from 'swr';
 import LayoutPrincipal from '../components/LayoutPrincipal';
 import { filtrarSoloLetras, formatearTelefono } from '../services/validacionEntrada';
 import TablaBase, { type ColumnaTabla } from '../components/TablaBase';
@@ -1735,31 +1736,56 @@ const PaginaSolicitudes: React.FC = () => {
     }
   };
 
+  // ── Carga de solicitudes con SWR ────────────────
+  const { data: swrSolicitudes, isLoading: isLoadingSolicitudes, mutate: mutateSolicitudes } = useSWR(
+    ['/solicitudes', filtroEstado],
+    () => listarSolicitudes(filtroEstado || undefined),
+    {
+      revalidateOnFocus: true,
+      dedupingInterval: 2000,
+    }
+  );
+
   const cargarDatos = useCallback(async () => {
-    setCargando(true);
-    try {
-      const [datosSol, datosRoles, datosRedes, datosReq, datosTurnos, datosGrupos] = await Promise.all([
-        listarSolicitudes(filtroEstado || undefined),
-        listarRoles(),
-        listarRedes(),
-        listarRequisitos(),
-        listarTurnos(),
-        listarGrupos(),
-      ]);
-      setSolicitudes(datosSol);
-      setRoles(datosRoles);
-      setRedes(datosRedes);
-      setRequisitos(datosReq);
-      setTurnos(datosTurnos);
-      setGrupos(datosGrupos);
-    } catch (err) {
-      console.error('Error cargando solicitudes:', err);
-    } finally {
+    mutateSolicitudes();
+  }, [mutateSolicitudes]);
+
+  useEffect(() => {
+    if (swrSolicitudes) {
+      setSolicitudes(swrSolicitudes);
+    }
+  }, [swrSolicitudes]);
+
+  useEffect(() => {
+    if (isLoadingSolicitudes && !swrSolicitudes) {
+      setCargando(true);
+    } else {
       setCargando(false);
     }
-  }, [filtroEstado]);
+  }, [isLoadingSolicitudes, swrSolicitudes]);
 
-  useEffect(() => { cargarDatos(); }, [cargarDatos]);
+  // Cargar catálogos una sola vez al montar
+  useEffect(() => {
+    const cargarCatalogos = async () => {
+      try {
+        const [datosRoles, datosRedes, datosReq, datosTurnos, datosGrupos] = await Promise.all([
+          listarRoles(),
+          listarRedes(),
+          listarRequisitos(),
+          listarTurnos(),
+          listarGrupos(),
+        ]);
+        setRoles(datosRoles);
+        setRedes(datosRedes);
+        setRequisitos(datosReq);
+        setTurnos(datosTurnos);
+        setGrupos(datosGrupos);
+      } catch (err) {
+        console.error('Error cargando catálogos:', err);
+      }
+    };
+    cargarCatalogos();
+  }, []);
 
   const solicitudesPaginadas = useMemo(() => {
     const inicio = (pagina - 1) * porPagina;

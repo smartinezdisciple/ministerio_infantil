@@ -1,5 +1,6 @@
 // RegistroNinos.tsx — Página de Ingreso de Niños (MVP-01 + MVP-03)
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import useSWR from 'swr';
 import { filtrarSoloLetras, formatearTelefono } from '../services/validacionEntrada';
 import LayoutPrincipal from '../components/LayoutPrincipal';
 import ModalExpedienteNino from '../components/ModalExpedienteNino';
@@ -37,6 +38,7 @@ interface FormularioNino {
   observacionesGenerales: string;
   sexo:                   string;
   activo:                 boolean;
+  version?:               number;
 }
 
 const formularioVacio: FormularioNino = {
@@ -46,6 +48,7 @@ const formularioVacio: FormularioNino = {
   observacionesGenerales: '',
   sexo:                   '',
   activo:                 true,
+  version:                undefined,
 };
 
 const padreVacio = (id: number): CampoPadre => ({
@@ -140,6 +143,7 @@ const ModalRegistroNino: React.FC<PropsModalRegistro> = ({
           observacionesGenerales: datosCompletos.observacionesGenerales ?? '',
           sexo:                   datosCompletos.sexo ?? '',
           activo:                 datosCompletos.activo ?? true,
+          version:                datosCompletos.version,
         });
         if (datosCompletos.padres.length > 0) {
           const padresCargados = datosCompletos.padres.map((p, i) => ({
@@ -290,6 +294,7 @@ const ModalRegistroNino: React.FC<PropsModalRegistro> = ({
         observacionesGenerales: formulario.observacionesGenerales.trim() || undefined,
         sexo:                   (formulario.sexo as any) || undefined,
         activo:                 formulario.activo,
+        version:                formulario.version,
       };
 
       let idPersonaResult = 0;
@@ -891,22 +896,32 @@ const RegistroNinos: React.FC = () => {
   const [modalConfirmarEliminar, setModalConfirmarEliminar] = useState(false);
   const [ninoAEliminar, setNinoAEliminar] = useState<NinoIngresoApi | null>(null);
 
-  const cargarDatos = useCallback(async () => {
-    setCargandoTabla(true);
-    try {
-      const datosNinos = await listarNinosIngreso();
-      setRegistros(datosNinos);
-    } catch (err) {
-      console.error('Error cargando datos de ingreso:', err);
-      setRegistros([]);
-    } finally {
-      setCargandoTabla(false);
+  const { data: swrNinos, isLoading: isLoadingNinos, mutate: mutateNinos } = useSWR(
+    '/ninos/ingreso',
+    listarNinosIngreso,
+    {
+      revalidateOnFocus: true,
+      dedupingInterval: 2000,
     }
-  }, []);
+  );
+
+  const cargarDatos = useCallback(async () => {
+    mutateNinos();
+  }, [mutateNinos]);
 
   useEffect(() => {
-    cargarDatos();
-  }, [cargarDatos]);
+    if (swrNinos) {
+      setRegistros(swrNinos);
+    }
+  }, [swrNinos]);
+
+  useEffect(() => {
+    if (isLoadingNinos && !swrNinos) {
+      setCargandoTabla(true);
+    } else {
+      setCargandoTabla(false);
+    }
+  }, [isLoadingNinos, swrNinos]);
 
   const registrosFiltrados = useMemo(() => {
     const normalizar = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();

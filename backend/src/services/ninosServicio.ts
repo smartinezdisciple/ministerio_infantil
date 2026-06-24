@@ -44,6 +44,7 @@ export interface DatosCrearNino {
   motivoExcepcion?:      string;
   sexo?:                 'Masculino' | 'Femenino' | null;
   activo?:               boolean;
+  version?:              number;
 }
 
 /**
@@ -147,6 +148,7 @@ export const actualizarNinoExistente = async (idPersona: number, datos: DatosCre
     idGrupo,
     motivoExcepcion: esExcepcion ? datos.motivoExcepcion : undefined,
     activo:          datos.activo,
+    version:         datos.version,
   });
 };
 

@@ -1,5 +1,6 @@
 // PaginaDashboard.tsx — Dashboard principal del sistema (Spec §9.1 v2.0)
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import useSWR from 'swr';
 import LayoutPrincipal from '../components/LayoutPrincipal';
 import TarjetaEstadistica from '../components/TarjetaEstadistica';
 import TarjetaAcceso from '../components/TarjetaAcceso';
@@ -56,9 +57,9 @@ const PaginaDashboard: React.FC = () => {
   const [personalDisponible, setPersonalDisponible] = useState<PersonalDisponibleApi[]>([]);
   const [cargando, setCargando] = useState(true);
 
-  const cargarDatos = useCallback(async () => {
-    setCargando(true);
-    try {
+  const { data: dashboardData, error: errorDashboard, isLoading: isLoadingDashboard } = useSWR(
+    'dashboard-all-data',
+    async () => {
       const [
         resMetricas,
         resCumple,
@@ -87,32 +88,6 @@ const PaginaDashboard: React.FC = () => {
         obtenerPersonalDisponibleDashboard(),
       ]);
 
-      if (resMetricas.status === 'fulfilled') setMetricas(resMetricas.value);
-      if (resCumple.status === 'fulfilled') setCumpleaneros(resCumple.value);
-      if (resAlertas.status === 'fulfilled') setAlertas(resAlertas.value);
-      if (resAsistMensual.status === 'fulfilled') setAsistenciaMensual(resAsistMensual.value);
-      if (resDistrib.status === 'fulfilled') setDistribucionGrupos(resDistrib.value);
-      if (resAsistRol.status === 'fulfilled') setAsistenciaPorRol(resAsistRol.value);
-      if (resComparativa.status === 'fulfilled') setComparativa(resComparativa.value);
-      if (resFichas.status === 'fulfilled') setFichasDisponibles(resFichas.value);
-      if (resEventos.status === 'fulfilled') setEventos(resEventos.value);
-      if (resGrad.status === 'fulfilled') setNinosGraduacion(resGrad.value);
-      if (resTrans.status === 'fulfilled') setNinosTransicion(resTrans.value);
-      if (resDisp.status === 'fulfilled') setPersonalDisponible(resDisp.value);
-
-      // Verificar si todas fallaron (posible problema de conexión o sesión)
-      const todosRechazados = [
-        resMetricas, resCumple, resAlertas, resAsistMensual,
-        resDistrib, resAsistRol, resComparativa, resFichas, resEventos,
-        resGrad, resTrans, resDisp,
-      ].every((r) => r.status === 'rejected');
-
-      if (todosRechazados) {
-        const primerError = (resMetricas as PromiseRejectedResult).reason;
-        const msg = primerError instanceof Error ? primerError.message : 'Error de conexión con el servidor.';
-        toast.error(msg);
-      }
-
       // Log errors para depuración
       const resultados = [
         { name: 'Métricas', res: resMetricas },
@@ -133,17 +108,61 @@ const PaginaDashboard: React.FC = () => {
           console.error(`[Dashboard] Error al cargar ${r.name}:`, r.res.reason);
         }
       });
-    } catch (e) {
-      console.error('Error cargando dashboard', e);
-      toast.error('Ocurrió un error inesperado. Por favor recarga la página.');
-    } finally {
-      setCargando(false);
+
+      return {
+        metricas: resMetricas.status === 'fulfilled' ? resMetricas.value : null,
+        cumpleaneros: resCumple.status === 'fulfilled' ? resCumple.value : [],
+        alertas: resAlertas.status === 'fulfilled' ? resAlertas.value : [],
+        asistenciaMensual: resAsistMensual.status === 'fulfilled' ? resAsistMensual.value : [],
+        distribucionGrupos: resDistrib.status === 'fulfilled' ? resDistrib.value : [],
+        asistenciaPorRol: resAsistRol.status === 'fulfilled' ? resAsistRol.value : [],
+        comparativa: resComparativa.status === 'fulfilled' ? resComparativa.value : [],
+        fichasDisponibles: resFichas.status === 'fulfilled' ? resFichas.value : [],
+        eventos: resEventos.status === 'fulfilled' ? resEventos.value : [],
+        ninosGraduacion: resGrad.status === 'fulfilled' ? resGrad.value : [],
+        ninosTransicion: resTrans.status === 'fulfilled' ? resTrans.value : [],
+        personalDisponible: resDisp.status === 'fulfilled' ? resDisp.value : [],
+      };
+    },
+    {
+      refreshInterval: 30000, // 30 segundos
+      revalidateOnFocus: true,
+      dedupingInterval: 5000,
     }
-  }, []);
+  );
+
 
   useEffect(() => {
-    cargarDatos();
-  }, [cargarDatos]);
+    if (dashboardData) {
+      setMetricas(dashboardData.metricas);
+      setCumpleaneros(dashboardData.cumpleaneros);
+      setAlertas(dashboardData.alertas);
+      setAsistenciaMensual(dashboardData.asistenciaMensual);
+      setDistribucionGrupos(dashboardData.distribucionGrupos);
+      setAsistenciaPorRol(dashboardData.asistenciaPorRol);
+      setComparativa(dashboardData.comparativa);
+      setFichasDisponibles(dashboardData.fichasDisponibles);
+      setEventos(dashboardData.eventos);
+      setNinosGraduacion(dashboardData.ninosGraduacion);
+      setNinosTransicion(dashboardData.ninosTransicion);
+      setPersonalDisponible(dashboardData.personalDisponible);
+      setCargando(false);
+    }
+  }, [dashboardData]);
+
+  useEffect(() => {
+    if (errorDashboard) {
+      console.error('[Dashboard] Error al actualizar los datos del panel:', errorDashboard);
+      toast.error('Error al actualizar los datos del panel.');
+      setCargando(false);
+    }
+  }, [errorDashboard]);
+
+  useEffect(() => {
+    if (isLoadingDashboard && !dashboardData) {
+      setCargando(true);
+    }
+  }, [isLoadingDashboard, dashboardData]);
 
   useEffect(() => {
     if (alertas.length > 0) {
