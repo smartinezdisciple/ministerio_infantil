@@ -26,19 +26,40 @@ declare global {
  * Lee el header Authorization: Bearer <token>
  */
 export const verificarToken = (req: Request, res: Response, siguiente: NextFunction): void => {
+  // Ignorar peticiones OPTIONS preflight para evitar que fallen por falta de token
+  if (req.method === 'OPTIONS') {
+    siguiente();
+    return;
+  }
+
   const encabezado = req.headers.authorization;
-  if (!encabezado?.startsWith('Bearer ')) {
+  if (!encabezado) {
+    console.warn(`[verificarToken] Cabecera Authorization ausente para: ${req.method} ${req.originalUrl}`);
     respuestaNoAutorizado(res, 'Token de autenticación requerido.');
     return;
   }
 
-  const token = encabezado.split(' ')[1];
+  const partes = encabezado.split(' ');
+  if (partes.length !== 2 || partes[0].toLowerCase() !== 'bearer') {
+    console.warn(`[verificarToken] Formato de cabecera inválido ("${encabezado}") para: ${req.method} ${req.originalUrl}`);
+    respuestaNoAutorizado(res, 'Token de autenticación requerido.');
+    return;
+  }
+
+  const token = partes[1].trim();
+  if (!token) {
+    console.warn(`[verificarToken] Token vacío en cabecera ("${encabezado}") para: ${req.method} ${req.originalUrl}`);
+    respuestaNoAutorizado(res, 'Token de autenticación requerido.');
+    return;
+  }
+
   try {
     const secreto = process.env.JWT_SECRET as string;
     const payload = jwt.verify(token, secreto) as PayloadJwt;
     req.usuario = payload;
     siguiente();
-  } catch {
+  } catch (error: any) {
+    console.warn(`[verificarToken] Error al verificar JWT (${error.message}) para: ${req.method} ${req.originalUrl}`);
     respuestaNoAutorizado(res, 'Token inválido o expirado.');
   }
 };
