@@ -396,9 +396,12 @@ export const listarTurnosHoy = () => get<TurnoSimpleApi[]>('/grupos/turnos-hoy')
 export const listarMisTurnos = () => get<TurnoSimpleApi[]>('/personal/mis-turnos');
 
 /** Lista niños con check-in en el grupo hoy; idTurno obligatorio en producción */
-export const listarAsistenciaGrupo = (idGrupo: number, idTurno?: number) => {
-  const params = idTurno ? `?idTurno=${idTurno}` : '';
-  return get<FilaGrupoApi[]>(`/grupos/${idGrupo}/asistencia-hoy${params}`);
+export const listarAsistenciaGrupo = (idGrupo: number, idTurno?: number, fecha?: string) => {
+  const queryParams = new URLSearchParams();
+  if (idTurno) queryParams.append('idTurno', String(idTurno));
+  if (fecha) queryParams.append('fecha', fecha);
+  const qs = queryParams.toString();
+  return get<FilaGrupoApi[]>(`/grupos/${idGrupo}/asistencia-hoy${qs ? `?${qs}` : ''}`);
 };
 
 export const actualizarEstadoAsistenciaGrupo = (idAsistencia: number, estado: string) =>

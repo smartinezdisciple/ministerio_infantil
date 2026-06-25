@@ -58,13 +58,14 @@ export const turnosDisponiblesHoy = async (_req: Request, res: Response) => {
 export const asistenciaGrupoHoy = async (req: Request, res: Response) => {
   const idGrupo = Number(req.params.id);
   const idTurno = req.query.idTurno as string | undefined;
+  const fecha = req.query.fecha as string | undefined;
 
   if (!idGrupo) {
     return res.status(400).json({ exito: false, mensaje: 'ID de grupo inválido.' });
   }
 
   const ahora = new Date();
-  const hoy = `${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, '0')}-${String(ahora.getDate()).padStart(2, '0')}`;
+  const hoy = fecha || `${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, '0')}-${String(ahora.getDate()).padStart(2, '0')}`;
 
   try {
     const params: (string | number)[] = [idGrupo, hoy];

@@ -133,7 +133,7 @@ const PaginaAsistenciaPorGrupo: React.FC = () => {
   const { data: swrDatos, isLoading: isLoadingAsistencia, mutate: mutateAsistencia } = useSWR(
     grupoSeleccionado && !cargandoTurnos ? ['/asistencia/grupo', grupoSeleccionado, turnoSeleccionado] : null,
     async () => {
-      const res = await listarAsistenciaGrupo(grupoSeleccionado!, turnoSeleccionado ?? undefined);
+      const res = await listarAsistenciaGrupo(grupoSeleccionado!, turnoSeleccionado ?? undefined, fechaLocalHoy());
       return res;
     },
     {
