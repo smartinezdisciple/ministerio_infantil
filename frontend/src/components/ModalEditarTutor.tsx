@@ -1,7 +1,7 @@
 // ModalEditarTutor.tsx — Modal para editar los datos de un tutor (Spec §9.6)
 // Permite modificar nombres, apellidos, teléfono (opcional) y tipo de parentesco.
 import React, { useState, useEffect } from 'react';
-import { toast } from 'react-hot-toast';
+import { toast } from 'sonner';
 import { actualizarTutor } from '../services/servicioApi';
 import type { TutorApi } from '../services/servicioApi';
 import { filtrarSoloLetras, formatearTelefono } from '../services/validacionEntrada';

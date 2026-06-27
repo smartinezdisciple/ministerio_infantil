@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import ModalBase from './ModalBase';
 import type { Ficha, DatosCheckIn } from '../services/tipos';
 import { useAuth } from '../contexts/ContextoAuth';
-import { toast } from 'react-hot-toast';
+import { toast } from 'sonner';
 import {
   listarNinosRaw,
   listarFichasActivas,

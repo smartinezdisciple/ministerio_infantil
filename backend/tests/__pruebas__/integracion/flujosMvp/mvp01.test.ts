@@ -38,7 +38,7 @@ describe('MVP-01: Ingreso ágil de niños', () => {
       expect(res.body.exito).toBe(false);
     });
 
-    xit('debe bloquear la IP tras 3 intentos fallidos (rate limit)', async () => {
+    it.skip('debe bloquear la IP tras 3 intentos fallidos (rate limit)', async () => {
       // Realizar 3 intentos fallidos
       for (let i = 0; i < 3; i++) {
         await request(app)

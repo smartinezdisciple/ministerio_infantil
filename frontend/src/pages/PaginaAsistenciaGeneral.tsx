@@ -14,7 +14,7 @@ import { formatearTurno } from '../services/turnoUtils';
 import ModalEditarAsistencia from '../components/ModalEditarAsistencia';
 import ModalBase from '../components/ModalBase';
 import ModalConfirmar from '../components/ModalConfirmar';
-import { toast } from 'react-hot-toast';
+import { toast } from 'sonner';
 
 // Helper para formatear fecha a DD/MM/YYYY
 const formatearFecha = (fechaStr: string) => {

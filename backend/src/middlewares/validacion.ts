@@ -78,8 +78,8 @@ export const validar =
     const resultado = esquema.safeParse(req.body);
     if (!resultado.success) {
       console.log('❌ Validación fallida. Body:', JSON.stringify(req.body, null, 2));
-      console.log('❌ Errores Zod:', JSON.stringify(resultado.error.errors, null, 2));
-      const mensajes = resultado.error.errors.map((e) => ({
+      console.log('❌ Errores Zod:', JSON.stringify(resultado.error.issues, null, 2));
+      const mensajes = resultado.error.issues.map((e) => ({
         campo:   e.path.join('.'),
         mensaje: e.message,
       }));

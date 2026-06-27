@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import LayoutPrincipal from '../components/LayoutPrincipal';
 import TablaBase, { type ColumnaTabla } from '../components/TablaBase';
-import { toast } from 'react-hot-toast';
+import { toast } from 'sonner';
 import {
   listarRoles,
   crearRol,

@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import LayoutPrincipal from '../components/LayoutPrincipal';
-import { toast } from 'react-hot-toast';
+import { toast } from 'sonner';
 
 // ── Interfaces v5.1 ──────────────────────────────────────────────────────────
 interface InfoPersonal {

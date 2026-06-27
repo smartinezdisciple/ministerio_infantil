@@ -1,7 +1,7 @@
 // ModalEditarAsistencia.tsx — Modal para editar un registro de asistencia
 import React, { useState, useEffect, useMemo } from 'react';
 import ModalBase from './ModalBase';
-import { toast } from 'react-hot-toast';
+import { toast } from 'sonner';
 import type { RegistroAsistenciaNino, Ficha } from '../services/tipos';
 import {
   listarTurnos,

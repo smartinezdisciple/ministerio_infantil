@@ -4,7 +4,7 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ProveedorAuth } from './contexts/ContextoAuth';
 import RutaProtegida from './components/RutaProtegida';
-import { Toaster } from 'react-hot-toast';
+import { Toaster } from 'sonner';
 import './index.css';
 
 // Carga diferida de páginas (code splitting por ruta)
@@ -51,11 +51,9 @@ ReactDOM.createRoot(elementoRaiz).render(
   <React.StrictMode>
     <ProveedorAuth>
       <Toaster
+        richColors
         position="top-center"
-        toastOptions={{
-          className: 'bg-surface-container-highest text-on-surface border border-outline/20 font-sans rounded-xl shadow-lg',
-          duration: 2000,
-        }}
+        duration={2000}
       />
       <BrowserRouter>
         <Suspense fallback={<CargandoPagina />}>

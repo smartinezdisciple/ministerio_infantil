@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import CampoTexto from './CampoTexto';
 import BotonPrimario from './BotonPrimario';
 import IndicadorContrasena from './IndicadorContrasena';
-import { toast } from 'react-hot-toast';
+import { toast } from 'sonner';
 import { esquemaLogin, evaluarContrasena, contrasenaEsValida } from '../services/esquemaLogin';
 import { iniciarSesion } from '../services/servicioAutenticacion';
 import { useAuth } from '../contexts/ContextoAuth';

@@ -4,7 +4,7 @@ import useSWR from 'swr';
 import LayoutPrincipal from '../components/LayoutPrincipal';
 import { filtrarSoloLetras, formatearTelefono } from '../services/validacionEntrada';
 import TablaBase, { type ColumnaTabla } from '../components/TablaBase';
-import { toast } from 'react-hot-toast';
+import { toast } from 'sonner';
 import { useAuth } from '../contexts/ContextoAuth';
 import {
   listarSolicitudes,

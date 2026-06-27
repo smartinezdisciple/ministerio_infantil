@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import LayoutPrincipal from '../components/LayoutPrincipal';
 import BadgeEstado from '../components/BadgeEstado';
 import { useAuth } from '../contexts/ContextoAuth';
-import { toast } from 'react-hot-toast';
+import { toast } from 'sonner';
 import type { PersonalAsistencia, EstadoLlegada, RolNombre, MetricasPersonal } from '../services/tipos';
 import { listarPersonalHoy, registrarAsistenciaPersonal } from '../services/servicioApi';
 

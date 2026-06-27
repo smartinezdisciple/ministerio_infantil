@@ -7,7 +7,7 @@ import type { RegistroAsistenciaNino } from '../services/tipos';
 import { obtenerFichaContacto, registrarCheckOut, listarFichasActivas, listarAsistenciaDia } from '../services/servicioApi';
 import type { Ficha } from '../services/tipos';
 import { fechaLocalHoy } from '../services/fechaUtils';
-import { toast } from 'react-hot-toast';
+import { toast } from 'sonner';
 
 interface PropsModalCheckOut {
   abierto: boolean;

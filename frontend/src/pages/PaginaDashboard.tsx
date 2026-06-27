@@ -10,7 +10,7 @@ import GraficaDona from '../components/GraficaDona';
 import GraficaBarrasApiladas from '../components/GraficaBarrasApiladas';
 import IndicadorDelta from '../components/IndicadorDelta';
 import ContadorBadge from '../components/ContadorBadge';
-import { toast } from 'react-hot-toast';
+import { toast } from 'sonner';
 import { useAuth } from '../contexts/ContextoAuth';
 import {
   obtenerMetricasDashboard,

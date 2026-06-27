@@ -6,7 +6,7 @@ import LayoutPrincipal from '../components/LayoutPrincipal';
 import ModalExpedienteNino from '../components/ModalExpedienteNino';
 import TablaBase, { type ColumnaTabla } from '../components/TablaBase';
 import ModalConfirmar from '../components/ModalConfirmar';
-import { toast } from 'react-hot-toast';
+import { toast } from 'sonner';
 import {
   registrarNinoConPadres,
   actualizarNino,
