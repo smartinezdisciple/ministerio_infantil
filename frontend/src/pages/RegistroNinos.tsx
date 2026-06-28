@@ -1002,26 +1002,6 @@ const RegistroNinos: React.FC = () => {
       ordenablePor: (r) => r.creadoEn ?? '',
       render: (r) => <span className="text-on-surface-variant">{r.creadoEn ? formatearHora(r.creadoEn) : '--:--'}</span>,
     },
-    {
-      id: 'checkin',
-      encabezado: '',
-      ancho: 'w-[48px]',
-      alineaDerecha: true,
-      render: (r) => (
-        <div className="relative group inline-block">
-          <button
-            onClick={() => navigate('/asistencia-general', { state: { checkInNinoId: r.idNino } })}
-            className="w-[28px] h-[28px] rounded-lg border-[3px] border-emerald-500 bg-emerald-50 text-emerald-600 hover:bg-emerald-500 hover:border-emerald-500 hover:text-white flex items-center justify-center transition-all cursor-pointer"
-            aria-label="Check-in rápido con datos precargados"
-          >
-            <span className="material-symbols-outlined" style={{ fontSize: '13px', fontVariationSettings: "'FILL' 0, 'wght' 700, 'GRAD' 0, 'opsz' 24" }} aria-hidden="true">login</span>
-          </button>
-          <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:block bg-inverse-surface text-inverse-on-surface text-[11px] font-medium px-2 py-0.5 rounded shadow-lg whitespace-nowrap pointer-events-none z-50">
-            checkin
-          </span>
-        </div>
-      ),
-    },
   ];
 
   const handleEditar = useCallback(async (registro: NinoIngresoApi) => {
@@ -1045,6 +1025,10 @@ const RegistroNinos: React.FC = () => {
       console.error('Error cargando datos del niño:', err);
     }
   }, []);
+
+  const handleCheckin = useCallback((registro: NinoIngresoApi) => {
+    navigate('/asistencia-general', { state: { checkInNinoId: registro.idNino } });
+  }, [navigate]);
 
   const handleEliminar = useCallback((registro: NinoIngresoApi) => {
     setNinoAEliminar(registro);
@@ -1163,7 +1147,7 @@ const RegistroNinos: React.FC = () => {
                 ? `No se encontraron resultados para "${busqueda}".`
                 : 'No hay registros de ingreso aún. Use el botón "Ingresar Niño" para comenzar.'
             }
-            acciones={{ onVer: handleVer, onEditar: handleEditar, onEliminar: handleEliminar }}
+            acciones={{ onVer: handleVer, onEditar: handleEditar, onEliminar: handleEliminar, onCheckin: handleCheckin }}
           />
         </div>
       </div>

@@ -34,11 +34,12 @@ interface PropsTablaBase<T> {
   cargando?: boolean;
   /** Mensaje cuando no hay filas */
   mensajeVacio?: string;
-  /** Acciones por fila: ver, editar, eliminar */
+  /** Acciones por fila: ver, editar, eliminar, checkin */
   acciones?: {
     onVer?: (fila: T) => void;
     onEditar?: (fila: T) => void;
     onEliminar?: (fila: T) => void;
+    onCheckin?: (fila: T) => void;
   };
   /** Función para retornar clases CSS adicionales para cada fila tr */
   obtenerFilaClase?: (fila: T) => string;
@@ -253,7 +254,21 @@ function TablaBase<T>({
                     ))}
                     {acciones && (
                       <td className="px-2 py-1 sm:py-1.5 text-right align-top">
-                        <div className="flex flex-wrap items-center justify-start gap-1 max-w-[100px] md:max-w-none ml-auto">
+                        <div className="flex flex-wrap items-center justify-start gap-1 max-w-[130px] md:max-w-none ml-auto">
+                          {acciones.onCheckin && (
+                            <div className="relative group inline-block">
+                              <button
+                                onClick={() => acciones.onCheckin!(fila)}
+                                className="w-[28px] h-[28px] rounded-lg border-[3px] border-emerald-500 bg-emerald-50 text-emerald-600 hover:bg-emerald-500 hover:border-emerald-500 hover:text-white flex items-center justify-center transition-all cursor-pointer"
+                                aria-label="Check-in rápido"
+                              >
+                                <span className="material-symbols-outlined" style={{ fontSize: '13px', fontVariationSettings: "'FILL' 0, 'wght' 700, 'GRAD' 0, 'opsz' 24" }}>login</span>
+                              </button>
+                              <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:block bg-inverse-surface text-inverse-on-surface text-[11px] font-medium px-2 py-0.5 rounded shadow-lg whitespace-nowrap pointer-events-none z-50">
+                                checkin
+                              </span>
+                            </div>
+                          )}
                           {acciones.onVer && (
                             <div className="relative group inline-block">
                               <button
