@@ -1,5 +1,6 @@
 // RegistroNinos.tsx — Página de Ingreso de Niños (MVP-01 + MVP-03)
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import useSWR from 'swr';
 import { filtrarSoloLetras, formatearTelefono } from '../services/validacionEntrada';
 import LayoutPrincipal from '../components/LayoutPrincipal';
@@ -895,6 +896,7 @@ const RegistroNinos: React.FC = () => {
   const [porPagina, setPorPagina]         = useState(20);
   const [modalConfirmarEliminar, setModalConfirmarEliminar] = useState(false);
   const [ninoAEliminar, setNinoAEliminar] = useState<NinoIngresoApi | null>(null);
+  const navigate = useNavigate();
 
   const { data: swrNinos, isLoading: isLoadingNinos, mutate: mutateNinos } = useSWR(
     '/ninos/ingreso',
@@ -999,6 +1001,26 @@ const RegistroNinos: React.FC = () => {
       encabezado: 'Hora de Creación',
       ordenablePor: (r) => r.creadoEn ?? '',
       render: (r) => <span className="text-on-surface-variant">{r.creadoEn ? formatearHora(r.creadoEn) : '--:--'}</span>,
+    },
+    {
+      id: 'checkin',
+      encabezado: '',
+      ancho: 'w-[48px]',
+      alineaDerecha: true,
+      render: (r) => (
+        <div className="relative group inline-block">
+          <button
+            onClick={() => navigate('/asistencia-general', { state: { checkInNinoId: r.idNino } })}
+            className="w-[28px] h-[28px] rounded-lg border-[3px] border-emerald-500 bg-emerald-50 text-emerald-600 hover:bg-emerald-500 hover:border-emerald-500 hover:text-white flex items-center justify-center transition-all cursor-pointer"
+            aria-label="Check-in rápido con datos precargados"
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: '13px', fontVariationSettings: "'FILL' 0, 'wght' 700, 'GRAD' 0, 'opsz' 24" }} aria-hidden="true">login</span>
+          </button>
+          <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:block bg-inverse-surface text-inverse-on-surface text-[11px] font-medium px-2 py-0.5 rounded shadow-lg whitespace-nowrap pointer-events-none z-50">
+            checkin
+          </span>
+        </div>
+      ),
     },
   ];
 

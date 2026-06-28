@@ -1,5 +1,6 @@
 // PaginaAsistenciaGeneral.tsx — Módulo de Asistencia General (Spec §4, Plan Maestro Fase 4)
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useLocation } from 'react-router-dom';
 import useSWR from 'swr';
 import LayoutPrincipal from '../components/LayoutPrincipal';
 import TablaBase, { type ColumnaTabla } from '../components/TablaBase';
@@ -237,6 +238,20 @@ const PaginaAsistenciaGeneral: React.FC = () => {
 
   // Permisos: todos los roles pueden hacer check-in/check-out (nivel ≥ 1)
   const puedeOperar = (usuario?.nivelJerarquico ?? 0) >= 1;
+
+  // ── Navegación desde RegistroNinos con niño pre-seleccionado ──
+  const location = useLocation();
+  const checkInNinoId = (location.state as { checkInNinoId?: number })?.checkInNinoId;
+
+  useEffect(() => {
+    if (checkInNinoId && puedeOperar) {
+      // Pequeño delay para que el modal se monte y procese ninoIdInicial
+      const timer = setTimeout(() => setModalCheckIn(true), 300);
+      // Limpiar el state para no re-triggerar
+      window.history.replaceState({}, document.title);
+      return () => clearTimeout(timer);
+    }
+  }, [checkInNinoId, puedeOperar]);
 
   // ── Carga de registros con SWR ────────────────
   const { data: swrRegistros, isLoading: isLoadingRegistros, mutate: mutateRegistros } = useSWR(
@@ -648,8 +663,9 @@ const PaginaAsistenciaGeneral: React.FC = () => {
       <ModalCheckIn
         abierto={modalCheckIn}
         fecha={filtroFecha}
-        onCerrar={() => setModalCheckIn(false)}
+        onCerrar={() => { setModalCheckIn(false); window.history.replaceState({}, document.title); }}
         onIngresado={handleCheckInConfirmado}
+        ninoIdInicial={checkInNinoId}
       />
       <ModalCheckOut
         abierto={modalCheckOut}

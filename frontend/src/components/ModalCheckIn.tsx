@@ -38,6 +38,7 @@ interface PropsModalCheckIn {
   fecha: string;
   onCerrar: () => void;
   onIngresado: (datos: DatosCheckIn & { nombreNino: string }) => void;
+  ninoIdInicial?: number | null;
 }
 
 type TabActiva = 'ingreso' | 'tutor';
@@ -60,7 +61,7 @@ const ESTADO_INICIAL = {
   motivoExcepcion: '',
 };
 
-const ModalCheckIn: React.FC<PropsModalCheckIn> = ({ abierto, fecha, onCerrar, onIngresado }) => {
+const ModalCheckIn: React.FC<PropsModalCheckIn> = ({ abierto, fecha, onCerrar, onIngresado, ninoIdInicial }) => {
   const [estado, setEstado] = useState(ESTADO_INICIAL);
   const [ninosFiltrados, setNinosFiltrados] = useState<NinoCheckIn[]>([]);
   const [todosNinos, setTodosNinos] = useState<NinoCheckIn[]>([]);
@@ -208,6 +209,65 @@ const ModalCheckIn: React.FC<PropsModalCheckIn> = ({ abierto, fecha, onCerrar, o
       });
     }
   }, [abierto, usuario]);
+
+  useEffect(() => {
+    if (!abierto || !ninoIdInicial) return;
+    let cancel = false;
+    const cargar = async () => {
+      let lista = todosNinos;
+      if (lista.length === 0) {
+        const raw = await listarNinosRaw();
+        lista = raw.filter((n) => n.activo);
+        if (!cancel) setTodosNinos(lista);
+      }
+      const nino = lista.find((n) => n.idPersona === ninoIdInicial);
+      if (!nino || cancel) return;
+      const edad = calcularEdad(nino.fechaNacimiento);
+      let defaultGrupoId = '';
+      if (nino.grupo && nino.grupo.idGrupo > 0) {
+        defaultGrupoId = String(nino.grupo.idGrupo);
+      } else if (grupos.length > 0) {
+        const naturalGroup = grupos.find((g) => {
+          if (!g.activo) return false;
+          if (edad < 4) return g.idGrupo === 1;
+          return edad >= g.edadMinima && edad <= g.edadMaxima;
+        });
+        defaultGrupoId = naturalGroup ? String(naturalGroup.idGrupo) : '';
+      }
+      if (!cancel) {
+        setEstado((prev) => ({
+          ...prev,
+          ninoSeleccionado: nino,
+          busqueda: nino.nombreCompleto,
+          idGrupoSeleccionado: defaultGrupoId,
+          fichaSeleccionadaId: '',
+          tutorSeleccionadoId: '',
+          motivoExcepcion: '',
+          errores: {},
+        }));
+        setCargandoTutores(true);
+        try {
+          const tutores = await listarTutoresPorNino(nino.idPersona);
+          if (!cancel) {
+            setTutoresNino(tutores);
+            setCargandoTutores(false);
+            setEstado((prev) => ({
+              ...prev,
+              modoTutor: tutores.length > 0 ? 'existente' : 'nuevo',
+            }));
+          }
+        } catch {
+          if (!cancel) {
+            setTutoresNino([]);
+            setCargandoTutores(false);
+            setEstado((prev) => ({ ...prev, modoTutor: 'nuevo' }));
+          }
+        }
+      }
+    };
+    cargar();
+    return () => { cancel = true; };
+  }, [abierto, ninoIdInicial, grupos]);
 
   useEffect(() => {
     const timer = setTimeout(async () => {
