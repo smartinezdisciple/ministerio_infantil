@@ -446,9 +446,16 @@ export interface ContactoGlobalApi {
 
 export interface FichaContactoApi {
   nino: NinoApi;
-  padres: Array<{ nombres: string; apellidos: string; telefono: string; parentesco: string; tipo: string; activo: boolean }>;
-  autorizados: Array<{ nombres: string; apellidos: string; telefono: string; parentesco: string; tipo: string; activo: boolean }>;
-  temporales: Array<{ nombres: string; apellidos: string; telefono: string; parentesco: string; tipo: string; activo: boolean; fechaVigencia?: string }>;
+  tutores: Array<{
+    idPersona: number;
+    nombres: string;
+    apellidos: string;
+    telefono: string;
+    tieneWhatsapp?: boolean;
+    parentesco: string;
+    tipo: string;
+    activo: boolean;
+  }>;
 }
 
 export const listarContactos = () => get<ContactoGlobalApi[]>('/contactos');
