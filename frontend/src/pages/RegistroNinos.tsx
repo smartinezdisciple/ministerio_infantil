@@ -33,30 +33,30 @@ interface CampoPadre extends DatosPadreNuevo {
 }
 
 interface FormularioNino {
-  nombres:                string;
-  apellidos:              string;
-  fechaNacimiento:        string;
+  nombres: string;
+  apellidos: string;
+  fechaNacimiento: string;
   observacionesGenerales: string;
-  sexo:                   string;
-  activo:                 boolean;
-  version?:               number;
+  sexo: string;
+  activo: boolean;
+  version?: number;
 }
 
 const formularioVacio: FormularioNino = {
-  nombres:                '',
-  apellidos:              '',
-  fechaNacimiento:        '',
+  nombres: '',
+  apellidos: '',
+  fechaNacimiento: '',
   observacionesGenerales: '',
-  sexo:                   '',
-  activo:                 true,
-  version:                undefined,
+  sexo: '',
+  activo: true,
+  version: undefined,
 };
 
 const padreVacio = (id: number): CampoPadre => ({
   id,
-  nombres:   '',
+  nombres: '',
   apellidos: '',
-  telefono:  '',
+  telefono: '',
 });
 
 const obtenerIniciales = (nombreCompleto: string): string =>
@@ -88,11 +88,11 @@ const COLORES_AVATAR = [
 type TabActiva = 'datos' | 'tutor' | 'expediente';
 
 interface PropsModalRegistro {
-  abierto:        boolean;
+  abierto: boolean;
   registroEditar?: (NinoIngresoApi & { datosCompletos?: NinoCompletoApi }) | null;
-  onCerrar:       () => void;
-  onRegistrado:   () => void;
-  soloLectura?:   boolean;
+  onCerrar: () => void;
+  onRegistrado: () => void;
+  soloLectura?: boolean;
 }
 
 const ModalRegistroNino: React.FC<PropsModalRegistro> = ({
@@ -103,10 +103,10 @@ const ModalRegistroNino: React.FC<PropsModalRegistro> = ({
   soloLectura = false,
 }) => {
   const [tabActiva, setTabActiva] = useState<TabActiva>('datos');
-  const [formulario, setFormulario]   = useState<FormularioNino>(formularioVacio);
-  const [padres, setPadres]           = useState<CampoPadre[]>([padreVacio(1)]);
-  const [cargando, setCargando]       = useState(false);
-  const [errores, setErrores]         = useState<Record<string, string>>({});
+  const [formulario, setFormulario] = useState<FormularioNino>(formularioVacio);
+  const [padres, setPadres] = useState<CampoPadre[]>([padreVacio(1)]);
+  const [cargando, setCargando] = useState(false);
+  const [errores, setErrores] = useState<Record<string, string>>({});
   const [expedienteAbierto, setExpedienteAbierto] = useState(false);
   const [tutoresExistentes, setTutoresExistentes] = useState<TutorApi[]>([]);
   const [tutorEditandoId, setTutorEditandoId] = useState<number | null>(null);
@@ -138,13 +138,13 @@ const ModalRegistroNino: React.FC<PropsModalRegistro> = ({
           ? formatearFechaConMesTexto(datosCompletos.fechaNacimiento)
           : '';
         setFormulario({
-          nombres:                datosCompletos.nombres,
-          apellidos:              datosCompletos.apellidos,
-          fechaNacimiento:        fecha,
+          nombres: datosCompletos.nombres,
+          apellidos: datosCompletos.apellidos,
+          fechaNacimiento: fecha,
           observacionesGenerales: datosCompletos.observacionesGenerales ?? '',
-          sexo:                   datosCompletos.sexo ?? '',
-          activo:                 datosCompletos.activo ?? true,
-          version:                datosCompletos.version,
+          sexo: datosCompletos.sexo ?? '',
+          activo: datosCompletos.activo ?? true,
+          version: datosCompletos.version,
         });
         if (datosCompletos.padres.length > 0) {
           const padresCargados = datosCompletos.padres.map((p, i) => ({
@@ -229,14 +229,14 @@ const ModalRegistroNino: React.FC<PropsModalRegistro> = ({
       nuevosErrores['nombres'] = 'El nombre debe tener al menos 2 caracteres.';
     if (formulario.apellidos.trim().length < 2)
       nuevosErrores['apellidos'] = 'Los apellidos son requeridos.';
-    
+
     const fechaParseada = parsearFechaUsuario(formulario.fechaNacimiento);
     if (!fechaParseada)
       nuevosErrores['fechaNacimiento'] = 'Use el formato DD-MM-AA o DD-Mes-AA (ej: 08-Junio-26).';
 
     if (!formulario.sexo)
       nuevosErrores['sexo'] = 'Debe seleccionar el sexo.';
-    
+
     if (Object.keys(nuevosErrores).length > 0) {
       Object.values(nuevosErrores).forEach((err) => toast.error(err));
       setErrores(nuevosErrores);
@@ -263,7 +263,7 @@ const ModalRegistroNino: React.FC<PropsModalRegistro> = ({
         if (!nuevoTutorTelefono.trim()) nuevosErrores['nuevoTutorTelefono'] = 'Ingresa el teléfono.';
       }
     }
-    
+
     if (Object.keys(nuevosErrores).length > 0) {
       Object.values(nuevosErrores).forEach((err) => toast.error(err));
       setErrores(nuevosErrores);
@@ -289,13 +289,13 @@ const ModalRegistroNino: React.FC<PropsModalRegistro> = ({
       );
 
       const payloadSinPadres = {
-        nombres:                formulario.nombres.trim(),
-        apellidos:              formulario.apellidos.trim(),
-        fechaNacimiento:        fechaDb,
+        nombres: formulario.nombres.trim(),
+        apellidos: formulario.apellidos.trim(),
+        fechaNacimiento: fechaDb,
         observacionesGenerales: formulario.observacionesGenerales.trim() || undefined,
-        sexo:                   (formulario.sexo as any) || undefined,
-        activo:                 formulario.activo,
-        version:                formulario.version,
+        sexo: (formulario.sexo as any) || undefined,
+        activo: formulario.activo,
+        version: formulario.version,
       };
 
       let idPersonaResult = 0;
@@ -310,9 +310,9 @@ const ModalRegistroNino: React.FC<PropsModalRegistro> = ({
         const payload: DatosNinoConPadres = {
           ...payloadSinPadres,
           padres: padresValidos.map(({ nombres, apellidos, telefono }) => ({
-            nombres:   nombres.trim(),
+            nombres: nombres.trim(),
             apellidos: apellidos.trim(),
-            telefono:  telefono.trim(),
+            telefono: telefono.trim(),
           })),
         };
 
@@ -409,11 +409,10 @@ const ModalRegistroNino: React.FC<PropsModalRegistro> = ({
               key={tab.key}
               type="button"
               onClick={() => setTabActiva(tab.key)}
-              className={`flex-1 flex items-center justify-center gap-2 py-3 font-label-md text-label-md border-b-2 transition-colors ${
-                tabActiva === tab.key
+              className={`flex-1 flex items-center justify-center gap-2 py-3 font-label-md text-label-md border-b-2 transition-colors ${tabActiva === tab.key
                   ? 'border-primary text-primary'
                   : 'border-transparent text-on-surface-variant hover:text-on-surface'
-              }`}
+                }`}
             >
               <span className="material-symbols-outlined text-[20px]">{tab.icono}</span>
               {tab.label}
@@ -443,9 +442,8 @@ const ModalRegistroNino: React.FC<PropsModalRegistro> = ({
                     value={formulario.nombres}
                     onChange={(e) => actualizarCampo('nombres', filtrarSoloLetras(e.target.value))}
                     placeholder="Ej: Lucas Andrés"
-                    className={`w-full bg-surface-container-low border rounded-lg px-4 py-3 text-body-md focus:ring-2 focus:ring-primary focus:border-primary focus:outline-none transition-all ${
-                      errores['nombres'] ? 'border-error' : 'border-outline-variant'
-                    }`}
+                    className={`w-full bg-surface-container-low border rounded-lg px-4 py-3 text-body-md focus:ring-2 focus:ring-primary focus:border-primary focus:outline-none transition-all ${errores['nombres'] ? 'border-error' : 'border-outline-variant'
+                      }`}
                     disabled={cargando || soloLectura}
                   />
                 </div>
@@ -460,9 +458,8 @@ const ModalRegistroNino: React.FC<PropsModalRegistro> = ({
                     value={formulario.apellidos}
                     onChange={(e) => actualizarCampo('apellidos', filtrarSoloLetras(e.target.value))}
                     placeholder="Ej: Martínez García"
-                    className={`w-full bg-surface-container-low border rounded-lg px-4 py-3 text-body-md focus:ring-2 focus:ring-primary focus:border-primary focus:outline-none transition-all ${
-                      errores['apellidos'] ? 'border-error' : 'border-outline-variant'
-                    }`}
+                    className={`w-full bg-surface-container-low border rounded-lg px-4 py-3 text-body-md focus:ring-2 focus:ring-primary focus:border-primary focus:outline-none transition-all ${errores['apellidos'] ? 'border-error' : 'border-outline-variant'
+                      }`}
                     disabled={cargando || soloLectura}
                   />
                 </div>
@@ -477,9 +474,8 @@ const ModalRegistroNino: React.FC<PropsModalRegistro> = ({
                     placeholder="DD-MM-AA o DD-Mes-AA (ej: 08-Junio-26)"
                     value={formulario.fechaNacimiento}
                     onChange={(e) => actualizarCampo('fechaNacimiento', e.target.value)}
-                    className={`w-full bg-surface-container-low border rounded-lg px-4 py-3 text-body-md focus:ring-2 focus:ring-primary focus:border-primary focus:outline-none transition-all ${
-                      errores['fechaNacimiento'] ? 'border-error' : 'border-outline-variant'
-                    }`}
+                    className={`w-full bg-surface-container-low border rounded-lg px-4 py-3 text-body-md focus:ring-2 focus:ring-primary focus:border-primary focus:outline-none transition-all ${errores['fechaNacimiento'] ? 'border-error' : 'border-outline-variant'
+                      }`}
                     disabled={cargando || soloLectura}
                   />
                 </div>
@@ -493,9 +489,8 @@ const ModalRegistroNino: React.FC<PropsModalRegistro> = ({
                       id="nino-sexo"
                       value={formulario.sexo}
                       onChange={(e) => actualizarCampo('sexo', e.target.value)}
-                      className={`w-full bg-surface-container-low border rounded-lg pl-4 pr-10 py-3 text-body-md focus:ring-2 focus:ring-primary focus:border-primary focus:outline-none appearance-none transition-all ${
-                        errores['sexo'] ? 'border-error' : 'border-outline-variant'
-                      }`}
+                      className={`w-full bg-surface-container-low border rounded-lg pl-4 pr-10 py-3 text-body-md focus:ring-2 focus:ring-primary focus:border-primary focus:outline-none appearance-none transition-all ${errores['sexo'] ? 'border-error' : 'border-outline-variant'
+                        }`}
                       disabled={cargando || soloLectura}
                     >
                       <option value="">Seleccionar...</option>
@@ -598,9 +593,8 @@ const ModalRegistroNino: React.FC<PropsModalRegistro> = ({
                               setMostrarDropdownTutores(false);
                               setErrores((p) => { const c = { ...p }; delete c.tutorGeneral; return c; });
                             }}
-                            className={`w-full text-left px-4 py-3 hover:bg-surface-container-high transition-colors ${
-                              tutorSeleccionadoId === String(t.idPersona) ? 'bg-primary/10' : ''
-                            }`}
+                            className={`w-full text-left px-4 py-3 hover:bg-surface-container-high transition-colors ${tutorSeleccionadoId === String(t.idPersona) ? 'bg-primary/10' : ''
+                              }`}
                           >
                             <p className="text-label-md font-label-md text-on-surface">{t.nombres} {t.apellidos}</p>
                             <p className="text-body-sm text-on-surface-variant">
@@ -656,9 +650,8 @@ const ModalRegistroNino: React.FC<PropsModalRegistro> = ({
                       }}
                       placeholder="Ej: María"
                       readOnly={!!tutorSeleccionadoId || soloLectura}
-                      className={`w-full bg-surface-container-lowest border rounded-lg px-4 py-3 text-body-md focus:ring-2 focus:ring-primary focus:border-primary focus:outline-none transition-all ${
-                        errores['nuevoTutor'] ? 'border-error' : 'border-outline-variant'
-                      } ${(tutorSeleccionadoId || soloLectura) ? 'opacity-70 cursor-not-allowed' : ''}`}
+                      className={`w-full bg-surface-container-lowest border rounded-lg px-4 py-3 text-body-md focus:ring-2 focus:ring-primary focus:border-primary focus:outline-none transition-all ${errores['nuevoTutor'] ? 'border-error' : 'border-outline-variant'
+                        } ${(tutorSeleccionadoId || soloLectura) ? 'opacity-70 cursor-not-allowed' : ''}`}
                       disabled={cargando || !!tutorSeleccionadoId || soloLectura}
                     />
                   </div>
@@ -674,9 +667,8 @@ const ModalRegistroNino: React.FC<PropsModalRegistro> = ({
                       onChange={(e) => { setNuevoTutorApellidos(filtrarSoloLetras(e.target.value)); setTutorSeleccionadoId(''); setErrores((p) => { const c = { ...p }; delete c.nuevoTutorApellidos; delete c.tutorGeneral; return c; }); }}
                       placeholder="Ej: López"
                       readOnly={!!tutorSeleccionadoId || soloLectura}
-                      className={`w-full bg-surface-container-lowest border rounded-lg px-4 py-3 text-body-md focus:ring-2 focus:ring-primary focus:border-primary focus:outline-none transition-all ${
-                        errores['nuevoTutorApellidos'] ? 'border-error' : 'border-outline-variant'
-                      } ${(tutorSeleccionadoId || soloLectura) ? 'opacity-70 cursor-not-allowed' : ''}`}
+                      className={`w-full bg-surface-container-lowest border rounded-lg px-4 py-3 text-body-md focus:ring-2 focus:ring-primary focus:border-primary focus:outline-none transition-all ${errores['nuevoTutorApellidos'] ? 'border-error' : 'border-outline-variant'
+                        } ${(tutorSeleccionadoId || soloLectura) ? 'opacity-70 cursor-not-allowed' : ''}`}
                       disabled={cargando || !!tutorSeleccionadoId || soloLectura}
                     />
                   </div>
@@ -694,9 +686,8 @@ const ModalRegistroNino: React.FC<PropsModalRegistro> = ({
                       onChange={(e) => { setNuevoTutorTelefono(formatearTelefono(e.target.value, nuevoTutorTelefono)); setTutorSeleccionadoId(''); setErrores((p) => { const c = { ...p }; delete c.nuevoTutorTelefono; delete c.tutorGeneral; return c; }); }}
                       placeholder="Ej: 5555-1234"
                       readOnly={!!tutorSeleccionadoId || soloLectura}
-                      className={`w-full bg-surface-container-lowest border rounded-lg px-4 py-3 text-body-md focus:ring-2 focus:ring-primary focus:border-primary focus:outline-none transition-all ${
-                        errores['nuevoTutorTelefono'] ? 'border-error' : 'border-outline-variant'
-                      } ${(tutorSeleccionadoId || soloLectura) ? 'opacity-70 cursor-not-allowed' : ''}`}
+                      className={`w-full bg-surface-container-lowest border rounded-lg px-4 py-3 text-body-md focus:ring-2 focus:ring-primary focus:border-primary focus:outline-none transition-all ${errores['nuevoTutorTelefono'] ? 'border-error' : 'border-outline-variant'
+                        } ${(tutorSeleccionadoId || soloLectura) ? 'opacity-70 cursor-not-allowed' : ''}`}
                       disabled={cargando || !!tutorSeleccionadoId || soloLectura}
                     />
                   </div>
@@ -733,11 +724,10 @@ const ModalRegistroNino: React.FC<PropsModalRegistro> = ({
                       {tutoresExistentes.map((tutor) => (
                         <div
                           key={tutor.idPersona}
-                          className={`flex items-center justify-between p-3 rounded-lg border transition-colors ${
-                            tutorEditandoId === tutor.idPersona
+                          className={`flex items-center justify-between p-3 rounded-lg border transition-colors ${tutorEditandoId === tutor.idPersona
                               ? 'bg-primary/10 border-primary'
                               : 'bg-surface-container-low border-outline-variant hover:bg-surface-container-high'
-                          }`}
+                            }`}
                         >
                           <div>
                             <p className="text-label-sm font-label-md text-on-surface">{tutor.nombreCompleto}</p>
@@ -886,14 +876,14 @@ const ModalRegistroNino: React.FC<PropsModalRegistro> = ({
 };
 
 const RegistroNinos: React.FC = () => {
-  const [modalAbierto, setModalAbierto]   = useState(false);
+  const [modalAbierto, setModalAbierto] = useState(false);
   const [modoVisualizar, setModoVisualizar] = useState(false);
   const [registroEditando, setRegistroEditando] = useState<(NinoIngresoApi & { datosCompletos?: NinoCompletoApi }) | null>(null);
-  const [registros, setRegistros]         = useState<NinoIngresoApi[]>([]);
+  const [registros, setRegistros] = useState<NinoIngresoApi[]>([]);
   const [cargandoTabla, setCargandoTabla] = useState(true);
-  const [busqueda, setBusqueda]           = useState('');
-  const [pagina, setPagina]               = useState(1);
-  const [porPagina, setPorPagina]         = useState(20);
+  const [busqueda, setBusqueda] = useState('');
+  const [pagina, setPagina] = useState(1);
+  const [porPagina, setPorPagina] = useState(20);
   const [modalConfirmarEliminar, setModalConfirmarEliminar] = useState(false);
   const [ninoAEliminar, setNinoAEliminar] = useState<NinoIngresoApi | null>(null);
   const navigate = useNavigate();
@@ -986,11 +976,10 @@ const RegistroNinos: React.FC = () => {
       render: (r) => {
         const activo = r.activo ?? true;
         return (
-          <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[12px] font-semibold ${
-            activo 
-              ? 'bg-emerald-100 text-emerald-800 border border-emerald-200/50' 
+          <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[12px] font-semibold ${activo
+              ? 'bg-emerald-100 text-emerald-800 border border-emerald-200/50'
               : 'bg-outline/15 text-on-surface-variant'
-          }`}>
+            }`}>
             {activo ? 'Activo' : 'Inactivo'}
           </span>
         );
@@ -1026,7 +1015,7 @@ const RegistroNinos: React.FC = () => {
     }
   }, []);
 
-  const handleCheckin = useCallback((registro: NinoIngresoApi) => {
+  const handleMarcarAsistencia = useCallback((registro: NinoIngresoApi) => {
     navigate('/asistencia-general', { state: { checkInNinoId: registro.idNino } });
   }, [navigate]);
 
@@ -1048,16 +1037,16 @@ const RegistroNinos: React.FC = () => {
     }
   }, [ninoAEliminar]);
 
-   const botonIngresar = (
-     <button
-       onClick={() => { setModoVisualizar(false); setModalAbierto(true); }}
-       className="flex items-center gap-2 bg-primary text-on-primary px-5 py-2.5 rounded-xl font-label-md shadow-md hover:bg-primary/90 active:scale-95 transition-all"
-       aria-label="Registrar nuevo niño"
-     >
-       <span className="material-symbols-outlined text-[20px]" aria-hidden="true">add</span>
-       Ingresar Niño
-     </button>
-   );
+  const botonIngresar = (
+    <button
+      onClick={() => { setModoVisualizar(false); setModalAbierto(true); }}
+      className="flex items-center gap-2 bg-primary text-on-primary px-5 py-2.5 rounded-xl font-label-md shadow-md hover:bg-primary/90 active:scale-95 transition-all"
+      aria-label="Registrar nuevo niño"
+    >
+      <span className="material-symbols-outlined text-[20px]" aria-hidden="true">add</span>
+      Ingresar Niño
+    </button>
+  );
 
   return (
     <LayoutPrincipal titulo="Ingreso de Niños" accionBarra={botonIngresar}>
@@ -1147,7 +1136,7 @@ const RegistroNinos: React.FC = () => {
                 ? `No se encontraron resultados para "${busqueda}".`
                 : 'No hay registros de ingreso aún. Use el botón "Ingresar Niño" para comenzar.'
             }
-            acciones={{ onVer: handleVer, onEditar: handleEditar, onEliminar: handleEliminar, onCheckin: handleCheckin }}
+            acciones={{ onVer: handleVer, onEditar: handleEditar, onEliminar: handleEliminar, onMarcarAsistencia: handleMarcarAsistencia }}
           />
         </div>
       </div>

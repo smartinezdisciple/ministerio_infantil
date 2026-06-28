@@ -34,12 +34,12 @@ interface PropsTablaBase<T> {
   cargando?: boolean;
   /** Mensaje cuando no hay filas */
   mensajeVacio?: string;
-  /** Acciones por fila: ver, editar, eliminar, checkin */
+  /** Acciones por fila: ver, editar, eliminar, marcar asistencia */
   acciones?: {
     onVer?: (fila: T) => void;
     onEditar?: (fila: T) => void;
     onEliminar?: (fila: T) => void;
-    onCheckin?: (fila: T) => void;
+    onMarcarAsistencia?: (fila: T) => void;
   };
   /** Función para retornar clases CSS adicionales para cada fila tr */
   obtenerFilaClase?: (fila: T) => string;
@@ -178,11 +178,9 @@ function TablaBase<T>({
                 return (
                   <th
                     key={col.id}
-                    className={`px-3 py-1.5 sm:py-2 text-body-sm sm:text-label-md font-body-sm sm:font-label-md text-on-surface-variant whitespace-nowrap ${
-                      esUltimo ? '' : 'border-r border-outline-variant/30'
-                    } ${
-                      col.alineaDerecha ? 'text-right' : ''
-                    } ${col.ancho ?? ''} ${col.ordenablePor ? 'cursor-pointer select-none hover:bg-surface-container-high transition-colors' : ''}`}
+                    className={`px-3 py-1.5 sm:py-2 text-body-sm sm:text-label-md font-body-sm sm:font-label-md text-on-surface-variant whitespace-nowrap ${esUltimo ? '' : 'border-r border-outline-variant/30'
+                      } ${col.alineaDerecha ? 'text-right' : ''
+                      } ${col.ancho ?? ''} ${col.ordenablePor ? 'cursor-pointer select-none hover:bg-surface-container-high transition-colors' : ''}`}
                     onClick={() => col.ordenablePor && manejarOrdenar(col.id)}
                     role={col.ordenablePor ? 'button' : undefined}
                     tabIndex={col.ordenablePor ? 0 : undefined}
@@ -245,9 +243,8 @@ function TablaBase<T>({
                     {columnas.map((col) => (
                       <td
                         key={col.id}
-                        className={`px-2 py-1 sm:py-1.5 text-body-sm sm:text-body-md text-on-surface align-top ${
-                          col.alineaDerecha ? 'text-right' : ''
-                        } ${col.ancho ?? ''}`}
+                        className={`px-2 py-1 sm:py-1.5 text-body-sm sm:text-body-md text-on-surface align-top ${col.alineaDerecha ? 'text-right' : ''
+                          } ${col.ancho ?? ''}`}
                       >
                         {col.render(fila)}
                       </td>
@@ -255,10 +252,10 @@ function TablaBase<T>({
                     {acciones && (
                       <td className="px-2 py-1 sm:py-1.5 text-right align-top">
                         <div className="flex flex-wrap items-center justify-start gap-1 max-w-[130px] md:max-w-none ml-auto">
-                          {acciones.onCheckin && (
+                          {acciones.onMarcarAsistencia && (
                             <div className="relative group inline-block">
                               <button
-                                onClick={() => acciones.onCheckin!(fila)}
+                                onClick={() => acciones.onMarcarAsistencia!(fila)}
                                 className="w-[28px] h-[28px] rounded-lg border-[3px] border-emerald-500 bg-emerald-50 text-emerald-600 hover:bg-emerald-500 hover:border-emerald-500 hover:text-white flex items-center justify-center transition-all cursor-pointer"
                                 aria-label="Check-in rápido"
                               >
@@ -346,11 +343,10 @@ function TablaBase<T>({
                 key="pag-1"
                 onClick={() => onCambiarPagina(1)}
                 aria-current={pagina === 1 ? 'page' : undefined}
-                className={`w-10 h-10 rounded-lg flex items-center justify-center text-body-sm font-label-md border transition-colors ${
-                  pagina === 1
+                className={`w-10 h-10 rounded-lg flex items-center justify-center text-body-sm font-label-md border transition-colors ${pagina === 1
                     ? 'bg-primary text-on-primary border-primary cursor-default pointer-events-none'
                     : 'text-on-surface-variant border-outline-variant hover:bg-surface-container-high'
-                }`}
+                  }`}
               >
                 1
               </button>
@@ -375,11 +371,10 @@ function TablaBase<T>({
                     key={`pag-${p}`}
                     onClick={() => onCambiarPagina(p)}
                     aria-current={pagina === p ? 'page' : undefined}
-                    className={`w-10 h-10 rounded-lg flex items-center justify-center text-body-sm font-label-md border transition-colors ${
-                      pagina === p
+                    className={`w-10 h-10 rounded-lg flex items-center justify-center text-body-sm font-label-md border transition-colors ${pagina === p
                         ? 'bg-primary text-on-primary border-primary cursor-default pointer-events-none'
                         : 'text-on-surface-variant border-outline-variant hover:bg-surface-container-high'
-                    }`}
+                      }`}
                   >
                     {p}
                   </button>
@@ -397,11 +392,10 @@ function TablaBase<T>({
                   key={`pag-${totalPaginas}`}
                   onClick={() => onCambiarPagina(totalPaginas)}
                   aria-current={pagina === totalPaginas ? 'page' : undefined}
-                  className={`w-10 h-10 rounded-lg flex items-center justify-center text-body-sm font-label-md border transition-colors ${
-                    pagina === totalPaginas
+                  className={`w-10 h-10 rounded-lg flex items-center justify-center text-body-sm font-label-md border transition-colors ${pagina === totalPaginas
                       ? 'bg-primary text-on-primary border-primary cursor-default pointer-events-none'
                       : 'text-on-surface-variant border-outline-variant hover:bg-surface-container-high'
-                  }`}
+                    }`}
                 >
                   {totalPaginas}
                 </button>

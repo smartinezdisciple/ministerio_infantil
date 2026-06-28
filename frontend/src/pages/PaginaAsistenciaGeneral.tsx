@@ -52,10 +52,8 @@ const construirColumnas = (
           {r.nino.nombres[0]}{r.nino.apellidos[0]}
         </div>
         <div className="flex flex-col min-w-0">
-          <div className="flex items-center gap-1.5 text-[12px] font-semibold text-on-surface flex-nowrap">
-            <span className="truncate max-w-[120px]" title={r.nino.nombreCompleto}>
-              {r.nino.nombreCompleto}
-            </span>
+          <div className="flex items-center gap-1.5 text-[12px] font-semibold text-on-surface flex-wrap">
+            <span>{r.nino.nombreCompleto}</span>
             {r.nino.alertasMedicas.some((a) => a.severidad === 'Alta') && (
               <span className="material-symbols-outlined text-error shrink-0" style={{ fontSize: '13px' }} title="Alerta médica alta">warning</span>
             )}
@@ -63,7 +61,7 @@ const construirColumnas = (
               <span className="material-symbols-outlined text-emerald-600 shrink-0" style={{ fontSize: '14px', fontVariationSettings: "'FILL' 1" }} title="Cumpleaños hoy">cake</span>
             )}
           </div>
-          <p className="text-[11px] text-on-surface-variant truncate">{r.nino.grupo.nombre}</p>
+          <p className="text-[11px] text-on-surface-variant">{r.nino.grupo.nombre}</p>
         </div>
       </div>
     ),
@@ -109,17 +107,6 @@ const construirColumnas = (
     render: (r) => (
       <span className="font-mono text-[12px] text-on-surface">
         {r.codigoFichaSalida ?? <span className="text-on-surface-variant/50">—</span>}
-      </span>
-    ),
-  },
-  {
-    id: 'horaSalida',
-    encabezado: 'Salida',
-    ancho: 'w-[85px]',
-    ordenablePor: (r) => r.horaSalida ?? '',
-    render: (r) => (
-      <span className="text-[12px] text-on-surface">
-        {r.horaSalida ?? <span className="text-on-surface-variant/50">—</span>}
       </span>
     ),
   },
@@ -649,11 +636,7 @@ const PaginaAsistenciaGeneral: React.FC = () => {
               onCambiarPorPagina={setPorPagina}
               cargando={cargando}
               mensajeVacio="No hay registros de asistencia para los filtros seleccionados."
-              obtenerFilaClase={(r) =>
-                esCumpleanosHoy(r.nino.fechaNacimiento, filtroFecha)
-                  ? 'bg-emerald-50/70 dark:bg-emerald-950/30 hover:bg-emerald-100/50 dark:hover:bg-emerald-950/50 transition-colors'
-                  : ''
-              }
+              obtenerFilaClase={() => ''}
             />
           </div>
         </div>
