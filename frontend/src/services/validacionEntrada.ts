@@ -39,6 +39,12 @@ export const filtrarTelefono = (valor: string): string =>
  * Si se escribe el 4to dígito, añade un guión automáticamente (ej: 8888-).
  * Si se está borrando, no auto-completa el guión para permitir un borrado natural.
  */
+/** Genera enlace de WhatsApp con formato internacional */
+export const enlaceWhatsApp = (telefono: string): string => {
+  const digitos = telefono.replace(/[-\s]/g, '');
+  return `https://wa.me/505${digitos}`;
+};
+
 export const formatearTelefono = (valor: string, valorAnterior: string = ''): string => {
   const limpio = valor.replace(/[^0-9\-]/g, '');
   const digitos = limpio.replace(/\D/g, '');

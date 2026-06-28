@@ -4,6 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import LayoutPrincipal from '../components/LayoutPrincipal';
 import type { ContactoNino, Nino } from '../services/tipos';
 import { obtenerFichaContacto } from '../services/servicioApi';
+import { enlaceWhatsApp } from '../services/validacionEntrada';
 
 // ── Tipos internos ────────────────────────────────────────────────
 interface FichaContactoCompleta {
@@ -136,13 +137,24 @@ const PaginaFichaContacto: React.FC = () => {
                             </span>
                           </td>
                           <td className="px-2.5 py-2 text-right">
-                            <a
-                              href={`tel:${p.telefono.replace(/-/g, '')}`}
-                              className="inline-flex items-center justify-center h-10 w-10 bg-primary text-on-primary rounded-full hover:bg-primary/90 transition-all shadow-sm active:scale-95"
-                              aria-label={`Llamar a ${p.nombres}`}
-                            >
-                              <span className="material-symbols-outlined text-[18px]" aria-hidden="true">call</span>
-                            </a>
+                            <div className="flex items-center justify-end gap-1.5">
+                              <a
+                                href={enlaceWhatsApp(p.telefono)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center justify-center h-10 w-10 bg-emerald-500 text-white rounded-full hover:bg-emerald-600 transition-all shadow-sm active:scale-95"
+                                aria-label={`WhatsApp a ${p.nombres}`}
+                              >
+                                <span className="material-symbols-outlined text-[18px]" aria-hidden="true">chat</span>
+                              </a>
+                              <a
+                                href={`tel:${p.telefono.replace(/-/g, '')}`}
+                                className="inline-flex items-center justify-center h-10 w-10 bg-primary text-on-primary rounded-full hover:bg-primary/90 transition-all shadow-sm active:scale-95"
+                                aria-label={`Llamar a ${p.nombres}`}
+                              >
+                                <span className="material-symbols-outlined text-[18px]" aria-hidden="true">call</span>
+                              </a>
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -178,13 +190,24 @@ const PaginaFichaContacto: React.FC = () => {
                             </p>
                             <p className="text-body-sm text-on-surface-variant">{a.parentesco}</p>
                           </div>
-                          <a
-                            href={`tel:${a.telefono.replace(/-/g, '')}`}
-                            className="w-12 h-12 bg-surface-container-high text-primary rounded-full flex items-center justify-center hover:bg-primary hover:text-on-primary transition-all active:scale-90 shrink-0"
-                            aria-label={`Llamar a ${a.nombres}`}
-                          >
-                            <span className="material-symbols-outlined" aria-hidden="true">call</span>
-                          </a>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <a
+                              href={enlaceWhatsApp(a.telefono)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="w-12 h-12 bg-emerald-500 text-white rounded-full flex items-center justify-center hover:bg-emerald-600 transition-all active:scale-90"
+                              aria-label={`WhatsApp a ${a.nombres}`}
+                            >
+                              <span className="material-symbols-outlined" aria-hidden="true">chat</span>
+                            </a>
+                            <a
+                              href={`tel:${a.telefono.replace(/-/g, '')}`}
+                              className="w-12 h-12 bg-surface-container-high text-primary rounded-full flex items-center justify-center hover:bg-primary hover:text-on-primary transition-all active:scale-90"
+                              aria-label={`Llamar a ${a.nombres}`}
+                            >
+                              <span className="material-symbols-outlined" aria-hidden="true">call</span>
+                            </a>
+                          </div>
                         </div>
                       );
                     })}
@@ -239,16 +262,28 @@ const PaginaFichaContacto: React.FC = () => {
                             <span className="material-symbols-outlined text-sm" aria-hidden="true">phone_iphone</span>
                             <span>{t.telefono}</span>
                           </div>
-                          <a
-                            href={`tel:${t.telefono.replace(/-/g, '')}`}
-                            className="w-full bg-on-secondary-fixed text-secondary-fixed py-3 rounded-xl flex items-center justify-center gap-2 font-bold shadow-sm hover:opacity-90 active:scale-95 transition-all"
-                            aria-label={`Llamar a ${t.nombres}`}
-                          >
-                            <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: "'FILL' 1" }} aria-hidden="true">
-                              call
-                            </span>
-                            Llamar ahora
-                          </a>
+                          <div className="flex gap-2">
+                            <a
+                              href={enlaceWhatsApp(t.telefono)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex-1 bg-emerald-500 text-white py-3 rounded-xl flex items-center justify-center gap-2 font-bold shadow-sm hover:bg-emerald-600 active:scale-95 transition-all"
+                              aria-label={`WhatsApp a ${t.nombres}`}
+                            >
+                              <span className="material-symbols-outlined text-sm" aria-hidden="true">chat</span>
+                              WhatsApp
+                            </a>
+                            <a
+                              href={`tel:${t.telefono.replace(/-/g, '')}`}
+                              className="flex-1 bg-on-secondary-fixed text-secondary-fixed py-3 rounded-xl flex items-center justify-center gap-2 font-bold shadow-sm hover:opacity-90 active:scale-95 transition-all"
+                              aria-label={`Llamar a ${t.nombres}`}
+                            >
+                              <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: "'FILL' 1" }} aria-hidden="true">
+                                call
+                              </span>
+                              Llamar ahora
+                            </a>
+                          </div>
                         </div>
                       </div>
                     </div>

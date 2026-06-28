@@ -9,7 +9,7 @@ import {
   asignarRolesPersona,
   type PersonaApi,
 } from '../services/servicioApi';
-import { filtrarSoloLetras, formatearTelefono } from '../services/validacionEntrada';
+import { filtrarSoloLetras, formatearTelefono, enlaceWhatsApp } from '../services/validacionEntrada';
 import { parsearFechaUsuario, formatearFechaConMesTexto } from '../services/fechaUtils';
 
 const PaginaPersonas: React.FC = () => {
@@ -313,6 +313,37 @@ const PaginaPersonas: React.FC = () => {
               editar
             </span>
           </div>
+
+          {/* Botón WhatsApp */}
+          {p.telefono ? (
+            <div className="relative group inline-block">
+              <a
+                href={enlaceWhatsApp(p.telefono)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-[28px] h-[28px] rounded-lg border-[3px] border-emerald-500 bg-emerald-50 text-emerald-600 hover:bg-emerald-500 hover:border-emerald-500 hover:text-white flex items-center justify-center transition-all cursor-pointer"
+                aria-label="WhatsApp"
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: '13px', fontVariationSettings: "'FILL' 0, 'wght' 700, 'GRAD' 0, 'opsz' 24" }}>chat</span>
+              </a>
+              <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:block bg-inverse-surface text-inverse-on-surface text-[11px] font-medium px-2 py-0.5 rounded shadow-lg whitespace-nowrap pointer-events-none z-50">
+                whatsapp
+              </span>
+            </div>
+          ) : (
+            <div className="relative group inline-block">
+              <button
+                disabled
+                className="w-[28px] h-[28px] rounded-lg border-[3px] border-outline-variant/30 bg-outline-variant/10 text-outline/30 flex items-center justify-center cursor-not-allowed"
+                aria-label="Sin Teléfono"
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: '13px', fontVariationSettings: "'FILL' 0, 'wght' 700, 'GRAD' 0, 'opsz' 24" }}>chat</span>
+              </button>
+              <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:block bg-inverse-surface text-inverse-on-surface text-[11px] font-medium px-2 py-0.5 rounded shadow-lg whitespace-nowrap pointer-events-none z-50">
+                sin teléfono
+              </span>
+            </div>
+          )}
 
           {/* Botón de Llamar (si tiene teléfono) */}
           {p.telefono ? (

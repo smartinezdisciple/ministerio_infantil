@@ -8,6 +8,7 @@ import ModalEditarTutor from '../components/ModalEditarTutor';
 import type { ContactoGlobal } from '../services/tipos';
 import type { TutorApi } from '../services/servicioApi';
 import { listarContactos } from '../services/servicioApi';
+import { enlaceWhatsApp } from '../services/validacionEntrada';
 
 // ── Helpers ───────────────────────────────────────────────────────
 const colorAvatar = (nombre: string) => {
@@ -328,6 +329,28 @@ const TarjetaContacto: React.FC<PropsTarjetaContacto> = ({ contacto, onVerFicha,
           >
             <span className="material-symbols-outlined text-[18px]" aria-hidden="true">edit</span>
           </button>
+
+          {/* Botón WhatsApp — activo si hay teléfono */}
+          {contacto.telefono ? (
+            <a
+              href={enlaceWhatsApp(contacto.telefono)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-10 h-10 bg-emerald-500 text-white rounded-full flex items-center justify-center shadow-sm hover:bg-emerald-600 active:scale-95 transition-all"
+              aria-label={`WhatsApp a ${contacto.nombres} ${contacto.apellidos}`}
+              title="WhatsApp"
+            >
+              <span className="material-symbols-outlined text-[18px]" aria-hidden="true">chat</span>
+            </a>
+          ) : (
+            <button
+              disabled
+              className="w-10 h-10 bg-outline-variant/30 text-outline rounded-full flex items-center justify-center cursor-not-allowed"
+              title="Sin teléfono registrado"
+            >
+              <span className="material-symbols-outlined text-[18px]" aria-hidden="true">chat</span>
+            </button>
+          )}
 
           {/* Botón Llamar — desactivado si no hay niños o no hay teléfono */}
           {puedeLlamar ? (
