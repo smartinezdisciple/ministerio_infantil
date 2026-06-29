@@ -52,8 +52,8 @@ const consultasPorTipo: Record<string, string> = {
              WHEN g.ID_Grupo = 1 AND DATE_PART('year', AGE(an.Fecha, p.Fecha_Nacimiento))::INT < 4 THEN 'Menores de 4 años'
              ELSE COALESCE(g.Nombre, '') 
            END AS "Grupo",
-           to_char(an.Hora_Entrada - INTERVAL '5 hours', 'HH12:MI AM') AS "Hora Entrada",
-           to_char(an.Hora_Salida - INTERVAL '5 hours', 'HH12:MI AM') AS "Hora Salida",
+           to_char(an.Hora_Entrada - INTERVAL '6 hours', 'HH12:MI AM') AS "Hora Entrada",
+           to_char(an.Hora_Salida - INTERVAL '6 hours', 'HH12:MI AM') AS "Hora Salida",
            an.Estado AS "Estado",
            fe.Codigo_Ficha AS "Ficha Entrada",
            COALESCE(fs.Codigo_Ficha, '') AS "Ficha Salida"
@@ -73,7 +73,7 @@ const consultasPorTipo: Record<string, string> = {
            p.Nombres || ' ' || p.Apellidos AS "Personal",
            r.Nombre_Rol AS "Rol",
            COALESCE(g.Nombre, '') AS "Grupo",
-           to_char(am.Hora_Llegada - INTERVAL '5 hours', 'HH12:MI AM') AS "Hora Llegada",
+           to_char(am.Hora_Llegada - INTERVAL '6 hours', 'HH12:MI AM') AS "Hora Llegada",
            am.Estado_Llegada AS "Estado",
            COALESCE(am.Razon_Ausencia, '') AS "Razón Ausencia"
     FROM Asistencia_Maestros am

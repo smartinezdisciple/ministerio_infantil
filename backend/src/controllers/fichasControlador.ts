@@ -171,8 +171,8 @@ export const historialFicha = async (req: Request, res: Response): Promise<void>
              t.Nombre                                      AS "turno",
              p.Nombres || ' ' || p.Apellidos               AS "nino",
              g.Nombre                                      AS "grupo",
-             to_char(an.Hora_Entrada - INTERVAL '5 hours', 'HH12:MI AM')        AS "horaEntrada",
-             to_char(an.Hora_Salida - INTERVAL '5 hours',  'HH12:MI AM')        AS "horaSalida",
+             to_char(an.Hora_Entrada - INTERVAL '6 hours', 'HH12:MI AM')        AS "horaEntrada",
+             to_char(an.Hora_Salida - INTERVAL '6 hours',  'HH12:MI AM')        AS "horaSalida",
              an.Estado                                     AS "estado",
              CASE WHEN an.ID_Ficha_Entrada = $1 THEN 'Entrada' ELSE 'Salida' END AS "usoFicha"
       FROM   Asistencia_Ninos an

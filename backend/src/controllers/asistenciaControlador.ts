@@ -36,8 +36,8 @@ export const listarAsistenciaDia = async (req: Request, res: Response): Promise<
         an.Fecha                                       AS "fecha",
         an.ID_Turno                                    AS "idTurno",
         t.Nombre                                       AS "turno",
-        to_char(an.Hora_Entrada - INTERVAL '5 hours', 'HH12:MI AM')        AS "horaEntrada",
-        to_char(an.Hora_Salida - INTERVAL '5 hours',  'HH12:MI AM')        AS "horaSalida",
+        to_char(an.Hora_Entrada - INTERVAL '6 hours', 'HH12:MI AM')        AS "horaEntrada",
+        to_char(an.Hora_Salida - INTERVAL '6 hours',  'HH12:MI AM')        AS "horaSalida",
         an.ID_Ficha_Entrada                            AS "idFichaEntrada",
         fe.Codigo_Ficha                                AS "codigoFichaEntrada",
         an.ID_Ficha_Salida                             AS "idFichaSalida",
@@ -196,7 +196,7 @@ export const registrarCheckIn = async (req: Request, res: Response): Promise<voi
       RETURNING ID_Asistencia    AS "idAsistencia",
                 Fecha             AS "fecha",
                 ID_Turno          AS "idTurno",
-                to_char(Hora_Entrada - INTERVAL '5 hours', 'HH12:MI AM') AS "horaEntrada",
+                to_char(Hora_Entrada - INTERVAL '6 hours', 'HH12:MI AM') AS "horaEntrada",
                 Estado            AS "estado"
     `, [
       fechaAsistencia, idTurno, idNino, idGrupo, idFichaEntrada,
@@ -253,7 +253,7 @@ export const registrarCheckOut = async (req: Request, res: Response): Promise<vo
           ID_Ficha_Salida = $4
       WHERE ID_Asistencia = $5 AND Estado = 'Presente'
       RETURNING ID_Asistencia              AS "idAsistencia",
-                to_char(Hora_Salida - INTERVAL '5 hours', 'HH12:MI AM') AS "horaSalida",
+                to_char(Hora_Salida - INTERVAL '6 hours', 'HH12:MI AM') AS "horaSalida",
                 Estado                     AS "estado"
     `, [hora, idRetiradoPor, idCheckoutPor, id_ficha_salida ?? null, idAsistencia]);
 

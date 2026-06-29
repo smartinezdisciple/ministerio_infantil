@@ -113,7 +113,7 @@ export const registrarAsistenciaPersonal = async (req: Request, res: Response) =
                     Razon_Ausencia = EXCLUDED.Razon_Ausencia
       RETURNING ID_Asistencia_Maestro AS "idAsistencia",
                 Fecha                  AS "fecha",
-                to_char(Hora_Llegada - INTERVAL '5 hours', 'HH12:MI AM') AS "horaLlegada",
+                to_char(Hora_Llegada - INTERVAL '6 hours', 'HH12:MI AM') AS "horaLlegada",
                 Estado_Llegada         AS "estadoLlegada"
     `, [hoy, idTurno, idPersona, grupoId, estadoLlegada, hora, razonAusencia ?? null]);
 

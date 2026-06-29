@@ -314,7 +314,7 @@ export const obtenerDashboard = async (_req: Request, res: Response): Promise<vo
       pool.query(`
         SELECT an.ID_Asistencia AS "idAsistencia", 'checkin' AS "tipo",
                p.Nombres AS "nombreNino", g.Nombre AS "grupo",
-               to_char(an.Hora_Entrada - INTERVAL '5 hours', 'HH12:MI AM') AS "hora",
+               to_char(an.Hora_Entrada - INTERVAL '6 hours', 'HH12:MI AM') AS "hora",
                per.Nombres AS "procesadoPor"
         FROM Asistencia_Ninos an
         JOIN Personas p ON an.ID_Nino = p.ID_Persona
@@ -324,7 +324,7 @@ export const obtenerDashboard = async (_req: Request, res: Response): Promise<vo
         UNION ALL
         SELECT an.ID_Asistencia AS "idAsistencia", 'checkout' AS "tipo",
                p.Nombres AS "nombreNino", g.Nombre AS "grupo",
-               to_char(an.Hora_Salida - INTERVAL '5 hours', 'HH12:MI AM') AS "hora",
+               to_char(an.Hora_Salida - INTERVAL '6 hours', 'HH12:MI AM') AS "hora",
                per.Nombres AS "procesadoPor"
         FROM Asistencia_Ninos an
         JOIN Personas p ON an.ID_Nino = p.ID_Persona
