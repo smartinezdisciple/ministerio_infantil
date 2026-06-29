@@ -1,6 +1,6 @@
 // src/routes/eventosRutas.ts — Rutas para el módulo de Eventos
 import { Router } from 'express';
-import { verificarToken, requerirNivel } from '../middlewares/autenticacion.js';
+import { verificarToken, requerirNivel, restringirSiSoloLectura } from '../middlewares/autenticacion.js';
 import { limitadorGeneral } from '../middlewares/rateLimiting.js';
 import {
   listarEventos,
@@ -12,6 +12,7 @@ const enrutador = Router();
 
 // Todos los endpoints requieren token válido
 enrutador.use(verificarToken);
+enrutador.use(restringirSiSoloLectura);
 
 // GET /api/eventos?mes=YYYY-MM — Lista eventos activos (nivel ≥ 1)
 enrutador.get('/', requerirNivel(1), listarEventos);

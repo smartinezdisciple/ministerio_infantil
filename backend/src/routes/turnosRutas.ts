@@ -1,6 +1,6 @@
 // src/routes/turnosRutas.ts — Rutas para el módulo de Turnos
 import { Router } from 'express';
-import { verificarToken, requerirNivel } from '../middlewares/autenticacion.js';
+import { verificarToken, requerirNivel, restringirSiSoloLectura } from '../middlewares/autenticacion.js';
 import { limitadorGeneral } from '../middlewares/rateLimiting.js';
 import {
   listarTurnos,
@@ -11,6 +11,7 @@ const enrutador = Router();
 
 // Todos los endpoints requieren token válido
 enrutador.use(verificarToken);
+enrutador.use(restringirSiSoloLectura);
 
 // GET /api/turnos — Lista todos los turnos (nivel ≥ 1)
 enrutador.get('/', requerirNivel(1), listarTurnos);

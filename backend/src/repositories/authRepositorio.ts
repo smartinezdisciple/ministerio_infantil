@@ -10,6 +10,7 @@ export interface UsuarioDB {
   nombreRol:       string;
   nivelJerarquico: number;
   activo:          boolean;
+  soloLectura:     boolean;
 }
 
 /**
@@ -18,7 +19,7 @@ export interface UsuarioDB {
  */
 export const encontrarUsuarioPorNombre = async (usuario: string): Promise<UsuarioDB | null> => {
   const resultado = await pool.query<UsuarioDB>(
-    `SELECT
+    `    SELECT
        ps.ID_Persona        AS "idPersona",
        p.Nombres || ' ' || p.Apellidos  AS "nombreCompleto",
        ps.Usuario           AS "usuario",
@@ -26,7 +27,8 @@ export const encontrarUsuarioPorNombre = async (usuario: string): Promise<Usuari
        r.ID_Rol             AS "idRol",
        r.Nombre_Rol         AS "nombreRol",
        r.Nivel_Jerarquico   AS "nivelJerarquico",
-       ps.Activo            AS "activo"
+       ps.Activo            AS "activo",
+       ps.Solo_Lectura      AS "soloLectura"
      FROM Personal_Sistema ps
      JOIN Personas p  ON p.ID_Persona = ps.ID_Persona
      JOIN Roles    r  ON r.ID_Rol     = ps.ID_Rol

@@ -121,6 +121,8 @@ export interface UsuarioAutenticado {
   nivelJerarquico: NivelJerarquico;
   /** IDs de grupos asignados (R-04: Maestros/Colaboradores solo ven su grupo) */
   gruposAsignados: number[];
+  /** Si es true, el usuario solo puede visualizar datos sin modificarlos */
+  soloLectura?: boolean;
 }
 
 /** Grupo de la escuela dominical — Spec §2.5.2 */

@@ -1,6 +1,6 @@
 // src/routes/personalRutas.ts — Rutas de personal v5.1
 import { Router } from 'express';
-import { verificarToken, requerirNivel, permitirPropioONivel } from '../middlewares/autenticacion.js';
+import { verificarToken, requerirNivel, permitirPropioONivel, restringirSiSoloLectura } from '../middlewares/autenticacion.js';
 import { limitadorGeneral } from '../middlewares/rateLimiting.js';
 import {
   listarPersonalHoy,
@@ -23,6 +23,7 @@ import {
 const enrutador = Router();
 
 enrutador.use(verificarToken);
+enrutador.use(restringirSiSoloLectura);
 
 /** GET /api/personal/asistencia-hoy — Nivel 1+ */
 enrutador.get('/asistencia-hoy', listarPersonalHoy);

@@ -1,6 +1,6 @@
 // src/routes/fichasRutas.ts — Rutas de fichas/tokens de entrada
 import { Router } from 'express';
-import { verificarToken, requerirNivel } from '../middlewares/autenticacion.js';
+import { verificarToken, requerirNivel, restringirSiSoloLectura } from '../middlewares/autenticacion.js';
 import {
   listarFichas,
   obtenerDisponibilidad,
@@ -13,6 +13,7 @@ import { limitadorGeneral } from '../middlewares/rateLimiting.js';
 const router = Router();
 
 router.use(verificarToken);
+router.use(restringirSiSoloLectura);
 
 /** GET /api/fichas?estado=Activa */
 router.get('/', requerirNivel(1), listarFichas);

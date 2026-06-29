@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { verificarToken, requerirNivel } from '../middlewares/autenticacion.js';
+import { verificarToken, requerirNivel, restringirSiSoloLectura } from '../middlewares/autenticacion.js';
 import { limitadorGeneral } from '../middlewares/rateLimiting.js';
 import { listarRequisitos, crearRequisito, actualizarRequisito } from '../controllers/requisitosControlador.js';
 
@@ -7,6 +7,7 @@ const enrutador = Router();
 
 // Verificar token en todas las rutas de requisitos
 enrutador.use(verificarToken);
+enrutador.use(restringirSiSoloLectura);
 
 // GET / — Listar requisitos (nivel 1 o superior)
 enrutador.get('/', requerirNivel(1), listarRequisitos);

@@ -15,11 +15,12 @@ import {
   obtenerNinosTransicion,
   obtenerPersonalDisponibleDashboard,
 } from '../controllers/dashboardControlador.js';
-import { verificarToken, requerirNivel } from '../middlewares/autenticacion.js';
+import { verificarToken, requerirNivel, restringirSiSoloLectura } from '../middlewares/autenticacion.js';
 
 const enrutador = Router();
 
 enrutador.use(verificarToken);
+enrutador.use(restringirSiSoloLectura);
 
 /** GET /api/dashboard — Endpoint legado (bloque completo) */
 enrutador.get('/', requerirNivel(1), obtenerDashboard);

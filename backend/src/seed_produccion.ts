@@ -7,6 +7,10 @@ import pool from './config/db.js';
 const USUARIO_ADMIN    = 'admin';
 const CONTRASENA_ADMIN = 'AdminDiosEsFiel123!';
 
+// Datos del usuario de solo lectura
+const USUARIO_LECTURA    = 'lectura';
+const CONTRASENA_LECTURA = 'Lectura123!';
+
 async function runSeed() {
   console.log('🌱 Iniciando sembrado seguro para producción...');
   let cliente;
@@ -167,12 +171,60 @@ async function runSeed() {
       console.log('ℹ️  El usuario administrador ya existe. Saltando...');
     }
 
+    // ── 6. Usuario de solo lectura en Personal_Sistema ──────────────────
+    const checkLecturaRes = await cliente.query(
+      `SELECT COUNT(*)::int AS count FROM Personal_Sistema WHERE Usuario = $1`,
+      [USUARIO_LECTURA]
+    );
+
+    if (checkLecturaRes.rows[0].count === 0) {
+      console.log('👉 Sembrando usuario de solo lectura...');
+
+      const insPersonaLectura = await cliente.query(
+        `INSERT INTO Personas (Nombres, Apellidos, Telefono, Fecha_Nacimiento)
+         VALUES ('Consulta', 'General', '0000-SEED-LECTURA', '1990-01-01')
+         RETURNING ID_Persona`,
+      );
+      const idPersonaLectura = insPersonaLectura.rows[0].id_persona ?? insPersonaLectura.rows[0].ID_Persona;
+      console.log(`  ✅ Persona "Consulta General" creada (ID: ${idPersonaLectura})`);
+
+      const saltRounds = Number(process.env.BCRYPT_SALT_ROUNDS ?? 12);
+      const hashLectura = await bcrypt.hash(CONTRASENA_LECTURA, saltRounds);
+
+      const rolIdLectura = idRolesPorNombre['Coordinador General'];
+      if (!rolIdLectura) {
+        throw new Error('No se pudo encontrar el ID para el rol "Coordinador General".');
+      }
+
+      await cliente.query(
+        `INSERT INTO Personal_Sistema
+           (ID_Persona, ID_Rol, Usuario, Password_Hash, Fecha_Ingreso_Servicio, Activo, Solo_Lectura)
+         VALUES ($1, $2, $3, $4, CURRENT_DATE, true, true)`,
+        [idPersonaLectura, rolIdLectura, USUARIO_LECTURA, hashLectura]
+      );
+      console.log(`  ✅ Usuario de solo lectura "${USUARIO_LECTURA}" creado.`);
+
+      if (Object.keys(idTurnosPorNombre).length > 0) {
+        for (const idTurno of Object.values(idTurnosPorNombre)) {
+          await cliente.query(
+            `INSERT INTO Personal_Turnos (ID_Personal, ID_Turno) VALUES ($1, $2)`,
+            [idPersonaLectura, idTurno]
+          );
+        }
+        console.log('  ✅ Asignados turnos al usuario de solo lectura.');
+      }
+    } else {
+      console.log('ℹ️  El usuario de solo lectura ya existe. Saltando...');
+    }
+
     await cliente.query('COMMIT');
     console.log('✅ Sembrado seguro completado.');
     console.log('─────────────────────────────────────────');
     console.log('🟢 Credenciales de acceso:');
     console.log(`   Usuario:    ${USUARIO_ADMIN}`);
     console.log(`   Contraseña: ${CONTRASENA_ADMIN}`);
+    console.log(`   Usuario:    ${USUARIO_LECTURA} (solo lectura)`);
+    console.log(`   Contraseña: ${CONTRASENA_LECTURA}`);
     console.log('─────────────────────────────────────────\n');
 
   } catch (error) {

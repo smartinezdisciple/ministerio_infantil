@@ -1,11 +1,12 @@
 // src/routes/gruposRutas.ts — Rutas de grupos y asistencia por grupo
 import { Router } from 'express';
-import { verificarToken } from '../middlewares/autenticacion.js';
+import { verificarToken, restringirSiSoloLectura } from '../middlewares/autenticacion.js';
 import { listarGrupos, asistenciaGrupoHoy, turnosDisponiblesHoy } from '../controllers/gruposControlador.js';
 
 const router = Router();
 
 router.use(verificarToken);
+router.use(restringirSiSoloLectura);
 
 /** GET /api/grupos — Lista todos los grupos */
 router.get('/', listarGrupos);

@@ -3,7 +3,7 @@ import { Router } from 'express';
 import { crearNino, crearNinoConPadresControlador, listar, listarIngreso, obtenerPorId, obtenerCompleto, actualizarNino, eliminarNino, listarExpedientesNinoControlador, crearExpedienteNinoControlador, resolverExpedienteNinoControlador } from '../controllers/ninosControlador.js';
 import { fichaContactoNino } from '../controllers/contactosControlador.js';
 import { listarTutoresPorNino, crearTutorYVincularControlador, actualizarTutorControlador, vincularTutorExistenteControlador } from '../controllers/tutoresControlador.js';
-import { verificarToken, requerirNivel } from '../middlewares/autenticacion.js';
+import { verificarToken, requerirNivel, restringirSiSoloLectura } from '../middlewares/autenticacion.js';
 import { limitadorGeneral } from '../middlewares/rateLimiting.js';
 import { validar, esquemaNino, esquemaNinoConPadres } from '../middlewares/validacion.js';
 
@@ -11,6 +11,7 @@ const enrutador = Router();
 
 // Todas las rutas de niños requieren autenticación
 enrutador.use(verificarToken);
+enrutador.use(restringirSiSoloLectura);
 
 /**
  * GET /api/ninos — Lista todos los niños (nivel ≥ 1)

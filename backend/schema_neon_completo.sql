@@ -202,7 +202,8 @@ CREATE TABLE IF NOT EXISTS Personal_Sistema (
     Fecha_Ingreso_Servicio DATE       NOT NULL DEFAULT CURRENT_DATE,
     ID_Creado_Por        INT         REFERENCES Personal_Sistema(ID_Persona),
     ID_Autorizado_Por    INT         REFERENCES Personal_Sistema(ID_Persona),
-    ID_Solicitud_Origen  INT
+    ID_Solicitud_Origen  INT,
+    Solo_Lectura         BOOLEAN    NOT NULL DEFAULT FALSE
 );
 
 CREATE INDEX IF NOT EXISTS idx_personal_rol_activo ON Personal_Sistema (ID_Rol, Activo);

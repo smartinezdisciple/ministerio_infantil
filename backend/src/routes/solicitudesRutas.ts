@@ -1,7 +1,7 @@
 // src/routes/solicitudesRutas.ts — Rutas del módulo de Solicitudes de Personal v5.1
 // Sin estado 'Borrador' → sin ruta /enviar. Flujo: Pendiente → Aprobado/Rechazado/En_Revision.
 import { Router } from 'express';
-import { verificarToken, requerirNivel } from '../middlewares/autenticacion.js';
+import { verificarToken, requerirNivel, restringirSiSoloLectura } from '../middlewares/autenticacion.js';
 import { limitadorGeneral } from '../middlewares/rateLimiting.js';
 import {
   listarSolicitudes,
@@ -18,6 +18,7 @@ import {
 const enrutador = Router();
 
 enrutador.use(verificarToken);
+enrutador.use(restringirSiSoloLectura);
 
 // GET / — Listar solicitudes con filtro opcional por estado (nivel 3+)
 enrutador.get('/', requerirNivel(3), listarSolicitudes);

@@ -9,6 +9,7 @@ export interface PayloadJwt {
   usuario:          string;
   rol:              string;
   nivelJerarquico:  number;
+  soloLectura:      boolean;
 }
 
 /** Extiende Request para inyectar usuario autenticado */
@@ -93,4 +94,17 @@ export const permitirPropioONivel = (nivelMinimo: number) =>
     }
     respuestaProhibido(res, `Acceso denegado. Se requiere nivel jerárquico mínimo ${nivelMinimo} o ser el propio usuario.`);
   };
+
+/**
+ * Middleware que bloquea operaciones de escritura (POST, PUT, PATCH, DELETE)
+ * para usuarios marcados como solo lectura.
+ * Debe colocarse DESPUÉS de verificarToken.
+ */
+export const restringirSiSoloLectura = (req: Request, res: Response, siguiente: NextFunction): void => {
+  if (req.usuario?.soloLectura && !['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
+    respuestaProhibido(res, 'Usuario de solo lectura. No tiene permisos para modificar datos.');
+    return;
+  }
+  siguiente();
+};
 

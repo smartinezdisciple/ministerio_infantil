@@ -1,6 +1,6 @@
 // src/routes/telefonosDireccionesRutas.ts — CRUD de Teléfonos y Direcciones normalizados
 import { Router } from 'express';
-import { verificarToken, requerirNivel } from '../middlewares/autenticacion.js';
+import { verificarToken, requerirNivel, restringirSiSoloLectura } from '../middlewares/autenticacion.js';
 import { limitadorGeneral } from '../middlewares/rateLimiting.js';
 import {
   listarTelefonos,
@@ -22,6 +22,7 @@ import {
 const enrutador = Router({ mergeParams: true }); // mergeParams para acceder a :id de la ruta padre
 
 enrutador.use(verificarToken);
+enrutador.use(restringirSiSoloLectura);
 
 // ── Rutas Raíz de Personas (Gestión de Personas y Roles Funcionales) ──────────
 /** GET /api/personas — Nivel 3+ */

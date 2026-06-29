@@ -1,6 +1,6 @@
 // src/routes/lideresRutas.ts — Catálogo de Líderes Espirituales
 import { Router } from 'express';
-import { verificarToken, requerirNivel } from '../middlewares/autenticacion.js';
+import { verificarToken, requerirNivel, restringirSiSoloLectura } from '../middlewares/autenticacion.js';
 import { limitadorGeneral } from '../middlewares/rateLimiting.js';
 import {
   listarLideres,
@@ -12,6 +12,7 @@ import {
 const enrutador = Router();
 
 enrutador.use(verificarToken);
+enrutador.use(restringirSiSoloLectura);
 
 /** GET /api/lideres — Listar líderes activos (nivel 1+) */
 enrutador.get('/', requerirNivel(1), listarLideres);

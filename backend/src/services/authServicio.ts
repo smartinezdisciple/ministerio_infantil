@@ -11,6 +11,7 @@ export interface RespuestaLogin {
     usuario:         string;
     rol:             string;
     nivelJerarquico: number;
+    soloLectura:     boolean;
   };
 }
 
@@ -45,6 +46,7 @@ export const iniciarSesion = async (
     usuario:         usuario.usuario,
     rol:             usuario.nombreRol,
     nivelJerarquico: usuario.nivelJerarquico,
+    soloLectura:     usuario.soloLectura,
   };
 
   const token = jwt.sign(payload, secreto, { expiresIn: expiraEn as jwt.SignOptions['expiresIn'] });
@@ -57,6 +59,7 @@ export const iniciarSesion = async (
       usuario:         usuario.usuario,
       rol:             usuario.nombreRol,
       nivelJerarquico: usuario.nivelJerarquico,
+      soloLectura:     usuario.soloLectura,
     },
   };
 };

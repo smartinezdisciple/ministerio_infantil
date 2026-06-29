@@ -20,6 +20,10 @@ const pool = new Pool({
 const USUARIO_ADMIN    = 'admin';
 const CONTRASENA_ADMIN = 'AdminDiosEsFiel123!';
 
+// Datos del usuario de solo lectura
+const USUARIO_LECTURA    = 'lectura';
+const CONTRASENA_LECTURA = 'Lectura123!';
+
 async function runSeed() {
   const cliente = await pool.connect();
   try {
@@ -159,6 +163,34 @@ async function runSeed() {
     }
     console.log('  ✅ Asignados los 4 turnos al administrador.');
 
+    // ── 8. Usuario de solo lectura en Personal_Sistema ──────────────────
+    const insPersonaLectura = await cliente.query(
+      `INSERT INTO Personas (Nombres, Apellidos, Telefono, Fecha_Nacimiento)
+       VALUES ('Consulta', 'General', '0000-SEED-LECTURA', '1990-01-01')
+       RETURNING ID_Persona`,
+    );
+    const idPersonaLectura = insPersonaLectura.rows[0].id_persona ?? insPersonaLectura.rows[0].ID_Persona;
+    console.log(`  ✅ Persona "Consulta General" creada (ID: ${idPersonaLectura})`);
+
+    const saltRoundsLectura = Number(process.env.BCRYPT_SALT_ROUNDS ?? 12);
+    const hashLectura = await bcrypt.hash(CONTRASENA_LECTURA, saltRoundsLectura);
+
+    await cliente.query(
+      `INSERT INTO Personal_Sistema
+         (ID_Persona, ID_Rol, Usuario, Password_Hash, Fecha_Ingreso_Servicio, Activo, Solo_Lectura)
+       VALUES ($1, $2, $3, $4, CURRENT_DATE, true, true)`,
+      [idPersonaLectura, idRolesPorNombre['Coordinador General'], USUARIO_LECTURA, hashLectura]
+    );
+    console.log(`  ✅ Usuario de solo lectura "${USUARIO_LECTURA}" creado.`);
+
+    for (const idTurno of Object.values(idTurnosPorNombre)) {
+      await cliente.query(
+        `INSERT INTO Personal_Turnos (ID_Personal, ID_Turno) VALUES ($1, $2)`,
+        [idPersonaLectura, idTurno]
+      );
+    }
+    console.log('  ✅ Asignados los 4 turnos al usuario de solo lectura.');
+
     await cliente.query('COMMIT');
 
     console.log('\n─────────────────────────────────────────');
@@ -167,6 +199,8 @@ async function runSeed() {
     console.log(`   Contraseña: ${CONTRASENA_ADMIN}`);
     console.log('─────────────────────────────────────────');
     console.log('⚠️  Cambia la contraseña tras el primer inicio de sesión.\n');
+    console.log(`   Usuario:    ${USUARIO_LECTURA} (solo lectura)`);
+    console.log(`   Contraseña: ${CONTRASENA_LECTURA}`);
 
   } catch (error) {
     await cliente.query('ROLLBACK');

@@ -1,6 +1,6 @@
 // src/routes/asistenciaRutas.ts — Rutas de asistencia de niños (check-in / check-out)
 import { Router } from 'express';
-import { verificarToken } from '../middlewares/autenticacion.js';
+import { verificarToken, restringirSiSoloLectura } from '../middlewares/autenticacion.js';
 import {
   listarAsistenciaDia,
   registrarCheckIn,
@@ -12,6 +12,7 @@ import {
 const router = Router();
 
 router.use(verificarToken);
+router.use(restringirSiSoloLectura);
 
 /** GET /api/asistencia?fecha=YYYY-MM-DD&grupo=<id>&turno=<id> */
 router.get('/', listarAsistenciaDia);
