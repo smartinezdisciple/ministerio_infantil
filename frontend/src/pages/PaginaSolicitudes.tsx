@@ -245,11 +245,16 @@ const PaginaSolicitudes: React.FC = () => {
     {
       id: 'requisitos',
       encabezado: 'Requisitos',
-      render: (s) => (
-        <span className="text-body-sm text-on-surface-variant">
-          {s.reqCumplidos}/{s.reqTotal} obligatorios
-        </span>
-      ),
+      render: (s) => {
+        const esMentor = s.estadoLiderazgo === 'Mentor';
+        const total = esMentor ? Math.max(0, s.reqTotal - 1) : s.reqTotal;
+        const cumplidos = esMentor ? Math.max(0, s.reqCumplidos - 1) : s.reqCumplidos;
+        return (
+          <span className="text-body-sm text-on-surface-variant">
+            {cumplidos}/{total} obligatorios
+          </span>
+        );
+      },
     },
     {
       id: 'gestion',

@@ -505,8 +505,13 @@ const ModalSolicitud: React.FC<PropsModalSolicitud> = ({
 
 
   const requisitosFiltrados = useMemo(() => {
-    return requisitos.filter(r => r.activo && (!r.idRolRequerido || r.idRolRequerido === form.idRolSolicitado));
-  }, [requisitos, form.idRolSolicitado]);
+    return requisitos.filter(r => {
+      if (!r.activo) return false;
+      if (r.idRolRequerido && r.idRolRequerido !== form.idRolSolicitado) return false;
+      if (r.idRequisito === 7 && form.estadoLiderazgo === 'Mentor') return false;
+      return true;
+    });
+  }, [requisitos, form.idRolSolicitado, form.estadoLiderazgo]);
 
   const reqObligatoriosPendientes = useMemo(() => {
     return requisitosFiltrados.filter(r => r.obligatorio && !form.requisitos[r.idRequisito]?.cumplido);
@@ -1446,12 +1451,16 @@ const ModalSolicitud: React.FC<PropsModalSolicitud> = ({
                       </div>
                       {req.descripcion && <p className="text-body-sm text-on-surface-variant mt-1">{req.descripcion}</p>}
                     </div>
-                    <label className="flex items-center gap-2 shrink-0 cursor-pointer">
-                      <input type="checkbox" checked={r.cumplido}
-                        onChange={(e) => actualizarRequisito(req.idRequisito, 'cumplido', e.target.checked)}
-                        className="w-4 h-4 accent-primary rounded cursor-pointer" />
-                      <span className="text-label-sm text-on-surface-variant font-medium">Cumplido</span>
-                    </label>
+                    {req.idRequisito === 7 && form.estadoLiderazgo === 'Mentor' ? (
+                      <span className="text-label-sm text-on-surface-variant italic">No requerido para Mentores</span>
+                    ) : (
+                      <label className="flex items-center gap-2 shrink-0 cursor-pointer">
+                        <input type="checkbox" checked={r.cumplido}
+                          onChange={(e) => actualizarRequisito(req.idRequisito, 'cumplido', e.target.checked)}
+                          className="w-4 h-4 accent-primary rounded cursor-pointer" />
+                        <span className="text-label-sm text-on-surface-variant font-medium">Cumplido</span>
+                      </label>
+                    )}
                   </div>
                   {r.cumplido && (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3 pt-3 border-t border-outline-variant/30">

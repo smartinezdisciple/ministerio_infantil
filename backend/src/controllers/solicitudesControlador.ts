@@ -208,17 +208,19 @@ const CONSULTA_SOLICITUD_BASE = `
     sp.Fecha_Resolucion                                       AS "fechaResolucion",
     sp.Notas_Staff                                            AS "notasStaff",
     sp.Notas_Coordinador                                      AS "notasCoordinador",
-    -- Contadores de requisitos
+    -- Contadores de requisitos (excluye req 7 para Mentores)
     (SELECT COUNT(*)::INT
      FROM Solicitudes_Requisitos sr
      JOIN Requisitos req ON sr.ID_Requisito = req.ID_Requisito
      WHERE sr.ID_Solicitud = sp.ID_Solicitud
-       AND sr.Cumplido = TRUE AND req.Obligatorio = TRUE)    AS "reqCumplidos",
+       AND sr.Cumplido = TRUE AND req.Obligatorio = TRUE
+       AND NOT (req.ID_Requisito = 7 AND sp.Estado_Liderazgo = 'Mentor')) AS "reqCumplidos",
     (SELECT COUNT(*)::INT
      FROM Requisitos req
      WHERE req.Activo = TRUE AND req.Obligatorio = TRUE
        AND (req.ID_Rol_Requerido IS NULL
-            OR req.ID_Rol_Requerido = sp.ID_Rol_Solicitado)) AS "reqTotal"
+            OR req.ID_Rol_Requerido = sp.ID_Rol_Solicitado)
+       AND NOT (req.ID_Requisito = 7 AND sp.Estado_Liderazgo = 'Mentor'))   AS "reqTotal"
   FROM Solicitudes_Personal sp
   JOIN Personas p_cand          ON sp.ID_Persona         = p_cand.ID_Persona
   JOIN Roles r                  ON sp.ID_Rol_Solicitado  = r.ID_Rol
@@ -337,13 +339,14 @@ export const crearSolicitud = async (req: Request, res: Response): Promise<void>
     try {
       await cliente.query('BEGIN');
 
-      // Obtener requisitos obligatorios para el rol
+      // Obtener requisitos obligatorios para el rol (excluye req 7 para Mentores)
       const reqObligatoriosRes = await cliente.query(
         `SELECT ID_Requisito AS "idRequisito", Nombre AS "nombre"
          FROM Requisitos
          WHERE Activo = TRUE AND Obligatorio = TRUE
-           AND (ID_Rol_Requerido IS NULL OR ID_Rol_Requerido = $1)`,
-        [idRolSolicitado]
+           AND (ID_Rol_Requerido IS NULL OR ID_Rol_Requerido = $1)
+           AND NOT (ID_Requisito = 7 AND $2 = 'Mentor')`,
+        [idRolSolicitado, estadoLiderazgo ?? null]
       );
       
       const reqObligatorios = reqObligatoriosRes.rows;
@@ -487,8 +490,9 @@ export const crearSolicitud = async (req: Request, res: Response): Promise<void>
         const resultadoRequisitos = await cliente.query(
           `SELECT ID_Requisito AS "idRequisito" FROM Requisitos
            WHERE Activo = TRUE
-             AND (ID_Rol_Requerido IS NULL OR ID_Rol_Requerido = $1)`,
-          [idRolSolicitado]
+             AND (ID_Rol_Requerido IS NULL OR ID_Rol_Requerido = $1)
+             AND NOT (ID_Requisito = 7 AND $2 = 'Mentor')`,
+          [idRolSolicitado, estadoLiderazgo ?? null]
         );
         for (const fila of resultadoRequisitos.rows) {
           await cliente.query(
