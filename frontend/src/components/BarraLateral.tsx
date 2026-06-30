@@ -13,21 +13,21 @@ interface ItemMenu {
 }
 
 const ITEMS_MENU: ItemMenu[] = [
-  { ruta: '/dashboard',            etiqueta: 'Tablero',            icono: 'dashboard',         nivelMinimo: 1 },
-  { ruta: '/asistencia-general',   etiqueta: 'Asistencia General', icono: 'fact_check',         nivelMinimo: 1 },
-  { ruta: '/asistencia-grupo',     etiqueta: 'Por Grupo',          icono: 'groups',             nivelMinimo: 1 },
-  { ruta: '/ingreso-ninos',        etiqueta: 'Ingreso de Niños',   icono: 'child_care',         nivelMinimo: 3 },
-  { ruta: '/asistencia-personal',  etiqueta: 'Personal',           icono: 'badge',              nivelMinimo: 3 },
-  { ruta: '/ingreso-personal',     etiqueta: 'Ingreso Personal',   icono: 'person_add',         nivelMinimo: 3 },
-  { ruta: '/solicitudes',          etiqueta: 'Solicitudes',        icono: 'assignment',         nivelMinimo: 3 },
-  { ruta: '/fichas',               etiqueta: 'Fichas',             icono: 'confirmation_number', nivelMinimo: 3 },
-  { ruta: '/requisitos',           etiqueta: 'Requisitos',         icono: 'checklist',          nivelMinimo: 3 },
-  { ruta: '/roles',                etiqueta: 'Roles',              icono: 'shield',             nivelMinimo: 3 },
-  { ruta: '/turnos-eventos',       etiqueta: 'Turnos y Eventos',   icono: 'calendar_month',     nivelMinimo: 3 },
-  { ruta: '/redes',                etiqueta: 'Redes',              icono: 'hub',                nivelMinimo: 3 },
-  { ruta: '/suspensiones',         etiqueta: 'Suspensiones',       icono: 'gavel',              nivelMinimo: 3 },
-  { ruta: '/reportes',             etiqueta: 'Reportes',           icono: 'assessment',         nivelMinimo: 3 },
-  { ruta: '/directorio',           etiqueta: 'Directorio',         icono: 'contact_phone',      nivelMinimo: 1 },
+  { ruta: '/dashboard', etiqueta: 'Tablero', icono: 'dashboard', nivelMinimo: 1 },
+  { ruta: '/asistencia-general', etiqueta: 'Asistencia General', icono: 'fact_check', nivelMinimo: 1 },
+  { ruta: '/asistencia-grupo', etiqueta: 'Por Grupo', icono: 'groups', nivelMinimo: 1 },
+  { ruta: '/ingreso-ninos', etiqueta: 'Ingreso de Niños', icono: 'child_care', nivelMinimo: 3 },
+  { ruta: '/directorio', etiqueta: 'Directorio', icono: 'contact_phone', nivelMinimo: 1 },
+  { ruta: '/asistencia-personal', etiqueta: 'Personal', icono: 'badge', nivelMinimo: 3 },
+  { ruta: '/ingreso-personal', etiqueta: 'Ingreso Personal', icono: 'person_add', nivelMinimo: 3 },
+  { ruta: '/solicitudes', etiqueta: 'Solicitudes', icono: 'assignment', nivelMinimo: 3 },
+  { ruta: '/fichas', etiqueta: 'Fichas', icono: 'confirmation_number', nivelMinimo: 3 },
+  { ruta: '/requisitos', etiqueta: 'Requisitos', icono: 'checklist', nivelMinimo: 4 },
+  { ruta: '/roles', etiqueta: 'Roles', icono: 'shield', nivelMinimo: 4 },
+  { ruta: '/turnos-eventos', etiqueta: 'Turnos y Eventos', icono: 'calendar_month', nivelMinimo: 4 },
+  { ruta: '/redes', etiqueta: 'Redes', icono: 'hub', nivelMinimo: 4 },
+  { ruta: '/suspensiones', etiqueta: 'Suspensiones', icono: 'gavel', nivelMinimo: 3 },
+  { ruta: '/reportes', etiqueta: 'Reportes', icono: 'assessment', nivelMinimo: 3 },
 ];
 
 interface PropsBarraLateral {
@@ -69,17 +69,16 @@ const BarraLateral: React.FC<PropsBarraLateral> = ({ abierto = false, onCerrar }
     <>
       {/* Overlay oscuro en mobile cuando el menú está abierto */}
       {abierto && (
-        <div 
+        <div
           className="fixed inset-0 bg-on-surface/40 z-40 lg:hidden transition-opacity"
-          onClick={onCerrar}
+          onClick={() => onCerrar?.()}
           aria-hidden="true"
         />
       )}
 
       <aside
-        className={`fixed lg:static inset-y-0 left-0 w-64 bg-surface-container-lowest border-r border-outline-variant flex flex-col h-screen z-50 shrink-0 transform transition-transform duration-300 ease-in-out ${
-          abierto ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
-        }`}
+        className={`fixed lg:static inset-y-0 left-0 w-64 bg-surface-container-lowest border-r border-outline-variant flex flex-col h-screen z-50 shrink-0 transform transition-transform duration-300 ease-in-out ${abierto ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+          }`}
         aria-label="Navegación principal"
       >
         {/* ── Logo / Marca "MI" ──────────────────────── */}
@@ -100,8 +99,8 @@ const BarraLateral: React.FC<PropsBarraLateral> = ({ abierto = false, onCerrar }
             </div>
           </div>
           {/* Botón de cierre en mobile */}
-          <button 
-            onClick={onCerrar}
+          <button
+            onClick={() => onCerrar?.()}
             className="lg:hidden text-on-surface-variant hover:bg-surface-container-high p-1 rounded-full"
             aria-label="Cerrar menú"
           >
@@ -119,7 +118,7 @@ const BarraLateral: React.FC<PropsBarraLateral> = ({ abierto = false, onCerrar }
               <li key={item.ruta}>
                 <NavLink
                   to={item.ruta}
-                  onClick={onCerrar}
+                  onClick={() => onCerrar?.()}
                   className={({ isActive }) =>
                     [
                       'flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors duration-150 w-full',
@@ -133,9 +132,8 @@ const BarraLateral: React.FC<PropsBarraLateral> = ({ abierto = false, onCerrar }
                   {({ isActive }) => (
                     <>
                       <span
-                        className={`material-symbols-outlined text-[22px] shrink-0 ${
-                          isActive ? 'material-symbols-filled' : ''
-                        }`}
+                        className={`material-symbols-outlined text-[22px] shrink-0 ${isActive ? 'material-symbols-filled' : ''
+                          }`}
                         style={isActive ? { fontVariationSettings: "'FILL' 1" } : undefined}
                       >
                         {item.icono}
