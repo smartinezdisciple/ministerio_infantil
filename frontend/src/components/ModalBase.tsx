@@ -10,6 +10,8 @@ interface PropsModalBase {
   ancho?: string;
   /** Slot para los botones del footer */
   footer?: React.ReactNode;
+  /** Contenido adicional entre el header y el body (shrink-0, ej: tabs) */
+  headerChildren?: React.ReactNode;
 }
 
 /**
@@ -26,6 +28,7 @@ const ModalBase: React.FC<PropsModalBase> = ({
   children,
   ancho = 'max-w-lg',
   footer,
+  headerChildren,
 }) => {
   const tituloId = `modal-titulo-${titulo.replace(/\s+/g, '-').toLowerCase()}`;
   const panelRef = useRef<HTMLDivElement>(null);
@@ -73,7 +76,6 @@ const ModalBase: React.FC<PropsModalBase> = ({
       {/* Overlay semi-transparente con blur */}
       <div
         className="absolute inset-0 bg-on-surface/40 backdrop-blur-sm"
-        onClick={onCerrar}
         aria-hidden="true"
       />
 
@@ -105,6 +107,13 @@ const ModalBase: React.FC<PropsModalBase> = ({
             <span className="material-symbols-outlined text-[22px]">close</span>
           </button>
         </div>
+
+        {/* Header children (shrink-0 — ej: tabs, subtítulos) */}
+        {headerChildren && (
+          <div className="shrink-0">
+            {headerChildren}
+          </div>
+        )}
 
         {/* Cuerpo con scroll si es necesario */}
         <div className="overflow-y-auto flex-1 px-gutter py-4">
