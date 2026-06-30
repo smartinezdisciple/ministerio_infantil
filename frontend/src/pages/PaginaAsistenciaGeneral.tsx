@@ -9,7 +9,7 @@ import ModalCheckIn from '../components/ModalCheckIn';
 import ModalCheckOut from '../components/ModalCheckOut';
 import { useAuth } from '../contexts/ContextoAuth';
 import type { RegistroAsistenciaNino, EstadoAsistencia, DatosCheckIn } from '../services/tipos';
-import { listarAsistenciaDia, registrarCheckIn, eliminarAsistencia, listarTurnos } from '../services/servicioApi';
+import { listarAsistenciaDia, registrarCheckIn, eliminarAsistencia, listarTurnos, obtenerPerfilPersonal } from '../services/servicioApi';
 import { fechaLocalHoy, esCumpleanosHoy } from '../services/fechaUtils';
 import { formatearTurno } from '../services/turnoUtils';
 import ModalEditarAsistencia from '../components/ModalEditarAsistencia';
@@ -211,6 +211,7 @@ const PaginaAsistenciaGeneral: React.FC = () => {
 
   // Estado de catálogo de turnos
   const [turnos, setTurnos]                 = useState<Array<{ idTurno: number; nombre: string; horaInicio: string }>>([]);
+  const [cargandoTurnos, setCargandoTurnos] = useState(false);
 
   // Estado de modales
   const [modalCheckIn, setModalCheckIn]     = useState(false);
@@ -276,18 +277,37 @@ const PaginaAsistenciaGeneral: React.FC = () => {
     setPagina(1);
   }, [filtroFecha, filtroGrupo, filtroTurno]);
 
-  // Cargar catálogo de turnos al montar
+  // Cargar catálogo de turnos — si no es nivel 4, solo los de su perfil
   useEffect(() => {
     const cargarTurnos = async () => {
+      setCargandoTurnos(true);
       try {
-        const datos = await listarTurnos();
-        setTurnos(datos.filter((t: any) => t.activo));
+        if (usuario && usuario.nivelJerarquico < 4) {
+          const res = await obtenerPerfilPersonal(usuario.idPersona);
+          const turnosPerfil = (res.turnos || []).map(t => ({
+            idTurno: t.idTurno,
+            nombre: t.turno,
+            horaInicio: '',
+          }));
+          if (turnosPerfil.length > 0) {
+            setTurnos(turnosPerfil);
+            setFiltroTurno(String(turnosPerfil[0].idTurno));
+          } else {
+            setTurnos([]);
+            setFiltroTurno('');
+          }
+        } else {
+          const datos = await listarTurnos();
+          setTurnos(datos.filter((t: any) => t.activo));
+        }
       } catch (err) {
         console.error('Error cargando turnos:', err);
+      } finally {
+        setCargandoTurnos(false);
       }
     };
     cargarTurnos();
-  }, []);
+  }, [usuario]);
 
   // Filtrado local (búsqueda + estado)
   const registrosFiltrados = useMemo(() => {
@@ -518,20 +538,42 @@ const PaginaAsistenciaGeneral: React.FC = () => {
                 Turno
               </label>
               <div className="relative">
-                <select
-                  id="filtro-turno"
-                  value={filtroTurno}
-                  onChange={(e) => { setFiltroTurno(e.target.value); setPagina(1); }}
-                  className="w-full bg-surface-container-low border border-outline-variant rounded-xl pl-3 pr-8 py-2 text-[13px] h-[38px] focus:ring-2 focus:ring-primary focus:outline-none transition-all appearance-none"
-                >
-                  <option value="">Todos los Turnos</option>
-                  {turnos.map((t) => (
-                    <option key={t.idTurno} value={t.idTurno}>
-                      {formatearTurno(t.nombre)}
-                    </option>
-                  ))}
-                </select>
-                <span className="material-symbols-outlined absolute right-2.5 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none text-[18px]">expand_more</span>
+                {cargandoTurnos ? (
+                  <div className="w-full bg-surface-container-low border border-outline-variant rounded-xl px-3 py-2 text-[13px] h-[38px] flex items-center gap-2 text-on-surface-variant">
+                    <span className="w-3.5 h-3.5 border-2 border-outline-variant border-t-transparent rounded-full animate-spin" />
+                    Cargando...
+                  </div>
+                ) : (
+                  <select
+                    id="filtro-turno"
+                    value={filtroTurno}
+                    disabled={!!(usuario && usuario.nivelJerarquico < 4 && turnos.length <= 1)}
+                    onChange={(e) => { setFiltroTurno(e.target.value); setPagina(1); }}
+                    className={`w-full border rounded-xl pl-3 pr-8 py-2 text-[13px] h-[38px] focus:ring-2 focus:ring-primary focus:outline-none transition-all appearance-none ${
+                      !!(usuario && usuario.nivelJerarquico < 4 && turnos.length <= 1)
+                        ? 'bg-surface-container-low text-on-surface-variant/80 border-outline-variant cursor-not-allowed'
+                        : 'bg-surface-container-low border-outline-variant'
+                    }`}
+                  >
+                    {!!(usuario && usuario.nivelJerarquico < 4 && turnos.length === 0) ? (
+                      <option value="">Sin turnos asignados</option>
+                    ) : (
+                      <>
+                        {(!usuario || usuario.nivelJerarquico >= 4) && (
+                          <option value="">Todos los Turnos</option>
+                        )}
+                        {turnos.map((t) => (
+                          <option key={t.idTurno} value={t.idTurno}>
+                            {formatearTurno(t.nombre)}
+                          </option>
+                        ))}
+                      </>
+                    )}
+                  </select>
+                )}
+                {!cargandoTurnos && (
+                  <span className="material-symbols-outlined absolute right-2.5 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none text-[18px]">expand_more</span>
+                )}
               </div>
             </div>
 
