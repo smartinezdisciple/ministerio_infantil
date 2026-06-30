@@ -1136,7 +1136,20 @@ const RegistroNinos: React.FC = () => {
                 ? `No se encontraron resultados para "${busqueda}".`
                 : 'No hay registros de ingreso aún. Use el botón "Ingresar Niño" para comenzar.'
             }
-            acciones={{ onVer: handleVer, onEditar: handleEditar, onEliminar: handleEliminar, onMarcarAsistencia: handleMarcarAsistencia }}
+            acciones={{
+              onVer: handleVer,
+              onEditar: handleEditar,
+              onEliminar: handleEliminar,
+              extras: [
+                {
+                  id: 'asistencia',
+                  icono: 'login',
+                  etiqueta: 'marcar asistencia',
+                  onClick: handleMarcarAsistencia,
+                  clases: 'border-emerald-500 bg-emerald-50 text-emerald-600 hover:bg-emerald-500 hover:border-emerald-500 hover:text-white',
+                },
+              ],
+            }}
           />
         </div>
       </div>

@@ -268,35 +268,6 @@ const PaginaSolicitudes: React.FC = () => {
       ordenablePor: 'fechaSolicitud',
       render: (s) => <span className="text-on-surface-variant">{new Date(s.fechaSolicitud).toLocaleDateString('es-ES')}</span>,
     },
-    {
-      id: 'acciones_ingreso',
-      encabezado: 'Acciones de Ingreso',
-      render: (s) => {
-        if (s.estado !== 'Pendiente' || !esCoordinador) {
-          return <span className="text-on-surface-variant/40">-</span>;
-        }
-        return (
-          <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
-            <button
-              onClick={() => handleAprobarDirecto(s)}
-              className="bg-primary text-on-primary px-3 py-1.5 rounded-lg text-label-sm font-bold flex items-center gap-1 hover:bg-primary/95 active:scale-95 transition-all shadow-sm"
-              title="Aprobar"
-            >
-              <span className="material-symbols-outlined text-[16px]">check</span>
-              Aprobar
-            </button>
-            <button
-              onClick={() => handleRechazarDirecto(s)}
-              className="bg-error text-on-error px-3 py-1.5 rounded-lg text-label-sm font-bold flex items-center gap-1 hover:bg-error/95 active:scale-95 transition-all shadow-sm"
-              title="Rechazar"
-            >
-              <span className="material-symbols-outlined text-[16px]">close</span>
-              Rechazar
-            </button>
-          </div>
-        );
-      },
-    },
   ];
 
   return (
@@ -336,6 +307,22 @@ const PaginaSolicitudes: React.FC = () => {
           acciones={{
             onVer: handleEditar,
             onEditar: handleEditar,
+            extras: [
+              {
+                id: 'aprobar',
+                icono: 'check',
+                etiqueta: 'aprobar',
+                onClick: (s) => s.estado === 'Pendiente' && esCoordinador ? handleAprobarDirecto(s) : undefined,
+                clases: 'bg-emerald-700 text-white border-emerald-700 hover:bg-emerald-800',
+              },
+              {
+                id: 'rechazar',
+                icono: 'close',
+                etiqueta: 'rechazar',
+                onClick: (s) => s.estado === 'Pendiente' && esCoordinador ? handleRechazarDirecto(s) : undefined,
+                clases: 'bg-neutral-900 text-white border-neutral-900 hover:bg-neutral-800',
+              },
+            ],
           }}
         />
 
