@@ -30,21 +30,24 @@ const app = express();
 app.use(helmet());
 
 // ── CORS con origen explícito (nunca * en producción — CLAUDE.md §4.4) ──
-const origenPermitidoRaw = process.env.CORS_ORIGEN;
-const origenPermitido = origenPermitidoRaw ? origenPermitidoRaw.replace(/\/$/, '') : undefined;
+const origenesPermitidosRaw = process.env.CORS_ORIGEN;
+const origenesPermitidos = origenesPermitidosRaw
+  ? origenesPermitidosRaw.split(',').map(o => o.trim().replace(/\/$/, ''))
+  : [];
 
 app.use(cors({
   origin: function (origin, callback) {
-    const originNormalizado = origin ? origin.replace(/\/$/, '') : '';
-    const esLocalhost = !origin
-      || originNormalizado.startsWith('http://localhost:')
+    if (!origin) { callback(null, true); return; }
+    const originNormalizado = origin.replace(/\/$/, '');
+    const esLocalhost = originNormalizado.startsWith('http://localhost:')
       || originNormalizado.startsWith('http://127.0.0.1:');
-    const esProduccion = !!origenPermitido && originNormalizado === origenPermitido;
+    const esVercelPreview = originNormalizado.endsWith('.vercel.app');
+    const esProduccion = origenesPermitidos.includes(originNormalizado);
 
-    if (esLocalhost || esProduccion) {
+    if (esLocalhost || esVercelPreview || esProduccion) {
       callback(null, true);
     } else {
-      console.warn(`⚠️ Origen rechazado por CORS. Esperado: "${origenPermitido}", Recibido: "${originNormalizado}"`);
+      console.warn(`⚠️ Origen rechazado por CORS. Permitidos: "${origenesPermitidosRaw}", Recibido: "${originNormalizado}"`);
       callback(new Error(`Origen no permitido por CORS: ${origin}`));
     }
   },
