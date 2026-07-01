@@ -16,25 +16,37 @@ if (process.env.NODE_ENV !== 'test') {
   }
 }
 
+/**
+ * Determina si se necesita SSL según el host.
+ * Neon y cualquier host remoto requieren SSL.
+ * Solo se omite para localhost/127.0.0.1 (PostgreSQL local sin SSL).
+ */
+const pgHost = process.env.PGHOST ?? 'localhost';
+const esHostLocal = pgHost === 'localhost' || pgHost === '127.0.0.1';
+const sslConfig = process.env.NODE_ENV === 'test'
+  ? false
+  : esHostLocal
+    ? false
+    : { rejectUnauthorized: false };
+
 /** Pool reutilizable de conexiones a PostgreSQL. No usar pg.Client directamente. */
 export const pool = new Pool({
-  host:     process.env.PGHOST,
+  host:     pgHost,
   port:     Number(process.env.PGPORT ?? 5432),
   database: process.env.PGDATABASE,
   user:     process.env.PGUSER,
   password: process.env.PGPASSWORD,
-  max:      5,
+  max:      10,                     // Aumentado: Neon soporta hasta 10 con el plan free
   connectionTimeoutMillis: 10000,
-  idleTimeoutMillis: 600000,
-  allowExitOnIdle: false,
-  // SSL requerido por Neon en producción
-  ssl: process.env.NODE_ENV === 'production'
-    ? { rejectUnauthorized: false }
-    : false,
+  idleTimeoutMillis:       30000,   // 30s: evitar conexiones zombi a Neon (antes 10 min)
+  allowExitOnIdle:         false,
+  ssl:      sslConfig,
 });
 
-// Keepalive: evita que Neon cierre conexiones inactivas prematuramente
-// .unref() permite que Node termine aunque el timer exista
+/**
+ * Keepalive: evita que Neon cierre conexiones inactivas por timeout.
+ * Se ejecuta cada 4 minutos. .unref() permite que Node termine aunque el timer exista.
+ */
 setInterval(() => {
   pool.query('SELECT 1').catch(() => {});
 }, 240_000).unref();

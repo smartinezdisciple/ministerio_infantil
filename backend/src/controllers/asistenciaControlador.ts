@@ -160,35 +160,56 @@ export const registrarCheckIn = async (req: Request, res: Response): Promise<voi
   }
 
   try {
-    // Verificar que la ficha está activa, es de tipo Entrada y pertenece al grupo
-    const fichaRes = await pool.query(
-      `SELECT ID_Ficha AS "idFicha", Tipo AS "tipo", ID_Grupo AS "idGrupo" FROM Fichas WHERE ID_Ficha = $1 AND Estado = 'Activa'`,
-      [idFichaEntrada]
-    );
-    if ((fichaRes.rowCount ?? 0) === 0) {
+    /**
+     * Validaciones y escritura en UN SOLO round-trip a la BD (evita la latencia de red ×3).
+     * El CTE valida: ficha activa, tipo Entrada, grupo correcto y ausencia de duplicado.
+     * Si alguna validación falla, devuelve 0 filas y consultamos qué falló en validaciones.
+     */
+    const { rows: validRows } = await pool.query(`
+      WITH validaciones AS (
+        SELECT
+          f.ID_Ficha,
+          f.Tipo,
+          f.ID_Grupo,
+          f.Estado,
+          EXISTS (
+            SELECT 1 FROM Asistencia_Ninos
+            WHERE ID_Nino = $3 AND Fecha = $1 AND ID_Turno = $2
+          ) AS ya_presente
+        FROM Fichas f
+        WHERE f.ID_Ficha = $5
+      )
+      SELECT
+        v.ID_Ficha   IS NULL              AS ficha_no_activa,
+        v.Tipo       <> 'Entrada'         AS ficha_no_entrada,
+        v.ID_Grupo   <> $4                AS ficha_grupo_incorrecto,
+        v.ya_presente                      AS ya_presente
+      FROM validaciones v
+      WHERE v.Estado = 'Activa'
+      UNION ALL
+      -- Fila vacía cuando la ficha no existe o no está activa
+      SELECT TRUE, FALSE, FALSE, FALSE
+      WHERE NOT EXISTS (SELECT 1 FROM Fichas WHERE ID_Ficha = $5 AND Estado = 'Activa')
+    `, [fechaAsistencia, idTurno, idNino, idGrupo, idFichaEntrada]);
+
+    if (validRows.length === 0 || validRows[0].ficha_no_activa) {
       res.status(409).json({ exito: false, mensaje: 'La ficha seleccionada no está activa.' });
       return;
     }
-    const ficha = fichaRes.rows[0];
-    if (ficha.tipo !== 'Entrada') {
+    if (validRows[0].ficha_no_entrada) {
       res.status(400).json({ exito: false, mensaje: 'La ficha seleccionada debe ser de tipo Entrada.' });
       return;
     }
-    if (ficha.idGrupo !== idGrupo) {
+    if (validRows[0].ficha_grupo_incorrecto) {
       res.status(400).json({ exito: false, mensaje: 'La ficha seleccionada no corresponde al grupo de la asistencia.' });
       return;
     }
-
-    // Verificar duplicado por niño + fecha + turno (constraint spec §2.10)
-    const yaPresente = await pool.query(
-      `SELECT 1 FROM Asistencia_Ninos WHERE ID_Nino = $1 AND Fecha = $2 AND ID_Turno = $3`,
-      [idNino, fechaAsistencia, idTurno]
-    );
-    if ((yaPresente.rowCount ?? 0) > 0) {
+    if (validRows[0].ya_presente) {
       res.status(409).json({ exito: false, mensaje: 'El niño ya tiene un registro de asistencia para ese turno.' });
       return;
     }
 
+    // INSERT (segundo round-trip: las validaciones previas ya confirmaron que es seguro)
     const { rows } = await pool.query(`
       INSERT INTO Asistencia_Ninos
         (Fecha, ID_Turno, ID_Nino, ID_Grupo_Asistido, ID_Ficha_Entrada,
@@ -233,21 +254,12 @@ export const registrarCheckOut = async (req: Request, res: Response): Promise<vo
   }
 
   try {
-    // Verificar que el registro existe y está pendiente
-    const checkRes = await pool.query(
-      `SELECT ID_Asistencia, Estado FROM Asistencia_Ninos WHERE ID_Asistencia = $1`,
-      [idAsistencia]
-    );
-    if ((checkRes.rowCount ?? 0) === 0) {
-      res.status(404).json({ exito: false, mensaje: 'Registro de asistencia no encontrado.' });
-      return;
-    }
-    if (checkRes.rows[0].Estado === 'Retirado') {
-      res.status(409).json({ exito: false, mensaje: 'El niño ya fue retirado.' });
-      return;
-    }
-
-    // El trigger trg_validar_retiro_nino valida la autorización en la BD
+    /**
+     * Intentar el UPDATE directamente filtrando por Estado = 'Presente'.
+     * Si devuelve 0 filas: o no existe el registro, o ya estaba retirado.
+     * Evita el SELECT previo de verificación (ahorra 1 round-trip a Neon).
+     * El trigger trg_validar_retiro_nino valida la autorización en la BD.
+     */
     const { rows, rowCount } = await pool.query(`
       UPDATE Asistencia_Ninos
       SET Hora_Salida     = $1,
@@ -262,7 +274,16 @@ export const registrarCheckOut = async (req: Request, res: Response): Promise<vo
     `, [hora, idRetiradoPor, idCheckoutPor, id_ficha_salida ?? null, idAsistencia]);
 
     if ((rowCount ?? 0) === 0) {
-      res.status(404).json({ exito: false, mensaje: 'No se pudo completar el checkout.' });
+      // Distinguir entre "no existe" y "ya retirado" (1 query extra solo en el camino de error)
+      const check = await pool.query(
+        `SELECT Estado FROM Asistencia_Ninos WHERE ID_Asistencia = $1`,
+        [idAsistencia]
+      );
+      if ((check.rowCount ?? 0) === 0) {
+        res.status(404).json({ exito: false, mensaje: 'Registro de asistencia no encontrado.' });
+      } else {
+        res.status(409).json({ exito: false, mensaje: 'El niño ya fue retirado.' });
+      }
       return;
     }
 
