@@ -218,6 +218,14 @@ const ModalRegistroNino: React.FC<PropsModalRegistro> = ({
     };
   }, [abierto]);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && abierto) onCerrar();
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [abierto, onCerrar]);
+
   const actualizarCampo = (campo: keyof FormularioNino, valor: string | boolean) => {
     setFormulario((prev) => ({ ...prev, [campo]: valor }));
     setErrores((prev) => { const copia = { ...prev }; delete copia[campo]; return copia; });
@@ -378,7 +386,6 @@ const ModalRegistroNino: React.FC<PropsModalRegistro> = ({
       role="dialog"
       aria-modal="true"
       aria-labelledby="titulo-modal-registro"
-      onClick={(e) => { if (e.target === e.currentTarget) onCerrar(); }}
     >
       <div className="bg-surface-container-lowest rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
 

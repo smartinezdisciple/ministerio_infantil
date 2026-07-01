@@ -49,6 +49,14 @@ const ModalEditarTutor: React.FC<PropsModalEditarTutor> = ({
     }
   }, [tutor]);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && abierto) alCerrar();
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [abierto, alCerrar]);
+
   if (!abierto || !tutor) return null;
 
   const manejarGuardar = async (e: React.FormEvent) => {
@@ -83,7 +91,6 @@ const ModalEditarTutor: React.FC<PropsModalEditarTutor> = ({
       role="dialog"
       aria-modal="true"
       aria-label="Editar tutor"
-      onClick={(e) => { if (e.target === e.currentTarget) alCerrar(); }}
     >
       <div className="bg-surface-container-lowest rounded-2xl shadow-xl w-full max-w-md border border-outline-variant animate-[fadeIn_0.2s_ease-out]">
         {/* Encabezado */}

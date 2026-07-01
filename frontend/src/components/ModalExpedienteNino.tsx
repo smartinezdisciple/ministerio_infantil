@@ -74,6 +74,14 @@ const ModalExpedienteNino: React.FC<PropsModalExpediente> = ({
     }
   }, [abierto, cargarExpedientes]);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && abierto) onCerrar();
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [abierto, onCerrar]);
+
   const handleCrearReporte = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!descripcion.trim()) return;
@@ -117,7 +125,6 @@ const ModalExpedienteNino: React.FC<PropsModalExpediente> = ({
       className="fixed inset-0 bg-on-surface/40 backdrop-blur-sm z-[70] flex items-center justify-center p-4"
       role="dialog"
       aria-modal="true"
-      onClick={(e) => { if (e.target === e.currentTarget && !guardando && !resolviendo) onCerrar(); }}
     >
       <div className="bg-surface-container-lowest rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden">
         
