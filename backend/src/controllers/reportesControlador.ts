@@ -300,3 +300,48 @@ export const obtenerNinosPorGrupoDatos = async (req: Request, res: Response): Pr
     respuestaError(res, 'Error al generar los datos del reporte.', 500);
   }
 };
+
+/** Mapeo de nombres de mes en español a número */
+const MAPA_MESES: Record<string, number> = {
+  enero: 1, febrero: 2, marzo: 3, abril: 4, mayo: 5, junio: 6,
+  julio: 7, agosto: 8, septiembre: 9, octubre: 10, noviembre: 11, diciembre: 12,
+};
+
+/**
+ * GET /api/reportes/cumpleanos/datos
+ * Retorna los niños que cumplen años en el mes indicado.
+ */
+export const obtenerCumpleanosDatos = async (req: Request, res: Response): Promise<void> => {
+  const { mes } = req.query;
+  const mesStr = ((mes as string) || '').trim().toLowerCase();
+  const numeroMes = MAPA_MESES[mesStr];
+
+  if (!numeroMes) {
+    res.status(400).json({ exito: false, mensaje: 'Mes inválido. Use: enero, febrero, ..., diciembre.' });
+    return;
+  }
+
+  try {
+    const { rows } = await pool.query(`
+      SELECT
+        p.ID_Persona                                  AS "idPersona",
+        p.Nombres                                     AS "nombres",
+        p.Apellidos                                   AS "apellidos",
+        CONCAT(p.Nombres, ' ', p.Apellidos)            AS "nombreCompleto",
+        TO_CHAR(p.Fecha_Nacimiento, 'YYYY-MM-DD')     AS "fechaNacimiento",
+        EXTRACT(YEAR FROM AGE(CURRENT_DATE, p.Fecha_Nacimiento))::integer AS "edad",
+        EXTRACT(MONTH FROM p.Fecha_Nacimiento)::integer  AS "mes",
+        EXTRACT(DAY FROM p.Fecha_Nacimiento)::integer   AS "dia"
+      FROM Ninos n
+      JOIN Personas p ON n.ID_Persona = p.ID_Persona
+      WHERE EXTRACT(MONTH FROM p.Fecha_Nacimiento) = $1
+        AND n.Activo = TRUE
+      ORDER BY EXTRACT(DAY FROM p.Fecha_Nacimiento), p.Apellidos, p.Nombres
+    `, [numeroMes]);
+
+    respuestaExito(res, rows);
+  } catch (err) {
+    console.error('Error al obtener datos de cumpleaños:', err);
+    respuestaError(res, 'Error al generar los datos del reporte.', 500);
+  }
+};

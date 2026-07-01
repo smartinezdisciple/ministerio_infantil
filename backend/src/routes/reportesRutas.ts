@@ -1,7 +1,7 @@
 // src/routes/reportesRutas.ts — Rutas de exportación de reportes (Spec §9.12)
 import { Router } from 'express';
 import { verificarToken, requerirNivel, restringirSiSoloLectura } from '../middlewares/autenticacion.js';
-import { exportarCSV, exportarExcel, obtenerNinosPorGrupoDatos } from '../controllers/reportesControlador.js';
+import { exportarCSV, exportarExcel, obtenerNinosPorGrupoDatos, obtenerCumpleanosDatos } from '../controllers/reportesControlador.js';
 
 const enrutador = Router();
 
@@ -13,6 +13,12 @@ enrutador.use(restringirSiSoloLectura);
  * Nivel 3+
  */
 enrutador.get('/ninos-por-grupo/datos', requerirNivel(3), obtenerNinosPorGrupoDatos);
+
+/**
+ * GET /api/reportes/cumpleanos/datos
+ * Nivel 3+
+ */
+enrutador.get('/cumpleanos/datos', requerirNivel(3), obtenerCumpleanosDatos);
 
 /**
  * GET /api/reportes/:tipo/csv

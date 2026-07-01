@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import LayoutPrincipal from '../components/LayoutPrincipal';
 import { fechaLocalHoy } from '../services/fechaUtils';
-import { exportarReporteCSV, exportarReporteExcel, obtenerNinosPorGrupoDatos, type DatosNinoPorGrupoReporte } from '../services/servicioApi';
+import { obtenerNinosPorGrupoDatos, obtenerCumpleanosDatos, type DatosNinoPorGrupoReporte, type CumpleanosReporteApi } from '../services/servicioApi';
 
 interface TipoReporte {
   id: string;
@@ -121,6 +121,8 @@ const PaginaReportes: React.FC = () => {
   const [filtros, setFiltros] = useState<Record<string, string>>({});
   const [datosNinosGrupo, setDatosNinosGrupo] = useState<DatosNinoPorGrupoReporte[]>([]);
   const [cargandoNinosGrupo, setCargandoNinosGrupo] = useState(false);
+  const [datosCumpleanos, setDatosCumpleanos] = useState<CumpleanosReporteApi[]>([]);
+  const [cargandoCumpleanos, setCargandoCumpleanos] = useState(false);
 
   // Inicialización de filtros con valores por defecto
   useEffect(() => {
@@ -160,6 +162,27 @@ const PaginaReportes: React.FC = () => {
       setDatosNinosGrupo([]);
     }
   }, [reporteSeleccionado, filtros.turno, filtros.fecha]);
+
+  useEffect(() => {
+    if (reporteSeleccionado?.id === 'cumpleanos') {
+      const cargarDatos = async () => {
+        setCargandoCumpleanos(true);
+        try {
+          const mes = filtros.mes || 'Enero';
+          const res = await obtenerCumpleanosDatos(mes);
+          setDatosCumpleanos(res);
+        } catch (err) {
+          console.error('Error cargando cumpleaños:', err);
+          setDatosCumpleanos([]);
+        } finally {
+          setCargandoCumpleanos(false);
+        }
+      };
+      cargarDatos();
+    } else {
+      setDatosCumpleanos([]);
+    }
+  }, [reporteSeleccionado, filtros.mes]);
 
   const gruposConNinos = useMemo(() => {
     if (reporteSeleccionado?.id !== 'ninos-por-grupo') return [];
@@ -202,16 +225,6 @@ const PaginaReportes: React.FC = () => {
     }
   };
 
-  const handleExportar = (formato: 'csv' | 'excel') => {
-    if (!reporteSeleccionado) return;
-    const params: Record<string, string> = {};
-    Object.entries(filtros).forEach(([k, v]) => {
-      if (v) params[k] = v;
-    });
-    if (formato === 'csv') exportarReporteCSV(reporteSeleccionado.id, params);
-    else exportarReporteExcel(reporteSeleccionado.id, params);
-  };
-
   return (
     <LayoutPrincipal titulo="Reportes">
       <div className="space-y-stack-lg max-w-[1440px]">
@@ -245,28 +258,11 @@ const PaginaReportes: React.FC = () => {
               <h2 className="text-headline-md font-headline-md text-on-surface">
                 {reporteSeleccionado.titulo}
               </h2>
-              <div className="flex gap-2">
-                {reporteSeleccionado.id === 'ninos-por-grupo' ? (
-                  <button onClick={() => window.print()} disabled={gruposConNinos.length === 0}
-                    className="flex items-center gap-2 bg-error text-on-error rounded-xl px-4 py-2 font-label-md shadow-md hover:bg-error/90 active:scale-95 transition-all disabled:opacity-50">
-                    <span className="material-symbols-outlined text-[18px]">picture_as_pdf</span>
-                    Imprimir / Guardar PDF
-                  </button>
-                ) : (
-                  <>
-                    <button onClick={() => handleExportar('csv')}
-                      className="flex items-center gap-2 border border-outline-variant text-on-surface-variant rounded-xl px-4 py-2 font-label-md hover:bg-surface-container-high transition-colors">
-                      <span className="material-symbols-outlined text-[18px]">download</span>
-                      CSV
-                    </button>
-                    <button onClick={() => handleExportar('excel')}
-                      className="flex items-center gap-2 bg-primary text-on-primary rounded-xl px-4 py-2 font-label-md shadow-md hover:bg-primary/90 active:scale-95 transition-all">
-                      <span className="material-symbols-outlined text-[18px]">table_chart</span>
-                      Excel
-                    </button>
-                  </>
-                )}
-              </div>
+              <button onClick={() => window.print()}
+                className="flex items-center gap-2 bg-error text-on-error rounded-xl px-4 py-2 font-label-md shadow-md hover:bg-error/90 active:scale-95 transition-all">
+                <span className="material-symbols-outlined text-[18px]">picture_as_pdf</span>
+                Imprimir / Guardar PDF
+              </button>
             </div>
 
             {/* Filtros */}
@@ -287,7 +283,7 @@ const PaginaReportes: React.FC = () => {
               ))}
             </div>
 
-            {/* Vista Previa en Pantalla para Reporte Niños por Grupo */}
+            {/* Vista Previa en Pantalla */}
             {reporteSeleccionado.id === 'ninos-por-grupo' && (
               <div className="mt-8 pt-6 border-t border-outline-variant/30">
                 <h3 className="text-title-lg font-headline-md text-on-surface mb-4">Vista Previa del Reporte</h3>
@@ -352,11 +348,53 @@ const PaginaReportes: React.FC = () => {
                 )}
               </div>
             )}
+
+            {/* Vista Previa — Cumpleaños */}
+            {reporteSeleccionado.id === 'cumpleanos' && (
+              <div className="mt-8 pt-6 border-t border-outline-variant/30">
+                <h3 className="text-title-lg font-headline-md text-on-surface mb-4">Vista Previa del Reporte</h3>
+                {cargandoCumpleanos ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="w-8 h-8 rounded-full border-4 border-primary border-t-transparent animate-spin" />
+                  </div>
+                ) : datosCumpleanos.length === 0 ? (
+                  <div className="text-center py-12 bg-surface-container-low rounded-xl border border-dashed border-outline-variant">
+                    <p className="text-body-md text-on-surface-variant font-medium">No hay niños que cumplan años en {filtros.mes || 'el mes seleccionado'}.</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="bg-primary-container text-on-primary-container">
+                          <th className="px-4 py-3 text-label-sm font-bold">Nombre Completo</th>
+                          <th className="px-4 py-3 text-label-sm font-bold">Día</th>
+                          <th className="px-4 py-3 text-label-sm font-bold">Edad</th>
+                          <th className="px-4 py-3 text-label-sm font-bold">Fecha de Nacimiento</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {datosCumpleanos.map((n) => (
+                          <tr key={n.idPersona} className="border-b border-outline-variant/20 hover:bg-surface-container-low">
+                            <td className="px-4 py-3 text-body-sm font-semibold text-on-surface">{n.nombreCompleto}</td>
+                            <td className="px-4 py-3 text-body-sm text-on-surface-variant">{n.dia}</td>
+                            <td className="px-4 py-3 text-body-sm text-on-surface-variant">{n.edad} años</td>
+                            <td className="px-4 py-3 text-body-sm text-on-surface-variant">
+                              {new Date(n.fechaNacimiento + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
         </div>
 
-        {/* Área de Impresión (PDF) Oculta en pantalla */}
+        {/* ── Área de Impresión (PDF) ── */}
+        {/* Niños por Grupo */}
         {reporteSeleccionado?.id === 'ninos-por-grupo' && gruposConNinos.length > 0 && (
           <div id="printable-report-area" className="hidden print:block">
             <div style={{ textAlign: 'center', marginBottom: '30px' }}>
@@ -404,6 +442,40 @@ const PaginaReportes: React.FC = () => {
                 </table>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* Cumpleaños */}
+        {reporteSeleccionado?.id === 'cumpleanos' && datosCumpleanos.length > 0 && (
+          <div id="printable-cumpleanos" className="hidden print:block">
+            <div style={{ textAlign: 'center', marginBottom: '30px' }}>
+              <h1 style={{ fontSize: '24pt', fontWeight: 'bold', color: '#2a7de1', margin: '0' }}>
+                Reporte de Cumpleaños
+              </h1>
+              <p style={{ fontSize: '12pt', color: '#555', margin: '5px 0 0 0' }}>
+                Mes: {filtros.mes || 'Todos'} • Total: {datosCumpleanos.length} niños
+              </p>
+            </div>
+            <table className="print-table">
+              <thead>
+                <tr>
+                  <th style={{ width: '40%' }}>Nombre Completo</th>
+                  <th style={{ width: '15%' }}>Día</th>
+                  <th style={{ width: '15%' }}>Edad</th>
+                  <th style={{ width: '30%' }}>Fecha de Nacimiento</th>
+                </tr>
+              </thead>
+              <tbody>
+                {datosCumpleanos.map((n) => (
+                  <tr key={n.idPersona}>
+                    <td><strong>{n.nombreCompleto}</strong></td>
+                    <td>{n.dia}</td>
+                    <td>{n.edad} años</td>
+                    <td>{new Date(n.fechaNacimiento + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </div>

@@ -985,6 +985,21 @@ export const obtenerNinosPorGrupoDatos = (turno?: string, fecha?: string) => {
   return get<DatosNinoPorGrupoReporte[]>(`/reportes/ninos-por-grupo/datos${query}`);
 };
 
+export interface CumpleanosReporteApi {
+  idPersona: number;
+  nombres: string;
+  apellidos: string;
+  nombreCompleto: string;
+  fechaNacimiento: string;
+  edad: number;
+  mes: number;
+  dia: number;
+}
+
+export const obtenerCumpleanosDatos = (mes: string) => {
+  return get<CumpleanosReporteApi[]>(`/reportes/cumpleanos/datos?mes=${encodeURIComponent(mes)}`);
+};
+
 // ══════════════════════════════════════════════════════════════════
 // TURNOS Y EVENTOS (Spec §9.13)
 // ══════════════════════════════════════════════════════════════════
