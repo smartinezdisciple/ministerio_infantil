@@ -60,7 +60,7 @@ export const listarAsistenciaDia = async (req: Request, res: Response): Promise<
         END                                            AS "nombreGrupo",
         g.Edad_Minima                                  AS "edadMinima",
         g.Edad_Maxima                                  AS "edadMaxima",
-        COALESCE(sub.total, 1)                         AS "totalAsistencias"
+        an.Es_Primera_Vez                              AS "esPrimeraVez"
       FROM   Asistencia_Ninos an
       JOIN   Personas   p    ON p.ID_Persona    = an.ID_Nino
       JOIN   Ninos      ni   ON ni.ID_Persona   = an.ID_Nino
@@ -70,7 +70,6 @@ export const listarAsistenciaDia = async (req: Request, res: Response): Promise<
       LEFT JOIN Fichas     fs  ON fs.ID_Ficha   = an.ID_Ficha_Salida
       LEFT JOIN Personas   ting ON ting.ID_Persona = an.ID_Ingresado_Por
       LEFT JOIN Personas   tret ON tret.ID_Persona = an.ID_Retirado_Por
-      LEFT JOIN (SELECT ID_Nino, COUNT(*)::INTEGER AS total FROM Asistencia_Ninos GROUP BY ID_Nino) sub ON sub.ID_Nino = an.ID_Nino
       WHERE  an.Fecha = $1${filtros}
       ORDER  BY an.Hora_Entrada DESC
     `, params);
@@ -106,7 +105,7 @@ export const listarAsistenciaDia = async (req: Request, res: Response): Promise<
       idFichaEntrada: number; codigoFichaEntrada: string; idFichaSalida?: number; codigoFichaSalida?: string;
       estado: string; acompananteEnAula: boolean; ingresadoPor: string; retiradoPor?: string; notas?: string;
       nombres: string; apellidos: string; nombreCompleto: string; fechaNacimiento: string;
-      observacionesGenerales?: string; totalAsistencias: number;
+      observacionesGenerales?: string; esPrimeraVez: boolean;
     }) => ({
       idAsistencia:       r.idAsistencia,
       fecha:              r.fecha,
@@ -132,7 +131,7 @@ export const listarAsistenciaDia = async (req: Request, res: Response): Promise<
         observacionesGenerales: r.observacionesGenerales,
         grupo: { idGrupo: r.idGrupo, nombre: r.nombreGrupo, edadMinima: r.edadMinima, edadMaxima: r.edadMaxima },
         alertasMedicas:       alertas[r.idPersona] ?? [],
-        totalAsistencias:     r.totalAsistencias,
+        esPrimeraVez:     r.esPrimeraVez,
       },
     }));
 
@@ -194,13 +193,15 @@ export const registrarCheckIn = async (req: Request, res: Response): Promise<voi
       INSERT INTO Asistencia_Ninos
         (Fecha, ID_Turno, ID_Nino, ID_Grupo_Asistido, ID_Ficha_Entrada,
          ID_Ingresado_Por, Hora_Entrada, Registrado_Por, Acompanante_En_Aula,
-         motivo_excepcion_asistencia)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+         motivo_excepcion_asistencia, Es_Primera_Vez)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
+        (SELECT NOT EXISTS (SELECT 1 FROM Asistencia_Ninos WHERE ID_Nino = $3)))
       RETURNING ID_Asistencia    AS "idAsistencia",
                 Fecha             AS "fecha",
                 ID_Turno          AS "idTurno",
                 to_char(Hora_Entrada - INTERVAL '6 hours', 'HH12:MI AM') AS "horaEntrada",
-                Estado            AS "estado"
+                Estado            AS "estado",
+                Es_Primera_Vez    AS "esPrimeraVez"
     `, [
       fechaAsistencia, idTurno, idNino, idGrupo, idFichaEntrada,
       idIngresadoPor ?? idRegistradoPor,

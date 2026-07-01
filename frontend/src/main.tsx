@@ -11,7 +11,6 @@ import './index.css';
 const PaginaInicioSesion = lazy(() => import('./pages/PaginaInicioSesion'));
 const PaginaDashboard = lazy(() => import('./pages/PaginaDashboard'));
 const PaginaAsistenciaGeneral = lazy(() => import('./pages/PaginaAsistenciaGeneral'));
-const PaginaAsistenciaPorGrupo = lazy(() => import('./pages/PaginaAsistenciaPorGrupo'));
 const PaginaAsistenciaPersonal = lazy(() => import('./pages/PaginaAsistenciaPersonal'));
 const PaginaRegistroPersonal = lazy(() => import('./pages/PaginaRegistroPersonal'));
 const PaginaDirectorioContactos = lazy(() => import('./pages/PaginaDirectorioContactos'));
@@ -68,9 +67,6 @@ ReactDOM.createRoot(elementoRaiz).render(
             } />
             <Route path="/asistencia-general" element={
               <RutaProtegida nivelMinimo={1}><PaginaAsistenciaGeneral /></RutaProtegida>
-            } />
-            <Route path="/asistencia-grupo" element={
-              <RutaProtegida nivelMinimo={1}><PaginaAsistenciaPorGrupo /></RutaProtegida>
             } />
             <Route path="/directorio" element={
               <RutaProtegida nivelMinimo={1}><PaginaDirectorioContactos /></RutaProtegida>

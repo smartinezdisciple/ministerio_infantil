@@ -16,7 +16,6 @@ const ITEMS_MENU: ItemMenu[] = [
   { ruta: '/dashboard', etiqueta: 'Tablero', icono: 'dashboard', nivelMinimo: 1 },
   { ruta: '/ingreso-ninos', etiqueta: 'Ingreso de Niños', icono: 'child_care', nivelMinimo: 2 },
   { ruta: '/asistencia-general', etiqueta: 'Asistencia General', icono: 'fact_check', nivelMinimo: 1 },
-  { ruta: '/asistencia-grupo', etiqueta: 'Por Grupo', icono: 'groups', nivelMinimo: 1 },
   { ruta: '/directorio', etiqueta: 'Directorio', icono: 'contact_phone', nivelMinimo: 1 },
   { ruta: '/asistencia-personal', etiqueta: 'Personal', icono: 'badge', nivelMinimo: 3 },
   { ruta: '/ingreso-personal', etiqueta: 'Ingreso Personal', icono: 'person_add', nivelMinimo: 3 },

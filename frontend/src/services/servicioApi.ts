@@ -349,21 +349,6 @@ export interface FichaApi {
 
 export const listarFichasActivas = () => get<FichaApi[]>('/fichas?estado=Activa');
 
-// ══════════════════════════════════════════════════════════════════
-// ASISTENCIA POR GRUPO — GET /api/grupos/:id/asistencia-hoy?idTurno=X
-//                         GET /api/grupos/turnos-hoy
-//                         GET /api/personal/mis-turnos
-//                         PATCH /api/asistencia-grupo/:id
-// ══════════════════════════════════════════════════════════════════
-
-/** Turno simplificado para selector de asistencia por grupo */
-export interface TurnoSimpleApi {
-  idTurno:    number;
-  nombre:     string;
-  diaSemana:  string;
-  horaInicio: string;
-}
-
 export interface GrupoApi {
   idGrupo: number;
   tipo?: 'Entrada' | 'Salida';
@@ -373,39 +358,7 @@ export interface GrupoApi {
   activo?: boolean;
 }
 
-/**
- * Fila de asistencia en tiempo real del grupo.
- * Solo incluye niños con check-in real hoy (INNER JOIN en backend).
- */
-export interface FilaGrupoApi {
-  nino:         NinoApi;
-  idAsistencia: number;          // siempre presente (check-in confirmado)
-  idTurno:      number;
-  turno:        string;
-  estado:       'Presente' | 'Retirado';
-  horaEntrada:  string;
-  horaSalida?:  string;
-}
-
 export const listarGrupos = () => get<GrupoApi[]>('/grupos');
-
-/** Turnos que tienen al menos un check-in hoy (para Coordinador General) */
-export const listarTurnosHoy = () => get<TurnoSimpleApi[]>('/grupos/turnos-hoy');
-
-/** Turnos asignados al usuario logueado (para Staff/Maestros/Colaboradores) */
-export const listarMisTurnos = () => get<TurnoSimpleApi[]>('/personal/mis-turnos');
-
-/** Lista niños con check-in en el grupo hoy; idTurno obligatorio en producción */
-export const listarAsistenciaGrupo = (idGrupo: number, idTurno?: number, fecha?: string) => {
-  const queryParams = new URLSearchParams();
-  if (idTurno) queryParams.append('idTurno', String(idTurno));
-  if (fecha) queryParams.append('fecha', fecha);
-  const qs = queryParams.toString();
-  return get<FilaGrupoApi[]>(`/grupos/${idGrupo}/asistencia-hoy${qs ? `?${qs}` : ''}`);
-};
-
-export const actualizarEstadoAsistenciaGrupo = (idAsistencia: number, estado: string) =>
-  patch<FilaGrupoApi>(`/asistencia-grupo/${idAsistencia}`, { estado });
 
 // ══════════════════════════════════════════════════════════════════
 // ASISTENCIA PERSONAL — GET /api/personal/asistencia-hoy
