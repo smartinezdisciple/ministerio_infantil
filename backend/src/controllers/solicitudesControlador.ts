@@ -4,6 +4,7 @@
 import { Request, Response } from 'express';
 import pool from '../config/db.js';
 import { respuestaExito, respuestaError, respuestaProhibido } from '../utils/respuesta.js';
+import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 
 // Helper para sanitizar y mapear valores del cuerpo de la solicitud a tipos DB/enums
@@ -683,10 +684,10 @@ export const aprobarSolicitud = async (req: Request, res: Response): Promise<voi
     }
 
     const { id } = req.params;
-    const { notas, idRolSolicitado, usuario, contrasena, idGrupoAsignado, idTurnos } = req.body;
+    const { notas } = req.body;
 
     const verificacion = await pool.query(
-      `SELECT Estado AS "estado", ID_Persona AS "idPersona", ID_Rol_Solicitado AS "idRolSolicitado" 
+      `SELECT Estado AS "estado", ID_Persona AS "idPersona" 
        FROM Solicitudes_Personal WHERE ID_Solicitud = $1`,
       [id]
     );
@@ -704,65 +705,23 @@ export const aprobarSolicitud = async (req: Request, res: Response): Promise<voi
     }
 
     const idPersona = solicitud.idPersona;
-    const rolFinal = idRolSolicitado ?? solicitud.idRolSolicitado;
     const idResueltoPor = req.usuario!.idPersona;
 
     const cliente = await pool.connect();
     try {
       await cliente.query('BEGIN');
-      // Requerido por trigger trg_auditoria_cambio_estado_solicitud y trg_propagar_datos
       await cliente.query(`SET LOCAL app.id_autorizador = '${idResueltoPor}'`);
 
-      // Si se proporcionaron credenciales, registrar el usuario en Personal_Sistema
-      if (usuario && contrasena) {
-        // Verificar si el usuario ya existe
-        const usuarioDuplicado = await cliente.query(
-          `SELECT 1 FROM Personal_Sistema WHERE Usuario = $1`,
-          [usuario.trim()]
-        );
-        if ((usuarioDuplicado.rowCount ?? 0) > 0) {
-          throw new Error('Este nombre de usuario ya está en uso.');
-        }
+      const tempUsuario = `temp_${idPersona}`;
+      const tempPassword = crypto.randomUUID();
+      const hash = await bcrypt.hash(tempPassword, 12);
 
-        const hash = await bcrypt.hash(contrasena.trim(), 12);
-
-        // Crear registro en Personal_Sistema
-        await cliente.query(
-          `INSERT INTO Personal_Sistema 
-             (ID_Persona, ID_Rol, Usuario, Password_Hash, Fecha_Ingreso_Servicio, ID_Creado_Por, ID_Autorizado_Por, ID_Solicitud_Origen)
-           VALUES ($1, $2, $3, $4, CURRENT_DATE, $5, $6, $7)`,
-          [idPersona, rolFinal, usuario.trim(), hash, idResueltoPor, idResueltoPor, id]
-        );
-
-        // Crear registros de Turnos
-        if (Array.isArray(idTurnos) && idTurnos.length > 0) {
-          for (const idTurno of idTurnos) {
-            await cliente.query(
-              `INSERT INTO Personal_Turnos (ID_Personal, ID_Turno) 
-               VALUES ($1, $2) ON CONFLICT DO NOTHING`,
-              [idPersona, idTurno]
-            );
-          }
-        }
-
-        // Obtener el nombre del rol para validar si requiere grupo
-        const rolRes = await cliente.query(
-          `SELECT Nombre_Rol AS "nombreRol" FROM Roles WHERE ID_Rol = $1`,
-          [rolFinal]
-        );
-        const nombreRol = rolRes.rows[0]?.nombreRol;
-
-        if ((nombreRol === 'Colaborador' || nombreRol === 'Maestro') && idGrupoAsignado) {
-          const primerTurno = Array.isArray(idTurnos) && idTurnos.length > 0 ? idTurnos[0] : null;
-          if (primerTurno) {
-            await cliente.query(
-              `INSERT INTO Personal_Grupos (ID_Personal, ID_Grupo, ID_Turno, Fecha_Asignacion)
-               VALUES ($1, $2, $3, CURRENT_DATE)`,
-              [idPersona, idGrupoAsignado, primerTurno]
-            );
-          }
-        }
-      }
+      await cliente.query(
+        `INSERT INTO Personal_Sistema 
+           (ID_Persona, ID_Rol, Usuario, Password_Hash, Fecha_Ingreso_Servicio, ID_Creado_Por, ID_Autorizado_Por, ID_Solicitud_Origen)
+         VALUES ($1, 1, $2, $3, CURRENT_DATE, $4, $5, $6)`,
+        [idPersona, tempUsuario, hash, idResueltoPor, idResueltoPor, id]
+      );
 
       await cliente.query(
         `UPDATE Solicitudes_Personal
@@ -770,7 +729,7 @@ export const aprobarSolicitud = async (req: Request, res: Response): Promise<voi
              ID_Resuelto_Por   = $1,
              Fecha_Resolucion  = NOW(),
              Notas_Coordinador = $2,
-             ID_Rol_Solicitado = COALESCE($3, ID_Rol_Solicitado),
+             ID_Rol_Solicitado = 1,
              Estado_Civil      = COALESCE(Estado_Civil, 'Soltero'::estado_civil),
              Condicion_Civil   = COALESCE(Condicion_Civil, 'Ninguna'::condicion_civil),
              Tiene_Hijos       = COALESCE(Tiene_Hijos, FALSE),
@@ -794,8 +753,8 @@ export const aprobarSolicitud = async (req: Request, res: Response): Promise<voi
                  THEN 'Completado' 
                  ELSE Capacitacion_Detalle 
              END
-         WHERE ID_Solicitud = $4`,
-        [idResueltoPor, notas ?? null, idRolSolicitado ?? null, id]
+         WHERE ID_Solicitud = $3`,
+        [idResueltoPor, notas ?? null, id]
       );
 
       await cliente.query('COMMIT');
@@ -941,7 +900,58 @@ export const marcarEnRevision = async (req: Request, res: Response): Promise<voi
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 7. GET /api/solicitudes/:id/requisitos — Listar requisitos
+// 7. DELETE /api/solicitudes/:id — Eliminar solicitud (nivel 4+)
+// ─────────────────────────────────────────────────────────────────────────────
+export const eliminarSolicitud = async (req: Request, res: Response): Promise<void> => {
+  try {
+    if ((req.usuario?.nivelJerarquico ?? 0) < 4) {
+      respuestaProhibido(res, 'Solo el Coordinador General puede eliminar solicitudes.');
+      return;
+    }
+
+    const { id } = req.params;
+
+    const verificacion = await pool.query(
+      `SELECT ID_Solicitud, Estado FROM Solicitudes_Personal WHERE ID_Solicitud = $1`,
+      [id]
+    );
+
+    if ((verificacion.rowCount ?? 0) === 0) {
+      respuestaError(res, 'Solicitud no encontrada', 404);
+      return;
+    }
+
+    const cliente = await pool.connect();
+    try {
+      await cliente.query('BEGIN');
+      await cliente.query(`SET LOCAL app.id_autorizador = '${req.usuario!.idPersona}'`);
+
+      // Desvincular Personal_Sistema si existe
+      await cliente.query(
+        `UPDATE Personal_Sistema SET ID_Solicitud_Origen = NULL WHERE ID_Solicitud_Origen = $1`,
+        [id]
+      );
+
+      await cliente.query(`DELETE FROM Solicitudes_Requisitos WHERE ID_Solicitud = $1`, [id]);
+      await cliente.query(`DELETE FROM Solicitudes_Historial_Estado WHERE ID_Solicitud = $1`, [id]);
+      await cliente.query(`DELETE FROM Solicitudes_Personal WHERE ID_Solicitud = $1`, [id]);
+
+      await cliente.query('COMMIT');
+      res.json({ exito: true, mensaje: 'Solicitud eliminada correctamente.' });
+    } catch (err) {
+      await cliente.query('ROLLBACK');
+      throw err;
+    } finally {
+      cliente.release();
+    }
+  } catch (error) {
+    console.error('Error al eliminar solicitud:', error);
+    respuestaError(res, 'Error interno al eliminar la solicitud', 500);
+  }
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 8. GET /api/solicitudes/:id/requisitos — Listar requisitos
 // ─────────────────────────────────────────────────────────────────────────────
 export const obtenerRequisitosSolicitud = async (req: Request, res: Response): Promise<void> => {
   try {

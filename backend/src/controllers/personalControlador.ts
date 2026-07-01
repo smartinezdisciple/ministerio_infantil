@@ -476,132 +476,8 @@ export const actualizarPersonal = async (req: Request, res: Response) => {
   }
 };
 
-/**
- * GET /api/personal/:id/perfil
- * Perfil completo: Info_Personal, Info_Iglesia (v5.1), teléfonos, direcciones, grupos, turnos, requisitos.
- */
-export const obtenerPerfilPersonal = async (req: Request, res: Response) => {
-  const id = Number(req.params.id);
-  if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ exito: false, mensaje: 'ID invalido.' });
-  try {
-    const baseRes = await pool.query(`
-      SELECT p.ID_Persona AS "idPersona", p.Nombres AS "nombres", p.Apellidos AS "apellidos",
-             p.Sexo AS "sexo", p.Cedula AS "cedula",
-             ps.Usuario AS "usuario", ps.version AS "version", r.ID_Rol AS "idRol", r.Nombre_Rol AS "rol",
-             r.Nivel_Jerarquico AS "nivelJerarquico",
-             ps.Fecha_Ingreso_Servicio AS "fechaIngreso", ps.Activo AS "activo"
-      FROM Personal_Sistema ps
-      JOIN Personas p ON p.ID_Persona = ps.ID_Persona
-      JOIN Roles r ON r.ID_Rol = ps.ID_Rol
-      WHERE ps.ID_Persona = $1
-    `, [id]);
+// DELETE: use perfil-completo instead
 
-    if ((baseRes.rowCount ?? 0) === 0) return res.status(404).json({ exito: false, mensaje: 'Personal no encontrado.' });
-
-    const [ip, ii, tels, dirs, gr, tr, rq, sus] = await Promise.all([
-      pool.query(`
-        SELECT Estado_Civil AS "estadoCivil", Condicion_Civil AS "condicionCivil", Nombre_Conyuge AS "nombreConyuge",
-               Tiene_Hijos AS "tieneHijos", Numero_Hijos AS "numeroHijos",
-               Ocupacion AS "ocupacion", Centro_Laboral AS "centroLaboral",
-               Nivel_Academico AS "nivelAcademico"
-        FROM Personal_Info_Personal WHERE ID_Persona = $1
-      `, [id]),
-      pool.query(`
-        SELECT Estado_Operativo AS "estadoOperativo",
-               Bautizado_Agua AS "bautizadoAgua",
-               Fecha_Bautismo AS "fechaBautismo",
-               Fecha_Bautismo_Precision AS "fechaBautismoPrecision",
-               Tiempo_Iglesia_Meses AS "tiempoIglesiaMeses",
-               Ministerio_Adicional AS "ministerioAdicional",
-               Clases_Biblicas_Ninos AS "clasesBiblicasNinos",
-               Clases_Biblicas_Detalle AS "clasesBiblicasDetalle",
-               Capacitacion_Ensenanza AS "capacitacionEnsenanza",
-               Capacitacion_Detalle AS "capacitacionDetalle",
-               Observaciones_Espirituales AS "observacionesEspirituales",
-               Asistio_Otra_Iglesia AS "asistioOtraIglesia",
-               Nombre_Otra_Iglesia AS "nombreOtraIglesia",
-               Denominacion_Otra_Iglesia AS "denominacionOtraIglesia",
-               pii.ID_Red AS "idRed",
-               rd.Nombre AS "red",
-               pii.ID_Circulo AS "idCirculo",
-               ca.Nombre AS "circuloAmistad",
-               Circulo_Amistad_Desde AS "circuloAmistadDesde",
-               pii.ID_Lider AS "idLider",
-               p_lid.Nombres || ' ' || p_lid.Apellidos AS "nombreLider",
-               tp_lid.Numero AS "telLider"
-        FROM Personal_Info_Iglesia pii
-        LEFT JOIN Redes rd ON pii.ID_Red = rd.ID_Red
-        LEFT JOIN Circulos_Amistad ca ON pii.ID_Circulo = ca.ID_Circulo
-        LEFT JOIN Personal_Lideres pl ON pii.ID_Lider = pl.ID_Lider
-        LEFT JOIN Personas p_lid ON pl.ID_Persona = p_lid.ID_Persona
-        LEFT JOIN Telefonos_Personas tp_lid
-               ON p_lid.ID_Persona = tp_lid.ID_Persona
-              AND tp_lid.Es_Principal = TRUE AND tp_lid.Activo = TRUE
-        WHERE pii.ID_Persona = $1
-      `, [id]),
-      pool.query(`
-        SELECT ID_Telefono AS "idTelefono", Tipo AS "tipo", Numero AS "numero",
-               Tiene_Whatsapp AS "tieneWhatsapp", Es_Principal AS "esPrincipal"
-        FROM Telefonos_Personas
-        WHERE ID_Persona = $1 AND Activo = TRUE
-        ORDER BY Es_Principal DESC, ID_Telefono ASC
-      `, [id]),
-      pool.query(`
-        SELECT ID_Direccion AS "idDireccion", Tipo_Direccion AS "tipoDireccion",
-               Ciudad_Departamento AS "ciudadDepartamento", Municipio AS "municipio",
-               Distrito AS "distrito", Barrio AS "barrio", Direccion_Exacta AS "direccionExacta",
-               Es_Principal AS "esPrincipal"
-        FROM Personas_Direcciones
-        WHERE ID_Persona = $1 AND Activo = TRUE
-        ORDER BY Es_Principal DESC, ID_Direccion ASC
-      `, [id]),
-      pool.query(`
-        SELECT pg.ID_Grupo AS "idGrupo", g.Nombre AS "grupo"
-        FROM Personal_Grupos pg JOIN Grupos g ON g.ID_Grupo = pg.ID_Grupo
-        WHERE pg.ID_Personal = $1
-      `, [id]),
-      pool.query(`
-        SELECT pt.ID_Turno AS "idTurno", t.Nombre AS "turno"
-        FROM Personal_Turnos pt JOIN Turnos t ON t.ID_Turno = pt.ID_Turno
-        WHERE pt.ID_Personal = $1
-      `, [id]),
-      pool.query(`
-        SELECT req.Nombre AS "nombre", req.Tipo AS "tipo", req.Obligatorio AS "obligatorio",
-               pr.Cumplido AS "cumplido", pr.Fecha_Cumplido AS "fechaCumplido"
-        FROM Personal_Requisitos pr
-        JOIN Requisitos req ON req.ID_Requisito = pr.ID_Requisito
-        WHERE pr.ID_Personal = $1 ORDER BY req.Obligatorio DESC
-      `, [id]),
-      pool.query(`
-        SELECT ID_Suspension AS "idSuspension", Fecha_Inicio AS "fechaInicio",
-               Fecha_Fin AS "fechaFin", Categoria_Motivo AS "categoriaMotivo", Motivo AS "motivo"
-        FROM Personal_Suspensiones_Servicio
-        WHERE ID_Personal = $1 AND Activo = TRUE
-          AND Fecha_Inicio <= CURRENT_DATE
-          AND (Fecha_Fin IS NULL OR Fecha_Fin >= CURRENT_DATE)
-        LIMIT 1
-      `, [id]),
-    ]);
-
-    res.json({
-      exito: true,
-      datos: {
-        ...baseRes.rows[0],
-        infoPersonal:    ip.rows[0] ?? null,
-        infoIglesia:     ii.rows[0] ?? null,
-        telefonos:       tels.rows,
-        direcciones:     dirs.rows,
-        grupos:          gr.rows,
-        turnos:          tr.rows,
-        requisitos:      rq.rows,
-        suspensionActiva: sus.rows[0] ?? null,
-      },
-    });
-  } catch (err) {
-    console.error('Error perfil:', err);
-    res.status(500).json({ exito: false, mensaje: 'Error interno.' });
-  }
-};
 
 /**
  * GET /api/personal/:id/perfil-completo
@@ -612,10 +488,100 @@ export const obtenerPerfilCompleto = async (req: Request, res: Response) => {
   if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ exito: false, mensaje: 'ID invalido.' });
   try {
     const { rows } = await pool.query(`
-      SELECT * FROM v_perfil_completo_personal WHERE ID_Persona = $1
+      SELECT
+        p.ID_Persona                                   AS "idPersona",
+        p.Nombres                                      AS "nombres",
+        p.Apellidos                                    AS "apellidos",
+        p.Sexo                                         AS "sexo",
+        p.Cedula                                       AS "cedula",
+        ps.Usuario                                     AS "usuario",
+        r.Nombre_Rol                                   AS "rol",
+        r.Nivel_Jerarquico                             AS "nivelJerarquico",
+        ps.Fecha_Ingreso_Servicio                      AS "fechaIngreso",
+        ps.Activo                                      AS "activo",
+        pip.Estado_Civil                               AS "estadoCivil",
+        pip.Nombre_Conyuge                             AS "nombreConyuge",
+        pip.Tiene_Hijos                                AS "tieneHijos",
+        pip.Numero_Hijos                               AS "numeroHijos",
+        pip.Ocupacion                                  AS "ocupacion",
+        pip.Centro_Laboral                             AS "centroLaboral",
+        pip.Nivel_Academico                            AS "nivelAcademico",
+        pii.Bautizado_Agua                             AS "bautizadoAgua",
+        pii.Fecha_Bautismo                             AS "fechaBautismo",
+        pii.Estado_Operativo                           AS "estadoOperativo",
+        rd.Nombre                                      AS "red",
+        ca.Nombre                                      AS "circuloAmistad",
+        pii.Circulo_Amistad_Desde                      AS "circuloAmistadDesde",
+        pii.Tiempo_Iglesia_Meses                       AS "tiempoIglesiaMeses",
+        pii.Ministerio_Adicional                       AS "ministerioAdicional",
+        pii.Clases_Biblicas_Ninos                      AS "clasesBiblicasNinos",
+        pii.Capacitacion_Ensenanza                     AS "capacitacionEnsenanza",
+        pii.Observaciones_Espirituales                 AS "observacionesEspirituales",
+        pl.ID_Lider                                    AS "idLider",
+        pl_nom.Nombres || ' ' || pl_nom.Apellidos      AS "nombreLider",
+        tp_lider.Numero                                AS "telLider",
+        (SELECT json_agg(json_build_object(
+          'idTelefono', tp.ID_Telefono, 'tipo', tp.Tipo, 'numero', tp.Numero,
+          'tieneWhatsapp', tp.Tiene_Whatsapp, 'esPrincipal', tp.Es_Principal
+        ) ORDER BY tp.Es_Principal DESC)
+         FROM Telefonos_Personas tp
+         WHERE tp.ID_Persona = p.ID_Persona AND tp.Activo = TRUE) AS "telefonos",
+        (SELECT json_agg(json_build_object(
+          'idDireccion', pd.ID_Direccion, 'tipoDireccion', pd.Tipo_Direccion,
+          'ciudadDepartamento', pd.Ciudad_Departamento, 'municipio', pd.Municipio,
+          'distrito', pd.Distrito, 'barrio', pd.Barrio, 'direccionExacta', pd.Direccion_Exacta,
+          'esPrincipal', pd.Es_Principal
+        ) ORDER BY pd.Es_Principal DESC)
+         FROM Personas_Direcciones pd
+         WHERE pd.ID_Persona = p.ID_Persona AND pd.Activo = TRUE) AS "direcciones",
+        (SELECT json_agg(json_build_object(
+          'idGrupo', pg.ID_Grupo, 'grupo', g.Nombre
+        ))
+         FROM Personal_Grupos pg
+         JOIN Grupos g ON g.ID_Grupo = pg.ID_Grupo
+         WHERE pg.ID_Personal = ps.ID_Persona) AS "grupos",
+        (SELECT json_agg(json_build_object(
+          'idTurno', pt.ID_Turno, 'turno', t.Nombre
+        ))
+         FROM Personal_Turnos pt
+         JOIN Turnos t ON t.ID_Turno = pt.ID_Turno
+         WHERE pt.ID_Personal = ps.ID_Persona) AS "turnos",
+        (SELECT json_agg(json_build_object(
+          'nombre', rp.Nombre, 'tipo', rp.Tipo, 'obligatorio', rp.Obligatorio,
+          'cumplido', COALESCE(rp_cum.Cumplido, FALSE),
+          'fechaCumplido', rp_cum.Fecha_Cumplido::TEXT
+        ) ORDER BY rp.Obligatorio DESC, rp.Nombre)
+         FROM Requisitos_Personal rp
+         LEFT JOIN Requisitos_Cumplidos rp_cum ON rp_cum.ID_Requisito = rp.ID_Requisito
+           AND rp_cum.ID_Personal = ps.ID_Persona
+         WHERE rp.Activo = TRUE) AS "requisitos",
+        (SELECT json_agg(json_build_object(
+          'idSuspension', pss.ID_Suspension, 'fechaInicio', pss.Fecha_Inicio::TEXT,
+          'fechaFin', pss.Fecha_Fin::TEXT, 'categoriaMotivo', pss.Categoria_Motivo,
+          'motivo', pss.Motivo
+        ) ORDER BY pss.Fecha_Inicio DESC LIMIT 1)
+         FROM Personal_Suspensiones_Servicio pss
+         WHERE pss.ID_Personal = ps.ID_Persona AND pss.Activo = TRUE
+           AND pss.Fecha_Inicio <= CURRENT_DATE
+           AND (pss.Fecha_Fin IS NULL OR pss.Fecha_Fin >= CURRENT_DATE)) AS "suspensionActiva"
+      FROM Personal_Sistema ps
+      JOIN Personas p ON p.ID_Persona = ps.ID_Persona
+      JOIN Roles r ON r.ID_Rol = ps.ID_Rol
+      LEFT JOIN Personal_Info_Personal pip ON pip.ID_Persona = ps.ID_Persona
+      LEFT JOIN Personal_Info_Iglesia pii ON pii.ID_Persona = ps.ID_Persona
+      LEFT JOIN Redes rd ON rd.ID_Red = pii.ID_Red
+      LEFT JOIN Circulos_Amistad ca ON ca.ID_Circulo = pii.ID_Circulo
+      LEFT JOIN Personal_Lideres pl ON pl.ID_Personal_Lider = pii.ID_Lider
+      LEFT JOIN Personas pl_nom ON pl_nom.ID_Persona = pl.ID_Persona
+      LEFT JOIN Telefonos_Personas tp_lider ON tp_lider.ID_Persona = pl.ID_Persona
+                                               AND tp_lider.Es_Principal = TRUE AND tp_lider.Activo = TRUE
+      WHERE ps.ID_Persona = $1
     `, [id]);
     if (rows.length === 0) return res.status(404).json({ exito: false, mensaje: 'Personal no encontrado.' });
-    res.json({ exito: true, datos: rows[0] });
+    const datos = rows[0];
+    datos.suspensionActiva = Array.isArray(datos.suspensionActiva) && datos.suspensionActiva.length > 0
+      ? datos.suspensionActiva[0] : null;
+    res.json({ exito: true, datos });
   } catch (err) {
     console.error('Error perfil completo:', err);
     res.status(500).json({ exito: false, mensaje: 'Error interno.' });
@@ -623,30 +589,167 @@ export const obtenerPerfilCompleto = async (req: Request, res: Response) => {
 };
 
 /**
- * GET /api/personal/:id/historial-roles
- * Historial de ascensos y cambios de rol.
+ * GET /api/personal/lista-completa
+ * Lista todos los usuarios del sistema con su información base.
  */
-export const obtenerHistorialRoles = async (req: Request, res: Response) => {
+export const listarPersonalCompleto = async (_req: Request, res: Response) => {
+  try {
+    const { rows } = await pool.query(`
+      SELECT
+        ps.ID_Persona                                    AS "idPersona",
+        p.Nombres                                        AS "nombres",
+        p.Apellidos                                      AS "apellidos",
+        CONCAT(p.Nombres, ' ', p.Apellidos)              AS "nombreCompleto",
+        ps.Usuario                                       AS "usuario",
+        ps.Activo                                        AS "activo",
+        r.ID_Rol                                         AS "idRol",
+        r.Nombre_Rol                                     AS "rol",
+        r.Nivel_Jerarquico                               AS "nivelJerarquico",
+        ps.Fecha_Ingreso_Servicio                        AS "fechaIngreso",
+        ps.Usuario LIKE 'temp_%'                         AS "credencialesPendientes",
+        (SELECT json_agg(json_build_object('idTurno', pt.ID_Turno, 'turno', t.Nombre))
+         FROM Personal_Turnos pt
+         JOIN Turnos t ON t.ID_Turno = pt.ID_Turno
+         WHERE pt.ID_Personal = ps.ID_Persona)           AS "turnos",
+        (SELECT json_agg(json_build_object('idGrupo', pg.ID_Grupo, 'grupo', g.Nombre))
+         FROM Personal_Grupos pg
+         JOIN Grupos g ON g.ID_Grupo = pg.ID_Grupo
+         WHERE pg.ID_Personal = ps.ID_Persona)           AS "grupos"
+      FROM Personal_Sistema ps
+      JOIN Personas p ON p.ID_Persona = ps.ID_Persona
+      JOIN Roles r ON r.ID_Rol = ps.ID_Rol
+      ORDER BY ps.Usuario LIKE 'temp_%' DESC, p.Apellidos, p.Nombres
+    `);
+    res.json({ exito: true, datos: rows });
+  } catch (err) {
+    console.error('Error listando personal completo:', err);
+    res.status(500).json({ exito: false, mensaje: 'Error interno.' });
+  }
+};
+
+/**
+ * PUT /api/personal/:id/configurar-acceso
+ * Body: { usuario, contrasena, idRol, idTurnos?, idGrupoAsignado? }
+ */
+export const configurarAccesoPersonal = async (req: Request, res: Response) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ exito: false, mensaje: 'ID invalido.' });
+
+  const { usuario, contrasena, idRol, idTurnos, idGrupoAsignado } = req.body;
+  const idAutorizador = req.usuario!.idPersona;
+
+  if (!usuario || !contrasena || !idRol) {
+    return res.status(400).json({ exito: false, mensaje: 'Faltan campos obligatorios: usuario, contrasena, idRol.' });
+  }
+
+  const cliente = await pool.connect();
+  try {
+    await cliente.query('BEGIN');
+    await cliente.query(`SET LOCAL app.id_autorizador = '${idAutorizador}'`);
+
+    const usuarioDuplicado = await cliente.query(
+      `SELECT 1 FROM Personal_Sistema WHERE Usuario = $1 AND ID_Persona != $2`,
+      [usuario.trim(), id]
+    );
+    if ((usuarioDuplicado.rowCount ?? 0) > 0) {
+      await cliente.query('ROLLBACK');
+      return res.status(409).json({ exito: false, mensaje: 'Este nombre de usuario ya está en uso.' });
+    }
+
+    const hash = await bcrypt.hash(contrasena.trim(), 12);
+
+    await cliente.query(
+      `UPDATE Personal_Sistema
+       SET Usuario = $1, Password_Hash = $2, ID_Rol = $3, Activo = TRUE
+       WHERE ID_Persona = $4`,
+      [usuario.trim(), hash, idRol, id]
+    );
+
+    if (Array.isArray(idTurnos)) {
+      await cliente.query(`DELETE FROM Personal_Turnos WHERE ID_Personal = $1`, [id]);
+      for (const idTurno of idTurnos) {
+        await cliente.query(
+          `INSERT INTO Personal_Turnos (ID_Personal, ID_Turno) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+          [id, idTurno]
+        );
+      }
+    }
+
+    if (idGrupoAsignado !== undefined) {
+      await cliente.query(`DELETE FROM Personal_Grupos WHERE ID_Personal = $1`, [id]);
+      if (idGrupoAsignado !== null) {
+        const primerTurno = Array.isArray(idTurnos) && idTurnos.length > 0 ? idTurnos[0] : null;
+        if (primerTurno) {
+          await cliente.query(
+            `INSERT INTO Personal_Grupos (ID_Personal, ID_Grupo, ID_Turno, Fecha_Asignacion)
+             VALUES ($1, $2, $3, CURRENT_DATE)`,
+            [id, idGrupoAsignado, primerTurno]
+          );
+        }
+      }
+    }
+
+    await cliente.query('COMMIT');
+    res.json({ exito: true, mensaje: 'Acceso configurado correctamente.' });
+  } catch (err) {
+    await cliente.query('ROLLBACK');
+    console.error('Error configurando acceso:', err);
+    res.status(500).json({ exito: false, mensaje: 'Error interno.' });
+  } finally {
+    cliente.release();
+  }
+};
+
+/**
+ * GET /api/personal/:id/historial-cambios
+ * Historial de cambios de perfil (roles, datos personales, info iglesia, etc.)
+ */
+export const obtenerHistorialCambios = async (req: Request, res: Response) => {
   const id = Number(req.params.id);
   if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ exito: false, mensaje: 'ID invalido.' });
   try {
-    const { rows } = await pool.query(`
-      SELECT phr.Fecha_Cambio     AS "fechaCambio",
-             r_ant.Nombre_Rol     AS "rolAnterior",
-             r_nvo.Nombre_Rol     AS "rolNuevo",
-             p_aut.Nombres || ' ' || p_aut.Apellidos AS "autorizadoPor",
-             phr.Notas            AS "notas"
-      FROM Personal_Historial_Roles phr
-      LEFT JOIN Roles r_ant           ON phr.ID_Rol_Anterior   = r_ant.ID_Rol
-      JOIN      Roles r_nvo           ON phr.ID_Rol_Nuevo       = r_nvo.ID_Rol
-      JOIN      Personal_Sistema ps_a ON phr.ID_Autorizado_Por  = ps_a.ID_Persona
-      JOIN      Personas p_aut        ON ps_a.ID_Persona         = p_aut.ID_Persona
-      WHERE phr.ID_Personal = $1
-      ORDER BY phr.Fecha_Cambio DESC
-    `, [id]);
-    res.json({ exito: true, datos: rows });
+    // Combina historial de roles + historial de cambios de perfil
+    const [cambiosRoles, cambiosPerfil] = await Promise.all([
+      pool.query(`
+        SELECT 'Personal_Historial_Roles' AS "tabla",
+               'ID_Rol' AS "campo",
+               r_ant.Nombre_Rol AS "valorAnterior",
+               r_nvo.Nombre_Rol AS "valorNuevo",
+               phr.Fecha_Cambio::TEXT AS "fechaCambio",
+               p_aut.Nombres || ' ' || p_aut.Apellidos AS "cambiadoPor",
+               phr.Notas AS "notas"
+        FROM Personal_Historial_Roles phr
+        LEFT JOIN Roles r_ant ON phr.ID_Rol_Anterior = r_ant.ID_Rol
+        JOIN Roles r_nvo ON phr.ID_Rol_Nuevo = r_nvo.ID_Rol
+        JOIN Personal_Sistema ps_a ON phr.ID_Autorizado_Por = ps_a.ID_Persona
+        JOIN Personas p_aut ON ps_a.ID_Persona = p_aut.ID_Persona
+        WHERE phr.ID_Personal = $1
+        ORDER BY phr.Fecha_Cambio DESC
+      `, [id]),
+      pool.query(`
+        SELECT phc.Tabla_Afectada AS "tabla",
+               phc.Campo AS "campo",
+               phc.Valor_Anterior AS "valorAnterior",
+               phc.Valor_Nuevo AS "valorNuevo",
+               phc.Fecha_Cambio::TEXT AS "fechaCambio",
+               COALESCE(p_aut.Nombres || ' ' || p_aut.Apellidos, 'Sistema') AS "cambiadoPor",
+               NULL AS "notas"
+        FROM Personal_Historial_Cambios phc
+        LEFT JOIN Personal_Sistema ps_c ON phc.ID_Cambiado_Por = ps_c.ID_Persona
+        LEFT JOIN Personas p_aut ON ps_c.ID_Persona = p_aut.ID_Persona
+        WHERE phc.ID_Personal = $1
+        ORDER BY phc.Fecha_Cambio DESC
+      `, [id]),
+    ]);
+
+    // Unificar ordenado por fecha
+    const todos = [...cambiosRoles.rows, ...cambiosPerfil.rows].sort(
+      (a, b) => new Date(b.fechaCambio).getTime() - new Date(a.fechaCambio).getTime()
+    );
+
+    res.json({ exito: true, datos: todos });
   } catch (err) {
-    console.error('Error historial roles:', err);
+    console.error('Error historial cambios:', err);
     res.status(500).json({ exito: false, mensaje: 'Error interno.' });
   }
 };

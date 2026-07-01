@@ -9,10 +9,11 @@ import {
   aprobarSolicitud,
   rechazarSolicitud,
   marcarEnRevision,
-  actualizarSolicitud,
+  eliminarSolicitud,
   obtenerRequisitosSolicitud,
   actualizarRequisitoSolicitud,
   obtenerHistorialSolicitud,
+  actualizarSolicitud,
 } from '../controllers/solicitudesControlador.js';
 
 const enrutador = Router();
@@ -50,6 +51,9 @@ enrutador.patch(
 
 // GET /:id/historial — Historial de cambios de estado (nivel 3+)
 enrutador.get('/:id/historial', requerirNivel(3), obtenerHistorialSolicitud);
+
+// DELETE /:id — Eliminar solicitud (nivel 4+)
+enrutador.delete('/:id', requerirNivel(4), limitadorGeneral, eliminarSolicitud);
 
 // ─── Ruta genérica /:id al FINAL ─────────────────────────────────────────────
 

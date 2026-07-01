@@ -10,14 +10,15 @@ import {
   registrarPersonal,
   obtenerPersonalCompleto,
   actualizarPersonal,
-  obtenerPerfilPersonal,
   obtenerPerfilCompleto,
   listarPersonalDisponible,
-  obtenerHistorialRoles,
   listarSuspensiones,
   suspenderPersonal,
   levantarSuspension,
   actualizarLider,
+  listarPersonalCompleto,
+  configurarAccesoPersonal,
+  obtenerHistorialCambios,
 } from '../controllers/personalControlador.js';
 
 const enrutador = Router();
@@ -40,13 +41,13 @@ enrutador.get('/mis-turnos', misTurnos);
 /** POST /api/personal/asistencia — Nivel 2+ (Maestro y superior) */
 enrutador.post('/asistencia', requerirNivel(2), limitadorGeneral, registrarAsistenciaPersonal);
 
+/** GET /api/personal/lista-completa — Todos los usuarios del sistema (nivel 4) */
+enrutador.get('/lista-completa', requerirNivel(4), listarPersonalCompleto);
+
 /** POST /api/personal — Registrar nuevo miembro (nivel 3+) */
 enrutador.post('/', requerirNivel(3), limitadorGeneral, registrarPersonal);
 
 // ─── Rutas con sufijos específicos ANTES de /:id ──────────────────────────────
-
-/** GET /api/personal/:id/perfil — Perfil completo (nivel 3+ o propio usuario) */
-enrutador.get('/:id/perfil', permitirPropioONivel(3), obtenerPerfilPersonal);
 
 /** GET /api/personal/:id/perfil-completo — Vista unificada v5.1 (nivel 3+ o propio usuario) */
 enrutador.get('/:id/perfil-completo', permitirPropioONivel(3), obtenerPerfilCompleto);
@@ -54,8 +55,11 @@ enrutador.get('/:id/perfil-completo', permitirPropioONivel(3), obtenerPerfilComp
 /** GET /api/personal/:id/completo — Datos básicos para edición (nivel 3+) */
 enrutador.get('/:id/completo', requerirNivel(3), obtenerPersonalCompleto);
 
-/** GET /api/personal/:id/historial-roles — Historial de ascensos (nivel 3+) */
-enrutador.get('/:id/historial-roles', requerirNivel(3), obtenerHistorialRoles);
+/** PUT /api/personal/:id/configurar-acceso — Configurar usuario/contraseña/rol (nivel 4) */
+enrutador.put('/:id/configurar-acceso', requerirNivel(4), limitadorGeneral, configurarAccesoPersonal);
+
+/** GET /api/personal/:id/historial-cambios — Historial completo de cambios de perfil (nivel 3+ o propio) */
+enrutador.get('/:id/historial-cambios', permitirPropioONivel(3), obtenerHistorialCambios);
 
 /** GET /api/personal/:id/suspensiones — Historial de suspensiones (nivel 3+) */
 enrutador.get('/:id/suspensiones', requerirNivel(3), listarSuspensiones);
