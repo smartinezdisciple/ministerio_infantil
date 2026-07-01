@@ -2,6 +2,9 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import LayoutPrincipal from '../components/LayoutPrincipal';
+import { obtenerPerfilPersonal, obtenerHistorialCambios } from '../services/servicioApi';
+import type { CambioHistorialApi } from '../services/servicioApi';
+import { useAuth } from '../contexts/ContextoAuth';
 import { toast } from 'sonner';
 
 // ── Interfaces v5.1 ──────────────────────────────────────────────────────────
@@ -97,6 +100,59 @@ interface PerfilPersonal {
   suspensionActiva: SuspensionActiva | null;
 }
 
+// ── Adaptador de respuesta API a PerfilPersonal ───────────────────────────────
+import type { PerfilPersonalApi } from '../services/servicioApi';
+
+const adaptarPerfilApi = (api: PerfilPersonalApi): PerfilPersonal => ({
+  idPersona: api.idPersona,
+  nombres: api.nombres,
+  apellidos: api.apellidos,
+  sexo: (api.sexo as 'Masculino' | 'Femenino') ?? null,
+  cedula: api.cedula,
+  usuario: api.usuario,
+  rol: api.rol,
+  nivelJerarquico: api.nivelJerarquico,
+  fechaIngreso: api.fechaIngreso,
+  activo: api.activo ?? true,
+  infoPersonal: {
+    estadoCivil: api.estadoCivil,
+    nombreConyuge: api.nombreConyuge,
+    tieneHijos: api.tieneHijos ?? false,
+    numeroHijos: api.numeroHijos,
+    ocupacion: api.ocupacion,
+    centroLaboral: api.centroLaboral,
+    nivelAcademico: api.nivelAcademico,
+  },
+  infoIglesia: {
+    estadoOperativo: api.estadoOperativo,
+    tiempoIglesiaMeses: api.tiempoIglesiaMeses,
+    ministerioAdicional: api.ministerioAdicional,
+    bautizadoAgua: api.bautizadoAgua ?? false,
+    fechaBautismo: api.fechaBautismo,
+    fechaBautismoPrecision: null,
+    idRed: null,
+    idCirculo: null,
+    circuloAmistad: api.circuloAmistad,
+    circuloAmistadDesde: api.circuloAmistadDesde,
+    circuloAmistadPrecision: null,
+    clasesBiblicasNinos: api.clasesBiblicasNinos ?? false,
+    clasesBiblicasDetalle: null,
+    capacitacionEnsenanza: api.capacitacionEnsenanza ?? false,
+    capacitacionDetalle: null,
+    observacionesEspirituales: api.observacionesEspirituales,
+    idLider: api.idLider,
+    nombreLider: api.nombreLider,
+    telLider: api.telLider,
+    red: api.red,
+  },
+  telefonos: (api.telefonos ?? []).map(t => ({ ...t, tipo: t.tipo as TelefonoEstructurado['tipo'] })),
+  direcciones: (api.direcciones ?? []).map(d => ({ ...d, tipoDireccion: d.tipoDireccion as DireccionEstructurada['tipoDireccion'] })),
+  grupos: api.grupos ?? [],
+  turnos: api.turnos ?? [],
+  requisitos: (api.requisitos ?? []).map(r => ({ ...r, notas: null })),
+  suspensionActiva: api.suspensionActiva ?? null,
+});
+
 // ── Sub-componentes de Presentación ──────────────────────────────────────────
 const CampoInfo: React.FC<{ etiqueta: string; valor: React.ReactNode }> = ({ etiqueta, valor }) => (
   <div className="mb-3">
@@ -123,25 +179,23 @@ const Icono: React.FC<{ nombre: string; color?: string; size?: number }> = ({ no
 // ── Componente Principal ─────────────────────────────────────────────────────
 const PaginaPerfilPersonal: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const { usuario } = useAuth();
   const navegar = useNavigate();
   const [perfil, setPerfil] = useState<PerfilPersonal | null>(null);
   const [cargando, setCargando] = useState(true);
+  const [historial, setHistorial] = useState<CambioHistorialApi[] | null>(null);
+  const [mostrandoHistorial, setMostrandoHistorial] = useState(false);
+
+  const idPersona = id ?? usuario?.idPersona;
 
   useEffect(() => {
-    if (!id) return;
+    if (!idPersona) return;
     setCargando(true);
-    const token = localStorage.getItem('ed_token') ?? '';
-    fetch(`/api/personal/${id}/perfil`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then(r => r.json())
-      .then(data => {
-        if (data.exito) setPerfil(data.datos);
-        else toast.error(data.mensaje ?? 'No se pudo cargar el perfil.');
-      })
-      .catch(() => toast.error('Error de conexión con el servidor si.'))
+    obtenerPerfilPersonal(Number(idPersona))
+      .then(data => setPerfil(adaptarPerfilApi(data as PerfilPersonalApi)))
+      .catch(() => toast.error('Error al cargar perfil.'))
       .finally(() => setCargando(false));
-  }, [id]);
+  }, [idPersona]);
 
   if (cargando) {
     return (
@@ -604,6 +658,64 @@ const PaginaPerfilPersonal: React.FC = () => {
               )}
             </div>
 
+          </div>
+
+          {/* ── Historial de Cambios ───────────────────────── */}
+          <div className="space-y-stack-md">
+            <div className="flex items-center justify-between">
+              <h2 className="text-title-md font-title-md text-on-surface flex items-center gap-2">
+                <span className="material-symbols-outlined text-primary">history</span>
+                Historial de Cambios
+              </h2>
+              <button
+                onClick={() => {
+                  if (historial) {
+                    setMostrandoHistorial(!mostrandoHistorial);
+                    return;
+                  }
+                  obtenerHistorialCambios(perfil.idPersona)
+                    .then(data => { setHistorial(data); setMostrandoHistorial(true); })
+                    .catch(() => toast.error('Error al cargar historial.'));
+                }}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-outline-variant text-label-sm font-medium text-on-surface-variant hover:bg-surface-container-high transition-colors"
+              >
+                <span className="material-symbols-outlined text-[18px]">{mostrandoHistorial ? 'visibility_off' : 'history'}</span>
+                {mostrandoHistorial ? 'Ocultar' : 'Ver Historial'}
+              </button>
+            </div>
+
+            {mostrandoHistorial && (
+              <>
+                {historial && historial.length > 0 ? (
+                  <div className="bg-surface-container-low rounded-xl border border-outline-variant/30 overflow-x-auto">
+                    <table className="w-full text-body-sm text-left">
+                      <thead className="bg-surface-container-high text-on-surface-variant text-label-sm uppercase tracking-wider">
+                        <tr>
+                          <th className="p-3">Campo</th>
+                          <th className="p-3">Valor Anterior</th>
+                          <th className="p-3">Valor Nuevo</th>
+                          <th className="p-3">Fecha</th>
+                          <th className="p-3">Cambiado Por</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-outline-variant/20">
+                        {historial.map((c, i) => (
+                          <tr key={i} className="hover:bg-surface-container-high transition-colors">
+                            <td className="p-3 font-medium text-on-surface">{c.campo}</td>
+                            <td className="p-3 text-on-surface-variant max-w-[200px] truncate">{c.valorAnterior ?? '—'}</td>
+                            <td className="p-3 text-on-surface font-semibold max-w-[200px] truncate">{c.valorNuevo ?? '—'}</td>
+                            <td className="p-3 text-on-surface-variant whitespace-nowrap">{new Date(c.fechaCambio).toLocaleString('es-ES')}</td>
+                            <td className="p-3 text-on-surface-variant">{c.cambiadoPor}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <p className="text-body-md text-on-surface-variant italic">No se encontraron cambios registrados.</p>
+                )}
+              </>
+            )}
           </div>
 
         </div>

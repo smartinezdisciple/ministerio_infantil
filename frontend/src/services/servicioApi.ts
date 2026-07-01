@@ -805,17 +805,11 @@ export const actualizarSolicitud = (id: number, datos: Partial<DatosSolicitudNue
 export const enviarSolicitud = (id: number) =>
   patch<SolicitudApi>(`/solicitudes/${id}/enviar`, {});
 
-export const aprobarSolicitud = (
-  id: number,
-  notas?: string,
-  idRolSolicitado?: number,
-  datosUsuario?: {
-    usuario: string;
-    contrasena: string;
-    idGrupoAsignado?: number;
-    idTurnos: number[];
-  }
-) => patch<SolicitudApi>(`/solicitudes/${id}/aprobar`, { notas, idRolSolicitado, ...datosUsuario });
+export const aprobarSolicitud = (id: number, notas?: string) =>
+  patch<SolicitudApi>(`/solicitudes/${id}/aprobar`, { notas });
+
+export const eliminarSolicitud = (id: number) =>
+  delete_<SolicitudApi>(`/solicitudes/${id}`);
 
 export const rechazarSolicitud = (id: number, notas: string) =>
   patch<SolicitudApi>(`/solicitudes/${id}/rechazar`, { notas });
@@ -844,6 +838,8 @@ export interface PerfilPersonalApi {
   idPersona: number;
   nombres: string;
   apellidos: string;
+  sexo: string | null;
+  cedula: string | null;
   usuario: string;
   rol: string;
   nivelJerarquico: number;
@@ -853,19 +849,106 @@ export interface PerfilPersonalApi {
   nombreConyuge: string | null;
   tieneHijos: boolean;
   numeroHijos: number | null;
-  direccion: string | null;
+  ocupacion: string | null;
+  centroLaboral: string | null;
+  nivelAcademico: string | null;
+  bautizadoAgua: boolean;
+  fechaBautismo: string | null;
+  estadoOperativo: string | null;
   red: string | null;
-  estadoLiderazgo: string | null;
-  mentor: string | null;
   circuloAmistad: string | null;
+  circuloAmistadDesde: string | null;
   tiempoIglesiaMeses: number | null;
   ministerioAdicional: string | null;
-  requisitos: Array<{ nombre: string; tipo: string; obligatorio: boolean; cumplido: boolean; fechaCumplido: string | null }>;
-  grupos: Array<{ nombre: string; turno: string }>;
+  clasesBiblicasNinos: boolean;
+  capacitacionEnsenanza: boolean;
+  observacionesEspirituales: string | null;
+  idLider: number | null;
+  nombreLider: string | null;
+  telLider: string | null;
+  telefonos: Array<{
+    idTelefono: number;
+    tipo: string;
+    numero: string;
+    tieneWhatsapp: boolean;
+    esPrincipal: boolean;
+  }>;
+  direcciones: Array<{
+    idDireccion: number;
+    tipoDireccion: string;
+    ciudadDepartamento: string;
+    municipio: string;
+    distrito: string;
+    barrio: string;
+    direccionExacta: string;
+    esPrincipal: boolean;
+  }>;
+  grupos: Array<{ idGrupo: number; grupo: string }>;
   turnos: Array<{ idTurno: number; turno: string }>;
+  requisitos: Array<{
+    nombre: string;
+    tipo: string;
+    obligatorio: boolean;
+    cumplido: boolean;
+    fechaCumplido: string | null;
+  }>;
+  suspensionActiva: {
+    idSuspension: number;
+    fechaInicio: string;
+    fechaFin: string | null;
+    categoriaMotivo: string;
+    motivo: string;
+  } | null;
 }
 
-export const obtenerPerfilPersonal = (id: number) => get<PerfilPersonalApi>(`/personal/${id}/perfil`);
+export const obtenerPerfilPersonal = (id: number) => get<PerfilPersonalApi>(`/personal/${id}/perfil-completo`);
+
+// ══════════════════════════════════════════════════════════════════
+// GESTIÓN DE USUARIOS — Lista completa y configuración de acceso
+// ══════════════════════════════════════════════════════════════════
+
+export interface UsuarioSistemaApi {
+  idPersona: number;
+  nombres: string;
+  apellidos: string;
+  nombreCompleto: string;
+  usuario: string;
+  activo: boolean;
+  idRol: number;
+  rol: string;
+  nivelJerarquico: number;
+  fechaIngreso: string;
+  credencialesPendientes: boolean;
+  turnos: Array<{ idTurno: number; turno: string }> | null;
+  grupos: Array<{ idGrupo: number; grupo: string }> | null;
+}
+
+export const listarPersonalCompleto = () => get<UsuarioSistemaApi[]>('/personal/lista-completa');
+
+export const configurarAccesoPersonal = (id: number, datos: {
+  usuario: string;
+  contrasena: string;
+  idRol: number;
+  idTurnos?: number[];
+  idGrupoAsignado?: number | null;
+}) => put<{ exito: boolean; mensaje: string }>(`/personal/${id}/configurar-acceso`, datos);
+
+// ══════════════════════════════════════════════════════════════════
+// HISTORIAL DE CAMBIOS — Auditoría de perfil
+// ══════════════════════════════════════════════════════════════════
+
+export interface CambioHistorialApi {
+  tabla: string;
+  campo: string;
+  valorAnterior: string | null;
+  valorNuevo: string | null;
+  fechaCambio: string;
+  cambiadoPor: string;
+  notas: string | null;
+}
+
+export const obtenerHistorialCambios = (id: number) =>
+  get<CambioHistorialApi[]>(`/personal/${id}/historial-cambios`);
 
 // ══════════════════════════════════════════════════════════════════
 // REPORTES — Generación y exportación (Spec §9.12)

@@ -28,6 +28,7 @@ const PaginaRedes = lazy(() => import('./pages/PaginaRedes'));
 const PaginaReportes = lazy(() => import('./pages/PaginaReportes'));
 const PaginaPerfilPersonal = lazy(() => import('./pages/PaginaPerfilPersonal'));
 const PaginaSuspensiones = lazy(() => import('./pages/PaginaSuspensiones'));
+const PaginaUsuarios = lazy(() => import('./pages/PaginaUsuarios'));
 
 /** Indicador de carga mientras se descarga un chunk de ruta */
 const CargandoPagina: React.FC = () => (
@@ -77,6 +78,9 @@ ReactDOM.createRoot(elementoRaiz).render(
             <Route path="/directorio/:idNino" element={
               <RutaProtegida nivelMinimo={1}><PaginaFichaContacto /></RutaProtegida>
             } />
+            <Route path="/perfil" element={
+              <RutaProtegida nivelMinimo={1}><PaginaPerfilPersonal /></RutaProtegida>
+            } />
 
             {/* ── Nivel ≥ 3 (Staff y Coordinador) ─────── */}
             <Route path="/asistencia-personal" element={
@@ -114,6 +118,11 @@ ReactDOM.createRoot(elementoRaiz).render(
             } />
             <Route path="/suspensiones" element={
               <RutaProtegida nivelMinimo={3}><PaginaSuspensiones /></RutaProtegida>
+            } />
+
+            {/* ── Nivel ≥ 4 (Coordinador General) ─────── */}
+            <Route path="/usuarios" element={
+              <RutaProtegida nivelMinimo={4}><PaginaUsuarios /></RutaProtegida>
             } />
 
             {/* ── Fallback ─────────────────────────────── */}

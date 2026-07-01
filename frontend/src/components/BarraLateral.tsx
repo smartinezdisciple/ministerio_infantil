@@ -14,9 +14,9 @@ interface ItemMenu {
 
 const ITEMS_MENU: ItemMenu[] = [
   { ruta: '/dashboard', etiqueta: 'Tablero', icono: 'dashboard', nivelMinimo: 1 },
+  { ruta: '/ingreso-ninos', etiqueta: 'Ingreso de Niños', icono: 'child_care', nivelMinimo: 2 },
   { ruta: '/asistencia-general', etiqueta: 'Asistencia General', icono: 'fact_check', nivelMinimo: 1 },
   { ruta: '/asistencia-grupo', etiqueta: 'Por Grupo', icono: 'groups', nivelMinimo: 1 },
-  { ruta: '/ingreso-ninos', etiqueta: 'Ingreso de Niños', icono: 'child_care', nivelMinimo: 3 },
   { ruta: '/directorio', etiqueta: 'Directorio', icono: 'contact_phone', nivelMinimo: 1 },
   { ruta: '/asistencia-personal', etiqueta: 'Personal', icono: 'badge', nivelMinimo: 3 },
   { ruta: '/ingreso-personal', etiqueta: 'Ingreso Personal', icono: 'person_add', nivelMinimo: 3 },
@@ -28,6 +28,7 @@ const ITEMS_MENU: ItemMenu[] = [
   { ruta: '/redes', etiqueta: 'Redes', icono: 'hub', nivelMinimo: 4 },
   { ruta: '/suspensiones', etiqueta: 'Suspensiones', icono: 'gavel', nivelMinimo: 3 },
   { ruta: '/reportes', etiqueta: 'Reportes', icono: 'assessment', nivelMinimo: 3 },
+  { ruta: '/usuarios', etiqueta: 'Usuarios', icono: 'manage_accounts', nivelMinimo: 4 },
 ];
 
 interface PropsBarraLateral {
@@ -152,7 +153,10 @@ const BarraLateral: React.FC<PropsBarraLateral> = ({ abierto = false, onCerrar }
         {/* ── Pie: perfil del usuario ───────────────── */}
         {usuario && (
           <div className="border-t border-outline-variant/50 px-3 py-3">
-            <div className="flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-surface-container-high transition-colors">
+            <button
+              onClick={() => { navigate('/perfil'); onCerrar?.(); }}
+              className="flex items-center gap-3 px-2 py-2 rounded-xl w-full hover:bg-surface-container-high transition-colors text-left"
+            >
               {/* Avatar con iniciales */}
               <div className="w-9 h-9 bg-primary-container rounded-full flex items-center justify-center shrink-0">
                 <span className="text-label-sm font-bold text-on-primary-container">
@@ -169,14 +173,14 @@ const BarraLateral: React.FC<PropsBarraLateral> = ({ abierto = false, onCerrar }
               </div>
               {/* Botón cerrar sesión */}
               <button
-                onClick={handleCerrarSesion}
+                onClick={(e) => { e.stopPropagation(); handleCerrarSesion(); }}
                 className="shrink-0 text-on-surface-variant hover:text-error transition-colors p-1 rounded-lg"
                 title="Cerrar sesión"
                 aria-label="Cerrar sesión"
               >
                 <span className="material-symbols-outlined text-[20px]">logout</span>
               </button>
-            </div>
+            </button>
           </div>
         )}
       </aside>
