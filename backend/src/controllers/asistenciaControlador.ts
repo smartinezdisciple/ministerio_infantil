@@ -59,7 +59,8 @@ export const listarAsistenciaDia = async (req: Request, res: Response): Promise<
           ELSE g.Nombre 
         END                                            AS "nombreGrupo",
         g.Edad_Minima                                  AS "edadMinima",
-        g.Edad_Maxima                                  AS "edadMaxima"
+        g.Edad_Maxima                                  AS "edadMaxima",
+        (SELECT COUNT(*) FROM Asistencia_Ninos an2 WHERE an2.ID_Nino = an.ID_Nino) AS "totalAsistencias"
       FROM   Asistencia_Ninos an
       JOIN   Personas   p    ON p.ID_Persona    = an.ID_Nino
       JOIN   Ninos      ni   ON ni.ID_Persona   = an.ID_Nino
@@ -104,7 +105,7 @@ export const listarAsistenciaDia = async (req: Request, res: Response): Promise<
       idFichaEntrada: number; codigoFichaEntrada: string; idFichaSalida?: number; codigoFichaSalida?: string;
       estado: string; acompananteEnAula: boolean; ingresadoPor: string; retiradoPor?: string; notas?: string;
       nombres: string; apellidos: string; nombreCompleto: string; fechaNacimiento: string;
-      observacionesGenerales?: string;
+      observacionesGenerales?: string; totalAsistencias: number;
     }) => ({
       idAsistencia:       r.idAsistencia,
       fecha:              r.fecha,
@@ -130,6 +131,7 @@ export const listarAsistenciaDia = async (req: Request, res: Response): Promise<
         observacionesGenerales: r.observacionesGenerales,
         grupo: { idGrupo: r.idGrupo, nombre: r.nombreGrupo, edadMinima: r.edadMinima, edadMaxima: r.edadMaxima },
         alertasMedicas:       alertas[r.idPersona] ?? [],
+        totalAsistencias:     r.totalAsistencias,
       },
     }));
 

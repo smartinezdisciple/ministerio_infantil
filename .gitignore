@@ -28,3 +28,9 @@ Thumbs.db
 basedatos.txt
 basedatosv5.txt
 generate_docx.js
+
+# ── Documentación interna (no forma parte del código fuente) ─────
+docs/
+
+# ── Configuración local de opencode ─────────────────────────────
+opencode.json

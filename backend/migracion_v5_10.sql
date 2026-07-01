@@ -24,54 +24,12 @@ CREATE TABLE IF NOT EXISTS Personal_Historial_Cambios (
 CREATE INDEX IF NOT EXISTS idx_historial_cambios_personal
     ON Personal_Historial_Cambios (ID_Personal, Fecha_Cambio DESC);
 
--- ============================================================
--- Función genérica de auditoría para Personas
--- ============================================================
-CREATE OR REPLACE FUNCTION fn_auditar_cambios_personas()
-RETURNS TRIGGER LANGUAGE plpgsql AS $$
-DECLARE
-    v_autorizador INT;
-BEGIN
-    v_autorizador := NULLIF(current_setting('app.id_autorizador', TRUE), '')::INT;
-
-    IF OLD.Nombres IS DISTINCT FROM NEW.Nombres THEN
-        INSERT INTO Personal_Historial_Cambios
-            (ID_Personal, Tabla_Afectada, Campo, Valor_Anterior, Valor_Nuevo, ID_Cambiado_Por)
-        VALUES (NEW.ID_Persona, 'Personas', 'Nombres',
-                COALESCE(OLD.Nombres::TEXT, ''), COALESCE(NEW.Nombres::TEXT, ''), v_autorizador);
-    END IF;
-    IF OLD.Apellidos IS DISTINCT FROM NEW.Apellidos THEN
-        INSERT INTO Personal_Historial_Cambios
-            (ID_Personal, Tabla_Afectada, Campo, Valor_Anterior, Valor_Nuevo, ID_Cambiado_Por)
-        VALUES (NEW.ID_Persona, 'Personas', 'Apellidos',
-                COALESCE(OLD.Apellidos::TEXT, ''), COALESCE(NEW.Apellidos::TEXT, ''), v_autorizador);
-    END IF;
-    IF OLD.Sexo IS DISTINCT FROM NEW.Sexo THEN
-        INSERT INTO Personal_Historial_Cambios
-            (ID_Personal, Tabla_Afectada, Campo, Valor_Anterior, Valor_Nuevo, ID_Cambiado_Por)
-        VALUES (NEW.ID_Persona, 'Personas', 'Sexo',
-                COALESCE(OLD.Sexo::TEXT, ''), COALESCE(NEW.Sexo::TEXT, ''), v_autorizador);
-    END IF;
-    IF OLD.Cedula IS DISTINCT FROM NEW.Cedula THEN
-        INSERT INTO Personal_Historial_Cambios
-            (ID_Personal, Tabla_Afectada, Campo, Valor_Anterior, Valor_Nuevo, ID_Cambiado_Por)
-        VALUES (NEW.ID_Persona, 'Personas', 'Cedula',
-                COALESCE(OLD.Cedula::TEXT, ''), COALESCE(NEW.Cedula::TEXT, ''), v_autorizador);
-    END IF;
-    IF OLD.Fecha_Nacimiento IS DISTINCT FROM NEW.Fecha_Nacimiento THEN
-        INSERT INTO Personal_Historial_Cambios
-            (ID_Personal, Tabla_Afectada, Campo, Valor_Anterior, Valor_Nuevo, ID_Cambiado_Por)
-        VALUES (NEW.ID_Persona, 'Personas', 'Fecha_Nacimiento',
-                COALESCE(OLD.Fecha_Nacimiento::TEXT, ''), COALESCE(NEW.Fecha_Nacimiento::TEXT, ''), v_autorizador);
-    END IF;
-    RETURN NEW;
-END;
-$$;
-
-DROP TRIGGER IF EXISTS trg_auditar_cambios_personas ON Personas;
-CREATE TRIGGER trg_auditar_cambios_personas
-    AFTER UPDATE ON Personas
-    FOR EACH ROW EXECUTE FUNCTION fn_auditar_cambios_personas();
+-- NOTA: NO hay trigger en Personas porque esa tabla es
+-- compartida entre niños, tutores y personal. Editar un tutor
+-- (aunque también sea personal) no debe registrar cambios
+-- en el historial del personal. La auditoría solo aplica
+-- a tablas exclusivas de personal (Personal_Info_Personal,
+-- Personal_Info_Iglesia, Telefonos_Personas, Personas_Direcciones).
 
 -- ============================================================
 -- Función de auditoría para Personal_Info_Personal
@@ -81,6 +39,10 @@ RETURNS TRIGGER LANGUAGE plpgsql AS $$
 DECLARE
     v_autorizador INT;
 BEGIN
+    IF NOT EXISTS (SELECT 1 FROM Personal_Sistema WHERE ID_Persona = NEW.ID_Persona) THEN
+        RETURN NEW;
+    END IF;
+
     v_autorizador := NULLIF(current_setting('app.id_autorizador', TRUE), '')::INT;
 
     IF OLD.Estado_Civil IS DISTINCT FROM NEW.Estado_Civil THEN
@@ -142,6 +104,10 @@ RETURNS TRIGGER LANGUAGE plpgsql AS $$
 DECLARE
     v_autorizador INT;
 BEGIN
+    IF NOT EXISTS (SELECT 1 FROM Personal_Sistema WHERE ID_Persona = NEW.ID_Persona) THEN
+        RETURN NEW;
+    END IF;
+
     v_autorizador := NULLIF(current_setting('app.id_autorizador', TRUE), '')::INT;
 
     IF OLD.Estado_Operativo IS DISTINCT FROM NEW.Estado_Operativo THEN
@@ -215,6 +181,10 @@ RETURNS TRIGGER LANGUAGE plpgsql AS $$
 DECLARE
     v_autorizador INT;
 BEGIN
+    IF NOT EXISTS (SELECT 1 FROM Personal_Sistema WHERE ID_Persona = NEW.ID_Persona) THEN
+        RETURN NEW;
+    END IF;
+
     v_autorizador := NULLIF(current_setting('app.id_autorizador', TRUE), '')::INT;
 
     IF OLD.Tipo IS DISTINCT FROM NEW.Tipo THEN
@@ -264,6 +234,10 @@ RETURNS TRIGGER LANGUAGE plpgsql AS $$
 DECLARE
     v_autorizador INT;
 BEGIN
+    IF NOT EXISTS (SELECT 1 FROM Personal_Sistema WHERE ID_Persona = NEW.ID_Persona) THEN
+        RETURN NEW;
+    END IF;
+
     v_autorizador := NULLIF(current_setting('app.id_autorizador', TRUE), '')::INT;
 
     IF OLD.Tipo_Direccion IS DISTINCT FROM NEW.Tipo_Direccion THEN

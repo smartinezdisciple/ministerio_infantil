@@ -60,6 +60,9 @@ const construirColumnas = (
             {esCumpleanosHoy(r.nino.fechaNacimiento, filtroFecha) && (
               <span className="material-symbols-outlined text-emerald-600 shrink-0" style={{ fontSize: '14px', fontVariationSettings: "'FILL' 1" }} title="Cumpleaños hoy">cake</span>
             )}
+            {r.nino.totalAsistencias === 1 && (
+              <span className="material-symbols-outlined text-amber-500 shrink-0" style={{ fontSize: '14px', fontVariationSettings: "'FILL' 1" }} title="Nuevo ingreso">add_reaction</span>
+            )}
           </div>
           <p className="text-[11px] text-on-surface-variant">{r.nino.grupo.nombre}</p>
         </div>

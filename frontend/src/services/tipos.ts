@@ -162,6 +162,7 @@ export interface Nino {
   grupo: Grupo;
   alertasMedicas: InfoMedica[];
   sexo?: 'Masculino' | 'Femenino' | null;
+  totalAsistencias?: number;
 }
 
 /** Registro de asistencia de un niño — Spec §2.8 Asistencia_Ninos */
