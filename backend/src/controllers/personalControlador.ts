@@ -481,7 +481,7 @@ export const actualizarPersonal = async (req: Request, res: Response) => {
 
 /**
  * GET /api/personal/:id/perfil-completo
- * Consume la vista v_perfil_completo_personal (todos los bloques en una sola consulta).
+ * Datos completos del personal (todos los bloques en una sola consulta).
  */
 export const obtenerPerfilCompleto = async (req: Request, res: Response) => {
   const id = Number(req.params.id);
@@ -546,24 +546,20 @@ export const obtenerPerfilCompleto = async (req: Request, res: Response) => {
          FROM Personal_Turnos pt
          JOIN Turnos t ON t.ID_Turno = pt.ID_Turno
          WHERE pt.ID_Personal = ps.ID_Persona) AS "turnos",
-        (SELECT json_agg(json_build_object(
-          'nombre', rp.Nombre, 'tipo', rp.Tipo, 'obligatorio', rp.Obligatorio,
-          'cumplido', COALESCE(rp_cum.Cumplido, FALSE),
-          'fechaCumplido', rp_cum.Fecha_Cumplido::TEXT
-        ) ORDER BY rp.Obligatorio DESC, rp.Nombre)
-         FROM Requisitos_Personal rp
-         LEFT JOIN Requisitos_Cumplidos rp_cum ON rp_cum.ID_Requisito = rp.ID_Requisito
-           AND rp_cum.ID_Personal = ps.ID_Persona
-         WHERE rp.Activo = TRUE) AS "requisitos",
-        (SELECT json_agg(json_build_object(
-          'idSuspension', pss.ID_Suspension, 'fechaInicio', pss.Fecha_Inicio::TEXT,
-          'fechaFin', pss.Fecha_Fin::TEXT, 'categoriaMotivo', pss.Categoria_Motivo,
-          'motivo', pss.Motivo
-        ) ORDER BY pss.Fecha_Inicio DESC LIMIT 1)
-         FROM Personal_Suspensiones_Servicio pss
-         WHERE pss.ID_Personal = ps.ID_Persona AND pss.Activo = TRUE
-           AND pss.Fecha_Inicio <= CURRENT_DATE
-           AND (pss.Fecha_Fin IS NULL OR pss.Fecha_Fin >= CURRENT_DATE)) AS "suspensionActiva"
+        NULL::json AS "requisitos",
+        (SELECT row_to_json(sub.*) FROM (
+          SELECT pss.ID_Suspension AS "idSuspension",
+                 pss.Fecha_Inicio::TEXT AS "fechaInicio",
+                 pss.Fecha_Fin::TEXT AS "fechaFin",
+                 pss.Categoria_Motivo AS "categoriaMotivo",
+                 pss.Motivo AS "motivo"
+          FROM Personal_Suspensiones_Servicio pss
+          WHERE pss.ID_Personal = ps.ID_Persona AND pss.Activo = TRUE
+            AND pss.Fecha_Inicio <= CURRENT_DATE
+            AND (pss.Fecha_Fin IS NULL OR pss.Fecha_Fin >= CURRENT_DATE)
+          ORDER BY pss.Fecha_Inicio DESC
+          LIMIT 1
+        ) sub) AS "suspensionActiva"
       FROM Personal_Sistema ps
       JOIN Personas p ON p.ID_Persona = ps.ID_Persona
       JOIN Roles r ON r.ID_Rol = ps.ID_Rol
@@ -571,7 +567,7 @@ export const obtenerPerfilCompleto = async (req: Request, res: Response) => {
       LEFT JOIN Personal_Info_Iglesia pii ON pii.ID_Persona = ps.ID_Persona
       LEFT JOIN Redes rd ON rd.ID_Red = pii.ID_Red
       LEFT JOIN Circulos_Amistad ca ON ca.ID_Circulo = pii.ID_Circulo
-      LEFT JOIN Personal_Lideres pl ON pl.ID_Personal_Lider = pii.ID_Lider
+      LEFT JOIN Personal_Lideres pl ON pl.ID_Lider = pii.ID_Lider
       LEFT JOIN Personas pl_nom ON pl_nom.ID_Persona = pl.ID_Persona
       LEFT JOIN Telefonos_Personas tp_lider ON tp_lider.ID_Persona = pl.ID_Persona
                                                AND tp_lider.Es_Principal = TRUE AND tp_lider.Activo = TRUE
@@ -579,8 +575,6 @@ export const obtenerPerfilCompleto = async (req: Request, res: Response) => {
     `, [id]);
     if (rows.length === 0) return res.status(404).json({ exito: false, mensaje: 'Personal no encontrado.' });
     const datos = rows[0];
-    datos.suspensionActiva = Array.isArray(datos.suspensionActiva) && datos.suspensionActiva.length > 0
-      ? datos.suspensionActiva[0] : null;
     res.json({ exito: true, datos });
   } catch (err) {
     console.error('Error perfil completo:', err);
