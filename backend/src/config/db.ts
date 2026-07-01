@@ -34,9 +34,10 @@ export const pool = new Pool({
 });
 
 // Keepalive: evita que Neon cierre conexiones inactivas prematuramente
+// .unref() permite que Node termine aunque el timer exista
 setInterval(() => {
   pool.query('SELECT 1').catch(() => {});
-}, 240_000);
+}, 240_000).unref();
 
 /**
  * Verifica la conexión a PostgreSQL.
