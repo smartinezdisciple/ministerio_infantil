@@ -60,7 +60,7 @@ export const listarAsistenciaDia = async (req: Request, res: Response): Promise<
         END                                            AS "nombreGrupo",
         g.Edad_Minima                                  AS "edadMinima",
         g.Edad_Maxima                                  AS "edadMaxima",
-        (SELECT COUNT(*)::INTEGER FROM Asistencia_Ninos an2 WHERE an2.ID_Nino = an.ID_Nino) AS "totalAsistencias"
+        COALESCE(sub.total, 1)                         AS "totalAsistencias"
       FROM   Asistencia_Ninos an
       JOIN   Personas   p    ON p.ID_Persona    = an.ID_Nino
       JOIN   Ninos      ni   ON ni.ID_Persona   = an.ID_Nino
@@ -70,6 +70,7 @@ export const listarAsistenciaDia = async (req: Request, res: Response): Promise<
       LEFT JOIN Fichas     fs  ON fs.ID_Ficha   = an.ID_Ficha_Salida
       LEFT JOIN Personas   ting ON ting.ID_Persona = an.ID_Ingresado_Por
       LEFT JOIN Personas   tret ON tret.ID_Persona = an.ID_Retirado_Por
+      LEFT JOIN (SELECT ID_Nino, COUNT(*)::INTEGER AS total FROM Asistencia_Ninos GROUP BY ID_Nino) sub ON sub.ID_Nino = an.ID_Nino
       WHERE  an.Fecha = $1${filtros}
       ORDER  BY an.Hora_Entrada DESC
     `, params);
