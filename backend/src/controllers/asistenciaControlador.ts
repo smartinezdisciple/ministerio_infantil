@@ -60,7 +60,7 @@ export const listarAsistenciaDia = async (req: Request, res: Response): Promise<
         END                                            AS "nombreGrupo",
         g.Edad_Minima                                  AS "edadMinima",
         g.Edad_Maxima                                  AS "edadMaxima",
-        (SELECT COUNT(*) FROM Asistencia_Ninos an2 WHERE an2.ID_Nino = an.ID_Nino) AS "totalAsistencias"
+        (SELECT COUNT(*)::INTEGER FROM Asistencia_Ninos an2 WHERE an2.ID_Nino = an.ID_Nino) AS "totalAsistencias"
       FROM   Asistencia_Ninos an
       JOIN   Personas   p    ON p.ID_Persona    = an.ID_Nino
       JOIN   Ninos      ni   ON ni.ID_Persona   = an.ID_Nino
