@@ -23,14 +23,20 @@ export const pool = new Pool({
   database: process.env.PGDATABASE,
   user:     process.env.PGUSER,
   password: process.env.PGPASSWORD,
-  max:      10,
-  connectionTimeoutMillis: 5000,
-  idleTimeoutMillis: 30000,
-  // SSL requerido por Neon en producción; deshabilitado en desarrollo local y tests
+  max:      5,
+  connectionTimeoutMillis: 10000,
+  idleTimeoutMillis: 600000,
+  allowExitOnIdle: false,
+  // SSL requerido por Neon en producción
   ssl: process.env.NODE_ENV === 'production'
     ? { rejectUnauthorized: false }
     : false,
 });
+
+// Keepalive: evita que Neon cierre conexiones inactivas prematuramente
+setInterval(() => {
+  pool.query('SELECT 1').catch(() => {});
+}, 240_000);
 
 /**
  * Verifica la conexión a PostgreSQL.
