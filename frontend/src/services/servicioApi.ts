@@ -296,6 +296,7 @@ export interface RegistroAsistenciaApi {
   ingresadoPor: string;
   retiradoPor?: string;
   notas?: string;
+  esPrimeraVez: boolean;
 }
 
 export const listarAsistenciaDia = (fecha: string, idGrupo?: string, idTurno?: string) => {

@@ -131,8 +131,8 @@ export const listarAsistenciaDia = async (req: Request, res: Response): Promise<
         observacionesGenerales: r.observacionesGenerales,
         grupo: { idGrupo: r.idGrupo, nombre: r.nombreGrupo, edadMinima: r.edadMinima, edadMaxima: r.edadMaxima },
         alertasMedicas:       alertas[r.idPersona] ?? [],
-        esPrimeraVez:     r.esPrimeraVez,
       },
+      esPrimeraVez: r.esPrimeraVez,   // nivel raíz — coincide con RegistroAsistenciaNino
     }));
 
     res.json({ exito: true, datos: resultado });
