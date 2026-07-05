@@ -1,0 +1,19 @@
+- [x] Generar dump local de respaldo con `pg_dump` antes de iniciar cambios
+- [x] Analizar estructura de `personal_sistema` y sus asociaciones en la BD
+- [x] Revisar en `backend/src/` qué campos se referencian en controladores, servicios y tipos
+- [x] Identificar campos no utilizados (`Estado_Operativo`, `Estado_Operativo_Candidato`)
+- [x] Verificar si `fecha_nacimiento` ya existe en `personal_sistema` o `personas`
+      - [x] Si **no existe**: ~~agregar campo~~ (ya existe en `personas`)
+      - [x] Si **ya existe**: agregar `fechaNacimiento` al SELECT del perfil personal y solicitudes
+- [x] Crear archivo de migración SQL (`migracion_v6_limpieza_personal.sql`)
+  - [x] Recrear vistas sin `Estado_Operativo`
+  - [x] Drop column `Estado_Operativo` de `Personal_Info_Iglesia`
+  - [x] Drop column `Estado_Operativo_Candidato` de `Solicitudes_Personal`
+  - [x] Drop ENUM `estado_operativo`
+- [x] Aplicar la migración en la BD local
+- [x] Actualizar `personalControlador.ts` (+ `fechaNacimiento`, - `Estado_Operativo` en SELECT/INSERT)
+- [x] Actualizar `solicitudesControlador.ts` (- `Estado_Operativo_Candidato` en SELECT/INSERT/mapaColumnas)
+- [x] Actualizar `lideresControlador.ts` (- `Estado_Operativo` en SELECT)
+- [x] Actualizar `dashboardControlador.ts` (- `Estado_Operativo_Candidato` en SELECT)
+- [x] Actualizar frontend `servicioApi.ts` (+ `fechaNacimiento`, - `estadoOperativo`, - `estadoOperativoCandidato`)
+- [x] Verificar que `npm test` pase (23 passed, 1 skipped)

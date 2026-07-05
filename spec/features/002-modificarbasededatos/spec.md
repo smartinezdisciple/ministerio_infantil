@@ -1,0 +1,1 @@
+La informacion del personal tambien debe de tener su fecha de cumpleaños para control de cumpleañeros, y no debe tener informacion que ya no se utilice

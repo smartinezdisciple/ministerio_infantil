@@ -73,7 +73,6 @@ export const obtenerLider = async (req: Request, res: Response): Promise<void> =
         ps.ID_Persona                                    AS "idPersona",
         p.Nombres || ' ' || p.Apellidos                  AS "nombreCompleto",
         r.Nombre_Rol                                     AS "rol",
-        pii.Estado_Operativo                             AS "estadoOperativo",
         tp.Numero                                        AS "telefono"
       FROM Personal_Info_Iglesia pii
       JOIN Personal_Sistema ps ON pii.ID_Persona = ps.ID_Persona

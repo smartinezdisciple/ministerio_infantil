@@ -1,0 +1,11 @@
+- [x] Instalar el cliente de PostgreSQL en WSL2: `sudo apt install postgresql-client -y`
+- [x] Identificar la estructura actual de la BD en Neon (migraciones en `backend/`)
+- [x] Listar las migraciones en orden de creación (`migracion_v4.sql`, `migracion_v5_*.sql`)
+- [x] Recrear el esquema en local ejecutando las migraciones contra `Ministerio_Infantil`
+- [x] Extraer la string de conexión de Neon
+- [x] Exportar datos reales desde Neon: `pg_dump --no-owner "{{DATABASE_URL}}" > dump_completo_neon.sql`
+- [x] Restaurar los datos en local: `psql -h localhost -U postgres -d Ministerio_Infantil < dump_completo_neon.sql`
+- [x] Ejecutar el seed no destructivo: `npx tsx src/seed_produccion.ts`
+- [x] Configurar `backend/.env` con las variables de conexión local
+- [x] Verificar conexión a la base de datos local
+- [x] Verificar que `npm test` pase contra la BD local con datos reales (23 passed, 1 skipped)

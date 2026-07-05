@@ -651,6 +651,7 @@ export interface SolicitudApi {
   reqCumplidos: number;
   reqTotal: number;
 
+  fechaNacimiento: string | null;
   // Nuevos campos v5.1
   sexoCandidato: 'Masculino' | 'Femenino' | null;
   cedulaCandidato: string | null;
@@ -678,7 +679,6 @@ export interface SolicitudApi {
   capacitacionEnsenanza: boolean;
   capacitacionDetalle: string | null;
   observacionesEspiritualesSol: string | null;
-  estadoOperativoCandidato: string | null;
   // Bloque D — líder / mentor (texto libre)
   liderNombres: string | null;
   liderApellidos: string | null;
@@ -739,7 +739,6 @@ export interface DatosSolicitudNueva {
   capacitacionEnsenanza?: boolean;
   capacitacionDetalle?: string | null;
   observacionesEspiritualesSol?: string | null;
-  estadoOperativoCandidato?: string | null;
   // Bloque D — líder / mentor (texto libre)
   liderNombres?: string | null;
   liderApellidos?: string | null;
@@ -794,6 +793,7 @@ export interface PerfilPersonalApi {
   apellidos: string;
   sexo: string | null;
   cedula: string | null;
+  fechaNacimiento: string | null;
   usuario: string;
   rol: string;
   nivelJerarquico: number;
@@ -808,7 +808,6 @@ export interface PerfilPersonalApi {
   nivelAcademico: string | null;
   bautizadoAgua: boolean;
   fechaBautismo: string | null;
-  estadoOperativo: string | null;
   red: string | null;
   circuloAmistad: string | null;
   circuloAmistadDesde: string | null;

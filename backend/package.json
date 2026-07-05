@@ -22,6 +22,7 @@
     "jsonwebtoken": "^9.0.2",
     "pg": "^8.13.3",
     "ts-node": "^10.9.2",
+    "xlsx": "^0.18.5",
     "zod": "^4.0.1"
   },
   "devDependencies": {

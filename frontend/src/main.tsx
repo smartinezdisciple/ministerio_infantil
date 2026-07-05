@@ -86,7 +86,7 @@ ReactDOM.createRoot(elementoRaiz).render(
               <RutaProtegida nivelMinimo={3}><PaginaRegistroPersonal /></RutaProtegida>
             } />
             <Route path="/ingreso-ninos" element={
-              <RutaProtegida nivelMinimo={3}><RegistroNinos /></RutaProtegida>
+              <RutaProtegida nivelMinimo={2}><RegistroNinos /></RutaProtegida>
             } />
             <Route path="/solicitudes" element={
               <RutaProtegida nivelMinimo={3}><PaginaSolicitudes /></RutaProtegida>

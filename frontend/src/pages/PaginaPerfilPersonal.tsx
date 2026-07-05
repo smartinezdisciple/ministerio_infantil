@@ -19,7 +19,6 @@ interface InfoPersonal {
 }
 
 interface InfoIglesia {
-  estadoOperativo: string | null;
   tiempoIglesiaMeses: number | null;
   ministerioAdicional: string | null;
   bautizadoAgua: boolean;
@@ -89,6 +88,7 @@ interface PerfilPersonal {
   rol: string;
   nivelJerarquico: number;
   fechaIngreso: string;
+  fechaNacimiento: string | null;
   activo: boolean;
   infoPersonal: InfoPersonal | null;
   infoIglesia: InfoIglesia | null;
@@ -113,6 +113,7 @@ const adaptarPerfilApi = (api: PerfilPersonalApi): PerfilPersonal => ({
   rol: api.rol,
   nivelJerarquico: api.nivelJerarquico,
   fechaIngreso: api.fechaIngreso,
+  fechaNacimiento: api.fechaNacimiento,
   activo: api.activo ?? true,
   infoPersonal: {
     estadoCivil: api.estadoCivil,
@@ -124,7 +125,6 @@ const adaptarPerfilApi = (api: PerfilPersonalApi): PerfilPersonal => ({
     nivelAcademico: api.nivelAcademico,
   },
   infoIglesia: {
-    estadoOperativo: api.estadoOperativo,
     tiempoIglesiaMeses: api.tiempoIglesiaMeses,
     ministerioAdicional: api.ministerioAdicional,
     bautizadoAgua: api.bautizadoAgua ?? false,
@@ -465,7 +465,7 @@ const PaginaPerfilPersonal: React.FC = () => {
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2">
                     <CampoInfo etiqueta="Red Apostólica" valor={perfil.infoIglesia.red} />
-                    <CampoInfo etiqueta="Estado Operativo" valor={perfil.infoIglesia.estadoOperativo} />
+                    <CampoInfo etiqueta="Fecha de Nacimiento" valor={perfil.fechaNacimiento} />
                     <CampoInfo
                       etiqueta="Tiempo en la Iglesia"
                       valor={
