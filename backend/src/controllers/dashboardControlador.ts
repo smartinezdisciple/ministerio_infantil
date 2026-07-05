@@ -249,7 +249,6 @@ export const obtenerSolicitudesPendientes = async (_req: Request, res: Response)
              r.Nombre_Rol                                      AS "rolSolicitado",
              p_staff.Nombres || ' ' || p_staff.Apellidos      AS "gestionadoPor",
              sp.Fecha_Solicitud                                AS "fechaSolicitud",
-             sp.Estado_Operativo_Candidato                     AS "estadoOperativo",
              sp.Tiempo_Iglesia_Meses                           AS "tiempoIglesiaMeses",
              (SELECT COUNT(*)::INT FROM Solicitudes_Requisitos sr
               JOIN Requisitos req ON sr.ID_Requisito = req.ID_Requisito

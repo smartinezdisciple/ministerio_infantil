@@ -50,6 +50,8 @@ interface FormSolicitud {
   ministerioAdicional: string;
   requisitos: Record<number, { cumplido: boolean; fechaCumplido: string; notas: string }>;
 
+  fechaNacimiento: string;
+
   // v5.1 fields
   sexoCandidato: string;
   cedulaCandidato: string;
@@ -77,7 +79,6 @@ interface FormSolicitud {
   capacitacionEnsenanza: boolean;
   capacitacionDetalle: string;
   observacionesEspiritualesSol: string;
-  estadoOperativoCandidato: string;
   idLiderPropuesto: number | null;
 
   // Líder / mentor / pastor(texto libre)
@@ -118,6 +119,7 @@ const formInicial = (): FormSolicitud => ({
   ministerioAdicional: '',
   requisitos: {},
 
+  fechaNacimiento: '',
   sexoCandidato: '',
   cedulaCandidato: '',
   ocupacionCandidato: '',
@@ -144,7 +146,6 @@ const formInicial = (): FormSolicitud => ({
   capacitacionEnsenanza: false,
   capacitacionDetalle: '',
   observacionesEspiritualesSol: '',
-  estadoOperativoCandidato: 'En_Formacion',
   idLiderPropuesto: null,
 
   liderNombres: '',
@@ -231,6 +232,7 @@ const ModalSolicitud: React.FC<PropsModalSolicitud> = ({
       nombreCandidato: `${p.nombres} ${p.apellidos}`,
       telefonoCandidato: p.telefono ?? '',
       telClaro: p.telefono ?? '',
+      fechaNacimiento: p.fechaNacimiento ?? '',
       sexoCandidato: p.sexo ?? '',
       cedulaCandidato: p.cedula ?? '',
     }));
@@ -283,6 +285,7 @@ const ModalSolicitud: React.FC<PropsModalSolicitud> = ({
           ministerioAdicional: solicitudEditar.ministerioAdicional ?? '',
           requisitos: {},
 
+          fechaNacimiento: solicitudEditar.fechaNacimiento ?? '',
           sexoCandidato: solicitudEditar.sexoCandidato ?? '',
           cedulaCandidato: solicitudEditar.cedulaCandidato ?? '',
           ocupacionCandidato: solicitudEditar.ocupacionCandidato ?? '',
@@ -309,7 +312,6 @@ const ModalSolicitud: React.FC<PropsModalSolicitud> = ({
           capacitacionEnsenanza: solicitudEditar.capacitacionEnsenanza ?? false,
           capacitacionDetalle: solicitudEditar.capacitacionDetalle ?? '',
           observacionesEspiritualesSol: solicitudEditar.observacionesEspiritualesSol ?? '',
-          estadoOperativoCandidato: solicitudEditar.estadoOperativoCandidato ?? 'En_Formacion',
           idLiderPropuesto: null,
 
           liderNombres: (solicitudEditar as any).liderNombres ?? '',
@@ -609,6 +611,7 @@ const ModalSolicitud: React.FC<PropsModalSolicitud> = ({
             telefono: form.telefonoCandidato.trim() || undefined,
             sexo: (form.sexoCandidato as any) || undefined,
             cedula: form.cedulaCandidato.trim() || undefined,
+            fechaNacimiento: form.fechaNacimiento || undefined,
           });
           finalIdPersona = nuevaPersona.idPersona;
         } catch (err: any) {
@@ -619,15 +622,17 @@ const ModalSolicitud: React.FC<PropsModalSolicitud> = ({
         // Si el usuario completó/modificó datos que estaban vacíos en la base de datos (como sexo o cédula), o actualizó el teléfono, actualizamos la persona.
         const personaOriginal = personas.find((p) => p.idPersona === finalIdPersona);
         if (personaOriginal) {
+          const fechaNacimientoNuevo = form.fechaNacimiento || null;
           const sexoNuevo = form.sexoCandidato || null;
           const cedulaNueva = form.cedulaCandidato.trim() || null;
           const telefonoNuevo = form.telefonoCandidato.trim() || null;
 
+          const cambioFechaNac = fechaNacimientoNuevo && (fechaNacimientoNuevo !== personaOriginal.fechaNacimiento);
           const cambioSexo = sexoNuevo && (sexoNuevo !== personaOriginal.sexo);
           const cambioCedula = cedulaNueva && (cedulaNueva !== personaOriginal.cedula);
           const cambioTelefono = telefonoNuevo && (telefonoNuevo !== personaOriginal.telefono);
 
-          if (cambioSexo || cambioCedula || cambioTelefono) {
+          if (cambioFechaNac || cambioSexo || cambioCedula || cambioTelefono) {
             try {
               await actualizarPersona(finalIdPersona, {
                 nombres: personaOriginal.nombres,
@@ -635,6 +640,7 @@ const ModalSolicitud: React.FC<PropsModalSolicitud> = ({
                 sexo: (sexoNuevo || personaOriginal.sexo) as any,
                 cedula: cedulaNueva || personaOriginal.cedula || undefined,
                 telefono: telefonoNuevo || personaOriginal.telefono || undefined,
+                fechaNacimiento: fechaNacimientoNuevo ?? undefined,
               });
             } catch (err) {
               console.error('Error al actualizar datos de persona vinculada:', err);
@@ -695,7 +701,6 @@ const ModalSolicitud: React.FC<PropsModalSolicitud> = ({
         capacitacionEnsenanza: form.capacitacionEnsenanza,
         capacitacionDetalle: form.capacitacionDetalle || undefined,
         observacionesEspiritualesSol: form.observacionesEspiritualesSol || undefined,
-        estadoOperativoCandidato: (form.estadoOperativoCandidato as any) || undefined,
         // Líder / mentor / pastor (texto libre)
         liderNombres: form.liderNombres || undefined,
         liderApellidos: form.liderApellidos || undefined,
@@ -865,6 +870,7 @@ const ModalSolicitud: React.FC<PropsModalSolicitud> = ({
                       nombreCandidato: '',
                       telefonoCandidato: '',
                       telClaro: '',
+                      fechaNacimiento: '',
                       sexoCandidato: '',
                       cedulaCandidato: '',
                     }));
@@ -944,6 +950,15 @@ const ModalSolicitud: React.FC<PropsModalSolicitud> = ({
                 readOnly={!!form.idPersona && !!personaSeleccionada?.cedula}
                 className={`w-full bg-surface-container-low border rounded-xl px-4 py-3 text-body-md focus:ring-2 focus:ring-primary focus:border-primary focus:outline-none ${errores['cedulaCandidato'] ? 'border-error' : 'border-outline-variant'} ${(form.idPersona && personaSeleccionada?.cedula) ? 'opacity-70 cursor-not-allowed bg-surface-container-high' : ''}`} />
               {errores['cedulaCandidato'] && <p className="text-label-sm text-error mt-1">{errores['cedulaCandidato']}</p>}
+            </div>
+
+            <div>
+              <label htmlFor="sol-fn" className="block text-label-sm text-on-surface-variant mb-1">
+                Fecha de Nacimiento
+              </label>
+              <input id="sol-fn" type="date" value={form.fechaNacimiento}
+                onChange={(e) => actualizarCampo('fechaNacimiento', e.target.value)}
+                className="w-full bg-surface-container-low border border-outline-variant rounded-xl px-4 py-3 text-body-md focus:ring-2 focus:ring-primary focus:border-primary focus:outline-none" />
             </div>
 
             <div className="hidden">

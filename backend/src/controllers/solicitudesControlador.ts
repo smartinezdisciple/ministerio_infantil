@@ -40,17 +40,7 @@ const sanitizarCamposSolicitud = (body: any): any => {
     ]) || 'Ninguna';
   }
 
-  // 4. estadoOperativoCandidato
-  if (body.estadoOperativoCandidato !== undefined) {
-    const rawVal = typeof body.estadoOperativoCandidato === 'string' ? body.estadoOperativoCandidato.trim() : '';
-    if (rawVal === 'Activo' || rawVal === 'Inactivo') {
-      clean.estadoOperativoCandidato = 'En_Formacion';
-    } else {
-      clean.estadoOperativoCandidato = toEnum(body.estadoOperativoCandidato, ['Lider', 'En_Formacion'], 'En_Formacion');
-    }
-  }
-
-  // 5. nivelAcademicoCandidato
+  // 4. nivelAcademicoCandidato
   if (body.nivelAcademicoCandidato !== undefined) {
     const rawVal = typeof body.nivelAcademicoCandidato === 'string' ? body.nivelAcademicoCandidato.trim() : '';
     if (rawVal === 'Tecnico') {
@@ -146,6 +136,8 @@ const CONSULTA_SOLICITUD_BASE = `
     sp.ID_Persona                                             AS "idPersona",
     p_cand.Nombres || ' ' || p_cand.Apellidos                AS "candidato",
     p_cand.Sexo                                               AS "sexoPersona",
+    -- Datos base de la persona (no en snapshot)
+    p_cand.Fecha_Nacimiento                                   AS "fechaNacimiento",
     -- Bloque A — datos del candidato en el snapshot
     sp.Sexo_Candidato                                         AS "sexoCandidato",
     sp.Cedula_Candidato                                       AS "cedulaCandidato",
@@ -174,7 +166,6 @@ const CONSULTA_SOLICITUD_BASE = `
     -- Bloque C — eclesiástico
     sp.ID_Red                                                 AS "idRed",
     red.Nombre                                                AS "red",
-    sp.Estado_Operativo_Candidato                             AS "estadoOperativoCandidato",
     sp.Bautizado_Agua                                         AS "bautizadoAgua",
     sp.Fecha_Bautismo                                         AS "fechaBautismo",
     sp.Fecha_Bautismo_Precision                               AS "fechaBautismoPrecision",
@@ -302,7 +293,6 @@ export const crearSolicitud = async (req: Request, res: Response): Promise<void>
       numeroHijos,
       // Bloque C
       idRed,
-      estadoOperativoCandidato,
       bautizadoAgua,
       fechaBautismo,
       fechaBautismoPrecision,
@@ -390,7 +380,7 @@ export const crearSolicitud = async (req: Request, res: Response): Promise<void>
           Dir_Ciudad, Dir_Municipio, Dir_Distrito, Dir_Barrio, Dir_Exacta,
           Estado_Civil, Condicion_Civil, Nombre_Conyuge, Conyuge_Ocupacion, Conyuge_Centro_Laboral,
           Tiene_Hijos, Numero_Hijos,
-          ID_Red, Estado_Operativo_Candidato,
+          ID_Red,
           Bautizado_Agua, Fecha_Bautismo, Fecha_Bautismo_Precision,
           Circulo_Amistad, Circulo_Amistad_Desde, Circulo_Amistad_Precision,
           Tiempo_Iglesia_Meses, Ministerio_Adicional,
@@ -406,8 +396,7 @@ export const crearSolicitud = async (req: Request, res: Response): Promise<void>
           $11, $12, $13, $14, $15, $16, $17, $18, $19, $20,
           $21, $22, $23, $24, $25, $26, $27, $28, $29, $30,
           $31, $32, $33, $34, $35, $36, $37, $38, $39, $40,
-          $41, $42, $43, $44, $45, $46, $47, $48, $49, $50,
-          $51
+          $41, $42, $43, $44, $45, $46, $47, $48, $49, $50
         )
         RETURNING ID_Solicitud AS "idSolicitud"`,
         [
@@ -438,7 +427,6 @@ export const crearSolicitud = async (req: Request, res: Response): Promise<void>
           tieneHijos               ?? false,
           numeroHijos              ?? null,
           idRed                    ?? null,
-          estadoOperativoCandidato ?? null,
           bautizadoAgua            ?? false,
           fechaBautismo            ?? null,
           fechaBautismoPrecision   ?? null,
@@ -577,7 +565,6 @@ export const actualizarSolicitud = async (req: Request, res: Response): Promise<
       Numero_Hijos:                 cleanBody.numeroHijos,
       // Bloque C
       ID_Red:                       cleanBody.idRed,
-      Estado_Operativo_Candidato:   cleanBody.estadoOperativoCandidato,
       Bautizado_Agua:               cleanBody.bautizadoAgua,
       Fecha_Bautismo:               cleanBody.fechaBautismo,
       Fecha_Bautismo_Precision:     cleanBody.fechaBautismoPrecision,

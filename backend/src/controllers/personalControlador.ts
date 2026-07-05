@@ -317,18 +317,17 @@ export const registrarPersonal = async (req: Request, res: Response) => {
     // Info iglesia
     await cliente.query(`
       INSERT INTO Personal_Info_Iglesia
-        (ID_Persona, Estado_Operativo, ID_Lider, ID_Circulo,
+        (ID_Persona, ID_Lider, ID_Circulo,
          Tiempo_Iglesia_Meses, Ministerio_Adicional,
          Bautizado_Agua, Fecha_Bautismo, Fecha_Bautismo_Precision,
          Circulo_Amistad_Desde, Circulo_Amistad_Precision,
          Clases_Biblicas_Ninos, Clases_Biblicas_Detalle,
          Capacitacion_Ensenanza, Capacitacion_Detalle, Observaciones_Espirituales,
          Asistio_Otra_Iglesia, Nombre_Otra_Iglesia, Denominacion_Otra_Iglesia)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
       ON CONFLICT (ID_Persona) DO NOTHING
     `, [
       idPersona,
-      estadoOperativo ?? null,
       idLider ?? null,
       idCirculo ?? null,
       tiempoIglesiaMeses ?? null,
@@ -494,6 +493,7 @@ export const obtenerPerfilCompleto = async (req: Request, res: Response) => {
         p.Apellidos                                    AS "apellidos",
         p.Sexo                                         AS "sexo",
         p.Cedula                                       AS "cedula",
+        p.Fecha_Nacimiento                             AS "fechaNacimiento",
         ps.Usuario                                     AS "usuario",
         r.Nombre_Rol                                   AS "rol",
         r.Nivel_Jerarquico                             AS "nivelJerarquico",
@@ -508,7 +508,6 @@ export const obtenerPerfilCompleto = async (req: Request, res: Response) => {
         pip.Nivel_Academico                            AS "nivelAcademico",
         pii.Bautizado_Agua                             AS "bautizadoAgua",
         pii.Fecha_Bautismo                             AS "fechaBautismo",
-        pii.Estado_Operativo                           AS "estadoOperativo",
         rd.Nombre                                      AS "red",
         ca.Nombre                                      AS "circuloAmistad",
         pii.Circulo_Amistad_Desde                      AS "circuloAmistadDesde",

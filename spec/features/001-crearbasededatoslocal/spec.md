@@ -1,0 +1,1 @@
+Quiero poder hacer pruebas en local en mi computadora. Si no se puede por falta de informacion o datos entonces esta mal.
