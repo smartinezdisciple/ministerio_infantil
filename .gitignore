@@ -25,6 +25,7 @@ Thumbs.db
 # ── Archivos temporales del proyecto ─────────────────────────────
 *.xlsm
 *.xlsx
+!incidencias.xlsx
 basedatos.txt
 basedatosv5.txt
 generate_docx.js
