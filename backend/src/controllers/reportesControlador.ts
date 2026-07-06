@@ -236,7 +236,7 @@ export const exportarIncidenciasExcel = async (req: Request, res: Response): Pro
   try {
     const XLSX = (await import('xlsx')).default;
 
-    const rutaPlantilla = new URL('../../../incidencias.xlsx', import.meta.url).pathname;
+    const rutaPlantilla = new URL('../../incidencias.xlsx', import.meta.url).pathname;
     const wb = XLSX.readFile(rutaPlantilla);
     const ws = wb.Sheets[wb.SheetNames[0]];
 
