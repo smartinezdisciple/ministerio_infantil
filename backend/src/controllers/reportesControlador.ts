@@ -209,6 +209,96 @@ export const exportarExcel = async (req: Request, res: Response): Promise<void> 
   }
 };
 
+/**
+ * Mapeo edad → fila en la plantilla incidencias.xlsx (filas 8-16)
+ * Edad exacta → número de fila (1-indexed en Excel)
+ */
+const FILA_POR_EDAD: Record<string, number> = {
+  '3':  8,  '4':  9,  '5':  10,
+  '6':  11, '7':  12, '8':  13,
+  '9':  14,
+  '10-11': 15,
+  '12-14': 16,
+};
+
+/** Turnos dominicales que aparecen en la plantilla (ID_Turno → columna Excel) */
+const TURNOS_INCIDENCIAS = [
+  { idTurno: 2, columna: 'B', etiqueta: 'Domingo_8am' },
+  { idTurno: 3, columna: 'C', etiqueta: 'Domingo_11am' },
+  { idTurno: 4, columna: 'D', etiqueta: 'Domingo_5pm' },
+];
+
+/**
+ * GET /api/reportes/incidencias/excel
+ * Descarga el archivo incidencias.xlsx con los conteos de asistencia por edad y turno.
+ */
+export const exportarIncidenciasExcel = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const XLSX = (await import('xlsx')).default;
+
+    const rutaPlantilla = new URL('../../../incidencias.xlsx', import.meta.url).pathname;
+    const wb = XLSX.readFile(rutaPlantilla);
+    const ws = wb.Sheets[wb.SheetNames[0]];
+
+    const fechaStr = (req.query.fecha as string) || new Date().toISOString().split('T')[0];
+
+    // Localidad y fecha
+    ws['B3'] = { t: 's', v: 'Linda Vista' };
+    ws['E3'] = { t: 's', v: fechaStr };
+
+    // Para cada turno dominical, contar niños por edad
+    for (const turno of TURNOS_INCIDENCIAS) {
+      const { rows } = await pool.query(`
+        SELECT EXTRACT(YEAR FROM AGE($1::date, p.Fecha_Nacimiento))::int AS edad
+        FROM Asistencia_Ninos an
+        JOIN Personas p ON an.ID_Nino = p.ID_Persona
+        WHERE an.Fecha = $1 AND an.ID_Turno = $2
+      `, [fechaStr, turno.idTurno]);
+
+      const conteo: Record<number, number> = {};
+      for (const row of rows) {
+        const e = row.edad as number;
+        conteo[e] = (conteo[e] || 0) + 1;
+      }
+
+      for (let edad = 3; edad <= 14; edad++) {
+        const key = edad <= 9 ? String(edad) : (edad <= 11 ? '10-11' : '12-14');
+        if (key === '10-11' && edad > 11) continue;
+        if (key === '12-14' && edad < 12) continue;
+
+        const fila = FILA_POR_EDAD[key];
+        if (!fila) continue;
+
+        const celda = `${turno.columna}${fila}`;
+        const actual = (ws[celda]?.v as number) || 0;
+        ws[celda] = { t: 'n', v: actual + (conteo[edad] || 0) };
+      }
+    }
+
+    // Actualizar valores cacheados de las fórmulas SUM para que se vean sin recálculo
+    for (let fila = 8; fila <= 16; fila++) {
+      const suma = TURNOS_INCIDENCIAS.reduce((acc, t) => acc + ((ws[`${t.columna}${fila}`]?.v as number) || 0), 0);
+      if (ws[`E${fila}`]) ws[`E${fila}`].v = suma;
+    }
+    for (const t of TURNOS_INCIDENCIAS) {
+      let suma = 0;
+      for (let fila = 8; fila <= 16; fila++) suma += (ws[`${t.columna}${fila}`]?.v as number) || 0;
+      if (ws[`${t.columna}17`]) ws[`${t.columna}17`].v = suma;
+    }
+    const totalGeneral = TURNOS_INCIDENCIAS.reduce((acc, t) => acc + ((ws[`${t.columna}17`]?.v as number) || 0), 0);
+    if (ws['E17']) ws['E17'].v = totalGeneral;
+
+    const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+    const nombreArchivo = `incidencias-${fechaStr}.xlsx`;
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="${nombreArchivo}"`);
+    res.send(buffer);
+  } catch (err) {
+    console.error('Error exportando incidencias Excel:', err);
+    res.status(500).json({ exito: false, mensaje: 'Error generando el reporte de incidencias.' });
+  }
+};
+
 /** Normaliza el nombre del turno enviado por el cliente para hacerlo coincidir con el enum de la BD */
 const normalizarTurno = (turno: string): string => {
   const t = turno.trim().toLowerCase();
