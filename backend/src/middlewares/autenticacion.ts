@@ -24,7 +24,7 @@ declare global {
 
 /**
  * Middleware de verificación de JWT.
- * Lee el header Authorization: Bearer <token>
+ * Lee el header Authorization: Bearer <token> o el query param ?token=
  */
 export const verificarToken = (req: Request, res: Response, siguiente: NextFunction): void => {
   // Ignorar peticiones OPTIONS preflight para evitar que fallen por falta de token
@@ -34,22 +34,16 @@ export const verificarToken = (req: Request, res: Response, siguiente: NextFunct
   }
 
   const encabezado = req.headers.authorization;
-  if (!encabezado) {
-    console.warn(`[verificarToken] Cabecera Authorization ausente para: ${req.method} ${req.originalUrl}`);
-    respuestaNoAutorizado(res, 'Token de autenticación requerido.');
-    return;
+  let token: string | undefined;
+
+  if (encabezado && encabezado.toLowerCase().startsWith('bearer ')) {
+    token = encabezado.slice(7).trim();
+  } else {
+    token = req.query.token as string | undefined;
   }
 
-  const partes = encabezado.split(' ');
-  if (partes.length !== 2 || partes[0].toLowerCase() !== 'bearer') {
-    console.warn(`[verificarToken] Formato de cabecera inválido ("${encabezado}") para: ${req.method} ${req.originalUrl}`);
-    respuestaNoAutorizado(res, 'Token de autenticación requerido.');
-    return;
-  }
-
-  const token = partes[1].trim();
   if (!token) {
-    console.warn(`[verificarToken] Token vacío en cabecera ("${encabezado}") para: ${req.method} ${req.originalUrl}`);
+    console.warn(`[verificarToken] Token ausente para: ${req.method} ${req.originalUrl}`);
     respuestaNoAutorizado(res, 'Token de autenticación requerido.');
     return;
   }

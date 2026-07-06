@@ -907,14 +907,18 @@ export const obtenerHistorialCambios = (id: number) =>
 // REPORTES — Generación y exportación (Spec §9.12)
 // ══════════════════════════════════════════════════════════════════
 
+const inyectarToken = (params?: Record<string, string>): string => {
+  const token = localStorage.getItem('ed_token') || '';
+  const paramsConToken = { ...params, token };
+  return `?${new URLSearchParams(paramsConToken).toString()}`;
+};
+
 export const exportarReporteCSV = (tipo: string, params?: Record<string, string>) => {
-  const query = params ? `?${new URLSearchParams(params).toString()}` : '';
-  window.open(`${URL_BASE}/reportes/${tipo}/csv${query}`, '_blank');
+  window.open(`${URL_BASE}/reportes/${tipo}/csv${inyectarToken(params)}`, '_blank');
 };
 
 export const exportarReporteExcel = (tipo: string, params?: Record<string, string>) => {
-  const query = params ? `?${new URLSearchParams(params).toString()}` : '';
-  window.open(`${URL_BASE}/reportes/${tipo}/excel${query}`, '_blank');
+  window.open(`${URL_BASE}/reportes/${tipo}/excel${inyectarToken(params)}`, '_blank');
 };
 
 export interface DatosNinoPorGrupoReporte {
