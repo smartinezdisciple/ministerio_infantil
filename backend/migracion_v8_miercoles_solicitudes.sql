@@ -1,6 +1,6 @@
 -- ============================================================================
 -- migracion_v8_miercoles_solicitudes.sql
--- Generado: 2026-07-08 23:39:00
+-- Generado: 2026-07-08 23:47:36
 -- Propósito: Importar solicitudes aprobadas de Turno Miercoles desde Formulario.xlsx
 -- Uso: Aplicar contra Neon: psql <connection_string> -f migracion_v8_miercoles_solicitudes.sql
 -- ============================================================================
@@ -44,7 +44,7 @@ INSERT INTO Solicitudes_Personal (
   Capacitacion_Ensenanza, Capacitacion_Detalle,
   Observaciones_Espirituales_Sol,
   Asistio_Otra_Iglesia, Nombre_Otra_Iglesia, Denominacion_Otra_Iglesia
-) VALUES (
+) SELECT
   (SELECT ID_Persona FROM Personas WHERE Cedula = '001-28031966X'), 1, 1, 1,
   'Aprobado', NOW(), NOW(), 'Importación desde formulario Excel - Turno Miercoles',
   'Masculino', '001-28031966X', 'Casado', 'Primer_Matrimonio',
@@ -61,7 +61,7 @@ INSERT INTO Solicitudes_Personal (
   FALSE, 'Completado',
   NULL,
   TRUE, 'Catedral', 'Otro'
-);
+WHERE NOT EXISTS (SELECT 1 FROM Solicitudes_Personal WHERE ID_Persona = (SELECT ID_Persona FROM Personas WHERE Cedula = '001-28031966X') AND Estado = 'Aprobado');
 
 -- Requisitos: Gerardo JoseAlonsoGuerrero
 INSERT INTO Solicitudes_Requisitos (ID_Solicitud, ID_Requisito, Cumplido, Fecha_Cumplido)
@@ -89,8 +89,8 @@ SELECT (SELECT ID_Persona FROM Personas WHERE Cedula = '001-28031966X'), 1,
 WHERE NOT EXISTS (SELECT 1 FROM Personal_Sistema WHERE ID_Persona = (SELECT ID_Persona FROM Personas WHERE Cedula = '001-28031966X'));
 
 -- Info Personal: Gerardo JoseAlonsoGuerrero
-INSERT INTO Personal_Info_Personal (ID_Persona, Estado_Civil, Condicion_Civil, Nombre_Conyuge, Conyuge_Ocupacion, Conyuge_Centro_Laboral, Tiene_Hijos, Numero_Hijos, Direccion, Ocupacion, Centro_Laboral, Nivel_Academico)
-SELECT (SELECT ID_Persona FROM Personas WHERE Cedula = '001-28031966X'), 'Casado', 'Primer_Matrimonio', 'Johanna Elizabeth Fletes Ramirez', 'Tele Marketing', 'Pharmainsa', TRUE, 3, 'Del súper expres 2c abajo75varas al sur casa k 2 09', 'Mecánico Automotriz', 'Enacal', 'Nivel_Tecnico'
+INSERT INTO Personal_Info_Personal (ID_Persona, Estado_Civil, Condicion_Civil, Nombre_Conyuge, Tiene_Hijos, Numero_Hijos, Direccion, Ocupacion, Centro_Laboral, Nivel_Academico)
+SELECT (SELECT ID_Persona FROM Personas WHERE Cedula = '001-28031966X'), 'Casado', 'Primer_Matrimonio', 'Johanna Elizabeth Fletes Ramirez', TRUE, 3, 'Del súper expres 2c abajo75varas al sur casa k 2 09', 'Mecánico Automotriz', 'Enacal', 'Nivel_Tecnico'
 WHERE NOT EXISTS (SELECT 1 FROM Personal_Info_Personal WHERE ID_Persona = (SELECT ID_Persona FROM Personas WHERE Cedula = '001-28031966X'));
 
 -- Info Iglesia: Gerardo JoseAlonsoGuerrero
@@ -164,7 +164,7 @@ INSERT INTO Solicitudes_Personal (
   Capacitacion_Ensenanza, Capacitacion_Detalle,
   Observaciones_Espirituales_Sol,
   Asistio_Otra_Iglesia, Nombre_Otra_Iglesia, Denominacion_Otra_Iglesia
-) VALUES (
+) SELECT
   (SELECT ID_Persona FROM Personas WHERE Cedula = '001-170469-0014V'), 1, 1, 1,
   'Aprobado', NOW(), NOW(), 'Importación desde formulario Excel - Turno Miercoles',
   'Femenino', '001-170469-0014V', 'Casado', 'Primer_Matrimonio',
@@ -181,7 +181,7 @@ INSERT INTO Solicitudes_Personal (
   FALSE, 'Completado',
   NULL,
   TRUE, 'Catedral', 'Otro'
-);
+WHERE NOT EXISTS (SELECT 1 FROM Solicitudes_Personal WHERE ID_Persona = (SELECT ID_Persona FROM Personas WHERE Cedula = '001-170469-0014V') AND Estado = 'Aprobado');
 
 -- Requisitos: Johanna Elizabeth Fletes Ramirez
 INSERT INTO Solicitudes_Requisitos (ID_Solicitud, ID_Requisito, Cumplido, Fecha_Cumplido)
@@ -209,8 +209,8 @@ SELECT (SELECT ID_Persona FROM Personas WHERE Cedula = '001-170469-0014V'), 1,
 WHERE NOT EXISTS (SELECT 1 FROM Personal_Sistema WHERE ID_Persona = (SELECT ID_Persona FROM Personas WHERE Cedula = '001-170469-0014V'));
 
 -- Info Personal: Johanna Elizabeth Fletes Ramirez
-INSERT INTO Personal_Info_Personal (ID_Persona, Estado_Civil, Condicion_Civil, Nombre_Conyuge, Conyuge_Ocupacion, Conyuge_Centro_Laboral, Tiene_Hijos, Numero_Hijos, Direccion, Ocupacion, Centro_Laboral, Nivel_Academico)
-SELECT (SELECT ID_Persona FROM Personas WHERE Cedula = '001-170469-0014V'), 'Casado', 'Primer_Matrimonio', 'Gerardo Jose Alonso Guerrero', 'Mecanico Automotris', 'Enacal', TRUE, 4, 'Del super express 2c abajo 75 vrs al sur k2 09', 'Tele Marketing', 'Pharmainsa', 'Nivel_Tecnico'
+INSERT INTO Personal_Info_Personal (ID_Persona, Estado_Civil, Condicion_Civil, Nombre_Conyuge, Tiene_Hijos, Numero_Hijos, Direccion, Ocupacion, Centro_Laboral, Nivel_Academico)
+SELECT (SELECT ID_Persona FROM Personas WHERE Cedula = '001-170469-0014V'), 'Casado', 'Primer_Matrimonio', 'Gerardo Jose Alonso Guerrero', TRUE, 4, 'Del super express 2c abajo 75 vrs al sur k2 09', 'Tele Marketing', 'Pharmainsa', 'Nivel_Tecnico'
 WHERE NOT EXISTS (SELECT 1 FROM Personal_Info_Personal WHERE ID_Persona = (SELECT ID_Persona FROM Personas WHERE Cedula = '001-170469-0014V'));
 
 -- Info Iglesia: Johanna Elizabeth Fletes Ramirez
@@ -264,8 +264,8 @@ INSERT INTO Telefonos_Personas (ID_Persona, Tipo, Numero, Es_Principal)
 SELECT (SELECT ID_Persona FROM Personas WHERE Cedula = '281-010306-1002Q'), 'Oficina', '8237 2621', FALSE
 WHERE NOT EXISTS (SELECT 1 FROM Telefonos_Personas WHERE ID_Persona = (SELECT ID_Persona FROM Personas WHERE Cedula = '281-010306-1002Q') AND Tipo = 'Oficina' AND Numero = '8237 2621');
 INSERT INTO Telefonos_Personas (ID_Persona, Tipo, Numero, Es_Principal)
-SELECT (SELECT ID_Persona FROM Personas WHERE Cedula = '281-010306-1002Q'), 'Claro', 'Celular de mi abuelita +505 5729 9502', FALSE
-WHERE NOT EXISTS (SELECT 1 FROM Telefonos_Personas WHERE ID_Persona = (SELECT ID_Persona FROM Personas WHERE Cedula = '281-010306-1002Q') AND Tipo = 'Claro' AND Numero = 'Celular de mi abuelita +505 5729 9502');
+SELECT (SELECT ID_Persona FROM Personas WHERE Cedula = '281-010306-1002Q'), 'Claro', 'Celular de mi abueli', FALSE
+WHERE NOT EXISTS (SELECT 1 FROM Telefonos_Personas WHERE ID_Persona = (SELECT ID_Persona FROM Personas WHERE Cedula = '281-010306-1002Q') AND Tipo = 'Claro' AND Numero = 'Celular de mi abueli');
 INSERT INTO Telefonos_Personas (ID_Persona, Tipo, Numero, Es_Principal)
 SELECT (SELECT ID_Persona FROM Personas WHERE Cedula = '281-010306-1002Q'), 'Movistar', '77224137', FALSE
 WHERE NOT EXISTS (SELECT 1 FROM Telefonos_Personas WHERE ID_Persona = (SELECT ID_Persona FROM Personas WHERE Cedula = '281-010306-1002Q') AND Tipo = 'Movistar' AND Numero = '77224137');
@@ -293,14 +293,14 @@ INSERT INTO Solicitudes_Personal (
   Capacitacion_Ensenanza, Capacitacion_Detalle,
   Observaciones_Espirituales_Sol,
   Asistio_Otra_Iglesia, Nombre_Otra_Iglesia, Denominacion_Otra_Iglesia
-) VALUES (
+) SELECT
   (SELECT ID_Persona FROM Personas WHERE Cedula = '281-010306-1002Q'), 1, 1, 1,
   'Aprobado', NOW(), NOW(), 'Importación desde formulario Excel - Turno Miercoles',
   'Femenino', '281-010306-1002Q', 'Soltero', 'Ninguna',
   NULL, NULL, NULL,
   FALSE, NULL,
   'Nací en León ( Vivo en Managua )', 'Mateare', 'Distrito Mateare', 'Residencial Ciudad El Doral', 'Km 18 Carretera Nueva León, calle 9 Avenida 13, Casa W106',
-  '88340474', '8237 2621', 'Celular de mi abuelita +505 5729 9502', '77224137',
+  '88340474', '8237 2621', 'Celular de mi abueli', '77224137',
   'Estudiante Universitaria de Psicología, y trabajo en un Centro Educativo.', 'Centro Educativo Little Angel', 'Licenciatura',
   1, 'Gap',
   '2019-01-01', 'Ano',
@@ -310,7 +310,7 @@ INSERT INTO Solicitudes_Personal (
   TRUE, 'He trabajado como maestra sombra, y actualmente trabajo como asistente de docente.',
   NULL,
   TRUE, 'Catolica ( San Sebastían en León )', 'Católico'
-);
+WHERE NOT EXISTS (SELECT 1 FROM Solicitudes_Personal WHERE ID_Persona = (SELECT ID_Persona FROM Personas WHERE Cedula = '281-010306-1002Q') AND Estado = 'Aprobado');
 
 -- Requisitos: María Marcela de Jesús Herrera González
 INSERT INTO Solicitudes_Requisitos (ID_Solicitud, ID_Requisito, Cumplido, Fecha_Cumplido)
@@ -335,8 +335,8 @@ SELECT (SELECT ID_Persona FROM Personas WHERE Cedula = '281-010306-1002Q'), 1,
 WHERE NOT EXISTS (SELECT 1 FROM Personal_Sistema WHERE ID_Persona = (SELECT ID_Persona FROM Personas WHERE Cedula = '281-010306-1002Q'));
 
 -- Info Personal: María Marcela de Jesús Herrera González
-INSERT INTO Personal_Info_Personal (ID_Persona, Estado_Civil, Condicion_Civil, Nombre_Conyuge, Conyuge_Ocupacion, Conyuge_Centro_Laboral, Tiene_Hijos, Numero_Hijos, Direccion, Ocupacion, Centro_Laboral, Nivel_Academico)
-SELECT (SELECT ID_Persona FROM Personas WHERE Cedula = '281-010306-1002Q'), 'Soltero', 'Ninguna', NULL, NULL, NULL, FALSE, NULL, 'Km 18 Carretera Nueva León, calle 9 Avenida 13, Casa W106', 'Estudiante Universitaria de Psicología, y trabajo en un Centro Educativo.', 'Centro Educativo Little Angel', 'Licenciatura'
+INSERT INTO Personal_Info_Personal (ID_Persona, Estado_Civil, Condicion_Civil, Nombre_Conyuge, Tiene_Hijos, Numero_Hijos, Direccion, Ocupacion, Centro_Laboral, Nivel_Academico)
+SELECT (SELECT ID_Persona FROM Personas WHERE Cedula = '281-010306-1002Q'), 'Soltero', 'Ninguna', NULL, FALSE, NULL, 'Km 18 Carretera Nueva León, calle 9 Avenida 13, Casa W106', 'Estudiante Universitaria de Psicología, y trabajo en un Centro Educativo.', 'Centro Educativo Little Angel', 'Licenciatura'
 WHERE NOT EXISTS (SELECT 1 FROM Personal_Info_Personal WHERE ID_Persona = (SELECT ID_Persona FROM Personas WHERE Cedula = '281-010306-1002Q'));
 
 -- Info Iglesia: María Marcela de Jesús Herrera González
@@ -392,7 +392,7 @@ WHERE NOT EXISTS (SELECT 1 FROM Telefonos_Personas WHERE ID_Persona = (SELECT ID
 
 -- Dirección: Kathleen Vanessa Calderón Hernández
 INSERT INTO Personas_Direcciones (ID_Persona, Tipo_Direccion, Ciudad_Departamento, Municipio, Distrito, Barrio, Direccion_Exacta, Es_Principal)
-SELECT (SELECT ID_Persona FROM Personas WHERE Cedula = '001-291298-0018V'), 'Residencial', 'Managua', 'Mateare', 'Distrito No estoy segura', 'Residencial ciudad el Doral', 'Casa H134', TRUE
+SELECT (SELECT ID_Persona FROM Personas WHERE Cedula = '001-291298-0018V'), 'Residencial', 'Managua', 'Mateare', NULL, 'Residencial ciudad el Doral', 'Casa H134', TRUE
 WHERE NOT EXISTS (SELECT 1 FROM Personas_Direcciones WHERE ID_Persona = (SELECT ID_Persona FROM Personas WHERE Cedula = '001-291298-0018V') AND Es_Principal = TRUE);
 
 -- Solicitud aprobada: Kathleen Vanessa Calderón Hernández
@@ -413,13 +413,13 @@ INSERT INTO Solicitudes_Personal (
   Capacitacion_Ensenanza, Capacitacion_Detalle,
   Observaciones_Espirituales_Sol,
   Asistio_Otra_Iglesia, Nombre_Otra_Iglesia, Denominacion_Otra_Iglesia
-) VALUES (
+) SELECT
   (SELECT ID_Persona FROM Personas WHERE Cedula = '001-291298-0018V'), 1, 1, 1,
   'Aprobado', NOW(), NOW(), 'Importación desde formulario Excel - Turno Miercoles',
   'Femenino', '001-291298-0018V', 'Soltero', 'Ninguna',
   NULL, NULL, NULL,
   FALSE, NULL,
-  'Managua', 'Mateare', 'Distrito No estoy segura', 'Residencial ciudad el Doral', 'Casa H134',
+  'Managua', 'Mateare', NULL, 'Residencial ciudad el Doral', 'Casa H134',
   '57022102', '57022102', '57022102', NULL,
   'Freelancer', 'Remoto', 'Licenciatura',
   3, 'Gap',
@@ -430,7 +430,7 @@ INSERT INTO Solicitudes_Personal (
   FALSE, 'Completado',
   NULL,
   TRUE, 'Pentecostal', 'Pentecostal'
-);
+WHERE NOT EXISTS (SELECT 1 FROM Solicitudes_Personal WHERE ID_Persona = (SELECT ID_Persona FROM Personas WHERE Cedula = '001-291298-0018V') AND Estado = 'Aprobado');
 
 -- Requisitos: Kathleen Vanessa Calderón Hernández
 INSERT INTO Solicitudes_Requisitos (ID_Solicitud, ID_Requisito, Cumplido, Fecha_Cumplido)
@@ -455,8 +455,8 @@ SELECT (SELECT ID_Persona FROM Personas WHERE Cedula = '001-291298-0018V'), 1,
 WHERE NOT EXISTS (SELECT 1 FROM Personal_Sistema WHERE ID_Persona = (SELECT ID_Persona FROM Personas WHERE Cedula = '001-291298-0018V'));
 
 -- Info Personal: Kathleen Vanessa Calderón Hernández
-INSERT INTO Personal_Info_Personal (ID_Persona, Estado_Civil, Condicion_Civil, Nombre_Conyuge, Conyuge_Ocupacion, Conyuge_Centro_Laboral, Tiene_Hijos, Numero_Hijos, Direccion, Ocupacion, Centro_Laboral, Nivel_Academico)
-SELECT (SELECT ID_Persona FROM Personas WHERE Cedula = '001-291298-0018V'), 'Soltero', 'Ninguna', NULL, NULL, NULL, FALSE, NULL, 'Casa H134', 'Freelancer', 'Remoto', 'Licenciatura'
+INSERT INTO Personal_Info_Personal (ID_Persona, Estado_Civil, Condicion_Civil, Nombre_Conyuge, Tiene_Hijos, Numero_Hijos, Direccion, Ocupacion, Centro_Laboral, Nivel_Academico)
+SELECT (SELECT ID_Persona FROM Personas WHERE Cedula = '001-291298-0018V'), 'Soltero', 'Ninguna', NULL, FALSE, NULL, 'Casa H134', 'Freelancer', 'Remoto', 'Licenciatura'
 WHERE NOT EXISTS (SELECT 1 FROM Personal_Info_Personal WHERE ID_Persona = (SELECT ID_Persona FROM Personas WHERE Cedula = '001-291298-0018V'));
 
 -- Info Iglesia: Kathleen Vanessa Calderón Hernández
@@ -530,7 +530,7 @@ INSERT INTO Solicitudes_Personal (
   Capacitacion_Ensenanza, Capacitacion_Detalle,
   Observaciones_Espirituales_Sol,
   Asistio_Otra_Iglesia, Nombre_Otra_Iglesia, Denominacion_Otra_Iglesia
-) VALUES (
+) SELECT
   (SELECT ID_Persona FROM Personas WHERE Cedula = '601-080790-0001C'), 1, 1, 1,
   'Aprobado', NOW(), NOW(), 'Importación desde formulario Excel - Turno Miercoles',
   'Femenino', '601-080790-0001C', 'Soltero', 'Ninguna',
@@ -553,7 +553,7 @@ Managua (2016)  Mientras hacia mi internado en Rivas viajaba a Managua a la igle
   FALSE, 'Completado',
   NULL,
   TRUE, 'Revival Tabernacle Church - Evangélico Pentecostes', 'Evangelico'
-);
+WHERE NOT EXISTS (SELECT 1 FROM Solicitudes_Personal WHERE ID_Persona = (SELECT ID_Persona FROM Personas WHERE Cedula = '601-080790-0001C') AND Estado = 'Aprobado');
 
 -- Requisitos: Gissell Elizabeth Ebanks Ruiz
 INSERT INTO Solicitudes_Requisitos (ID_Solicitud, ID_Requisito, Cumplido, Fecha_Cumplido)
@@ -578,8 +578,8 @@ SELECT (SELECT ID_Persona FROM Personas WHERE Cedula = '601-080790-0001C'), 1,
 WHERE NOT EXISTS (SELECT 1 FROM Personal_Sistema WHERE ID_Persona = (SELECT ID_Persona FROM Personas WHERE Cedula = '601-080790-0001C'));
 
 -- Info Personal: Gissell Elizabeth Ebanks Ruiz
-INSERT INTO Personal_Info_Personal (ID_Persona, Estado_Civil, Condicion_Civil, Nombre_Conyuge, Conyuge_Ocupacion, Conyuge_Centro_Laboral, Tiene_Hijos, Numero_Hijos, Direccion, Ocupacion, Centro_Laboral, Nivel_Academico)
-SELECT (SELECT ID_Persona FROM Personas WHERE Cedula = '601-080790-0001C'), 'Soltero', 'Ninguna', NULL, NULL, NULL, FALSE, NULL, 'Nueva etapa avenida 9 calle 2 casa C110', 'Médico', 'Farmacia Hosanna', 'Postgrado'
+INSERT INTO Personal_Info_Personal (ID_Persona, Estado_Civil, Condicion_Civil, Nombre_Conyuge, Tiene_Hijos, Numero_Hijos, Direccion, Ocupacion, Centro_Laboral, Nivel_Academico)
+SELECT (SELECT ID_Persona FROM Personas WHERE Cedula = '601-080790-0001C'), 'Soltero', 'Ninguna', NULL, FALSE, NULL, 'Nueva etapa avenida 9 calle 2 casa C110', 'Médico', 'Farmacia Hosanna', 'Postgrado'
 WHERE NOT EXISTS (SELECT 1 FROM Personal_Info_Personal WHERE ID_Persona = (SELECT ID_Persona FROM Personas WHERE Cedula = '601-080790-0001C'));
 
 -- Info Iglesia: Gissell Elizabeth Ebanks Ruiz
@@ -659,7 +659,7 @@ INSERT INTO Solicitudes_Personal (
   Capacitacion_Ensenanza, Capacitacion_Detalle,
   Observaciones_Espirituales_Sol,
   Asistio_Otra_Iglesia, Nombre_Otra_Iglesia, Denominacion_Otra_Iglesia
-) VALUES (
+) SELECT
   (SELECT ID_Persona FROM Personas WHERE Cedula = '001-031207-1040U'), 1, 1, 1,
   'Aprobado', NOW(), NOW(), 'Importación desde formulario Excel - Turno Miercoles',
   'Femenino', '001-031207-1040U', 'Soltero', 'Ninguna',
@@ -676,7 +676,7 @@ INSERT INTO Solicitudes_Personal (
   FALSE, 'Completado',
   NULL,
   FALSE, NULL, NULL
-);
+WHERE NOT EXISTS (SELECT 1 FROM Solicitudes_Personal WHERE ID_Persona = (SELECT ID_Persona FROM Personas WHERE Cedula = '001-031207-1040U') AND Estado = 'Aprobado');
 
 -- Requisitos: Itzel yaretzi Gutierrez Navarro
 INSERT INTO Solicitudes_Requisitos (ID_Solicitud, ID_Requisito, Cumplido, Fecha_Cumplido)
@@ -701,8 +701,8 @@ SELECT (SELECT ID_Persona FROM Personas WHERE Cedula = '001-031207-1040U'), 1,
 WHERE NOT EXISTS (SELECT 1 FROM Personal_Sistema WHERE ID_Persona = (SELECT ID_Persona FROM Personas WHERE Cedula = '001-031207-1040U'));
 
 -- Info Personal: Itzel yaretzi Gutierrez Navarro
-INSERT INTO Personal_Info_Personal (ID_Persona, Estado_Civil, Condicion_Civil, Nombre_Conyuge, Conyuge_Ocupacion, Conyuge_Centro_Laboral, Tiene_Hijos, Numero_Hijos, Direccion, Ocupacion, Centro_Laboral, Nivel_Academico)
-SELECT (SELECT ID_Persona FROM Personas WHERE Cedula = '001-031207-1040U'), 'Soltero', 'Ninguna', NULL, NULL, NULL, FALSE, NULL, 'Residencial santa eduviges de la guja 12 calles a mano derecha la 2 casa , casa G 19 de la 2 etapa', 'Estudiante', NULL, 'Licenciatura'
+INSERT INTO Personal_Info_Personal (ID_Persona, Estado_Civil, Condicion_Civil, Nombre_Conyuge, Tiene_Hijos, Numero_Hijos, Direccion, Ocupacion, Centro_Laboral, Nivel_Academico)
+SELECT (SELECT ID_Persona FROM Personas WHERE Cedula = '001-031207-1040U'), 'Soltero', 'Ninguna', NULL, FALSE, NULL, 'Residencial santa eduviges de la guja 12 calles a mano derecha la 2 casa , casa G 19 de la 2 etapa', 'Estudiante', NULL, 'Licenciatura'
 WHERE NOT EXISTS (SELECT 1 FROM Personal_Info_Personal WHERE ID_Persona = (SELECT ID_Persona FROM Personas WHERE Cedula = '001-031207-1040U'));
 
 -- Info Iglesia: Itzel yaretzi Gutierrez Navarro
@@ -776,7 +776,7 @@ INSERT INTO Solicitudes_Personal (
   Capacitacion_Ensenanza, Capacitacion_Detalle,
   Observaciones_Espirituales_Sol,
   Asistio_Otra_Iglesia, Nombre_Otra_Iglesia, Denominacion_Otra_Iglesia
-) VALUES (
+) SELECT
   (SELECT ID_Persona FROM Personas WHERE Cedula = '001-230108-1018M'), 1, 1, 1,
   'Aprobado', NOW(), NOW(), 'Importación desde formulario Excel - Turno Miercoles',
   'Femenino', '001-230108-1018M', 'Soltero', 'Ninguna',
@@ -793,7 +793,7 @@ INSERT INTO Solicitudes_Personal (
   FALSE, 'Completado',
   NULL,
   FALSE, NULL, NULL
-);
+WHERE NOT EXISTS (SELECT 1 FROM Solicitudes_Personal WHERE ID_Persona = (SELECT ID_Persona FROM Personas WHERE Cedula = '001-230108-1018M') AND Estado = 'Aprobado');
 
 -- Requisitos: Andrea Belén Vallecillo Escobar
 INSERT INTO Solicitudes_Requisitos (ID_Solicitud, ID_Requisito, Cumplido, Fecha_Cumplido)
@@ -815,8 +815,8 @@ SELECT (SELECT ID_Persona FROM Personas WHERE Cedula = '001-230108-1018M'), 1,
 WHERE NOT EXISTS (SELECT 1 FROM Personal_Sistema WHERE ID_Persona = (SELECT ID_Persona FROM Personas WHERE Cedula = '001-230108-1018M'));
 
 -- Info Personal: Andrea Belén Vallecillo Escobar
-INSERT INTO Personal_Info_Personal (ID_Persona, Estado_Civil, Condicion_Civil, Nombre_Conyuge, Conyuge_Ocupacion, Conyuge_Centro_Laboral, Tiene_Hijos, Numero_Hijos, Direccion, Ocupacion, Centro_Laboral, Nivel_Academico)
-SELECT (SELECT ID_Persona FROM Personas WHERE Cedula = '001-230108-1018M'), 'Soltero', 'Ninguna', NULL, NULL, NULL, FALSE, NULL, 'Km 17 ½ carretera a xiloa, 3 c arriba ½ c al sur', 'Estudiante', NULL, 'Nivel_Tecnico'
+INSERT INTO Personal_Info_Personal (ID_Persona, Estado_Civil, Condicion_Civil, Nombre_Conyuge, Tiene_Hijos, Numero_Hijos, Direccion, Ocupacion, Centro_Laboral, Nivel_Academico)
+SELECT (SELECT ID_Persona FROM Personas WHERE Cedula = '001-230108-1018M'), 'Soltero', 'Ninguna', NULL, FALSE, NULL, 'Km 17 ½ carretera a xiloa, 3 c arriba ½ c al sur', 'Estudiante', NULL, 'Nivel_Tecnico'
 WHERE NOT EXISTS (SELECT 1 FROM Personal_Info_Personal WHERE ID_Persona = (SELECT ID_Persona FROM Personas WHERE Cedula = '001-230108-1018M'));
 
 -- Info Iglesia: Andrea Belén Vallecillo Escobar
@@ -890,7 +890,7 @@ INSERT INTO Solicitudes_Personal (
   Capacitacion_Ensenanza, Capacitacion_Detalle,
   Observaciones_Espirituales_Sol,
   Asistio_Otra_Iglesia, Nombre_Otra_Iglesia, Denominacion_Otra_Iglesia
-) VALUES (
+) SELECT
   (SELECT ID_Persona FROM Personas WHERE Cedula = '001-071109-1024T'), 1, 1, 1,
   'Aprobado', NOW(), NOW(), 'Importación desde formulario Excel - Turno Miercoles',
   'Femenino', '001-071109-1024T', 'Soltero', 'Ninguna',
@@ -907,7 +907,7 @@ INSERT INTO Solicitudes_Personal (
   FALSE, 'Completado',
   NULL,
   TRUE, 'Ríos de Agua viva', 'Otro'
-);
+WHERE NOT EXISTS (SELECT 1 FROM Solicitudes_Personal WHERE ID_Persona = (SELECT ID_Persona FROM Personas WHERE Cedula = '001-071109-1024T') AND Estado = 'Aprobado');
 
 -- Requisitos: Genesis Belen Alvarez Guerrero
 INSERT INTO Solicitudes_Requisitos (ID_Solicitud, ID_Requisito, Cumplido, Fecha_Cumplido)
@@ -932,8 +932,8 @@ SELECT (SELECT ID_Persona FROM Personas WHERE Cedula = '001-071109-1024T'), 1,
 WHERE NOT EXISTS (SELECT 1 FROM Personal_Sistema WHERE ID_Persona = (SELECT ID_Persona FROM Personas WHERE Cedula = '001-071109-1024T'));
 
 -- Info Personal: Genesis Belen Alvarez Guerrero
-INSERT INTO Personal_Info_Personal (ID_Persona, Estado_Civil, Condicion_Civil, Nombre_Conyuge, Conyuge_Ocupacion, Conyuge_Centro_Laboral, Tiene_Hijos, Numero_Hijos, Direccion, Ocupacion, Centro_Laboral, Nivel_Academico)
-SELECT (SELECT ID_Persona FROM Personas WHERE Cedula = '001-071109-1024T'), 'Soltero', 'Ninguna', NULL, NULL, NULL, FALSE, NULL, 'Del super express 7c abajo casa G4-08', 'Estudiange', 'Colegio Enmanuel Mongalo y Rubio', 'Secundaria'
+INSERT INTO Personal_Info_Personal (ID_Persona, Estado_Civil, Condicion_Civil, Nombre_Conyuge, Tiene_Hijos, Numero_Hijos, Direccion, Ocupacion, Centro_Laboral, Nivel_Academico)
+SELECT (SELECT ID_Persona FROM Personas WHERE Cedula = '001-071109-1024T'), 'Soltero', 'Ninguna', NULL, FALSE, NULL, 'Del super express 7c abajo casa G4-08', 'Estudiange', 'Colegio Enmanuel Mongalo y Rubio', 'Secundaria'
 WHERE NOT EXISTS (SELECT 1 FROM Personal_Info_Personal WHERE ID_Persona = (SELECT ID_Persona FROM Personas WHERE Cedula = '001-071109-1024T'));
 
 -- Info Iglesia: Genesis Belen Alvarez Guerrero
@@ -1004,7 +1004,7 @@ INSERT INTO Solicitudes_Personal (
   Capacitacion_Ensenanza, Capacitacion_Detalle,
   Observaciones_Espirituales_Sol,
   Asistio_Otra_Iglesia, Nombre_Otra_Iglesia, Denominacion_Otra_Iglesia
-) VALUES (
+) SELECT
   (SELECT ID_Persona FROM Personas WHERE Cedula = '001-200802-1043L'), 1, 1, 1,
   'Aprobado', NOW(), NOW(), 'Importación desde formulario Excel - Turno Miercoles',
   'Femenino', '001-200802-1043L', 'Soltero', 'Ninguna',
@@ -1021,7 +1021,7 @@ INSERT INTO Solicitudes_Personal (
   TRUE, 'He trabajado como tutora académica a niños menores de 12 años, desde que tengo 20 años. Actualmente, soy maestra sombra (o de apoyo) en 1er nivel de Pre-Escolar, y estoy a cargo de Guardería por las tardes. Trabajo diariamente con niños de entre 3 a 8 años.',
   NULL,
   FALSE, NULL, NULL
-);
+WHERE NOT EXISTS (SELECT 1 FROM Solicitudes_Personal WHERE ID_Persona = (SELECT ID_Persona FROM Personas WHERE Cedula = '001-200802-1043L') AND Estado = 'Aprobado');
 
 -- Requisitos: Juliana Saraí Matamoros Ordeñana
 INSERT INTO Solicitudes_Requisitos (ID_Solicitud, ID_Requisito, Cumplido, Fecha_Cumplido)
@@ -1049,8 +1049,8 @@ SELECT (SELECT ID_Persona FROM Personas WHERE Cedula = '001-200802-1043L'), 1,
 WHERE NOT EXISTS (SELECT 1 FROM Personal_Sistema WHERE ID_Persona = (SELECT ID_Persona FROM Personas WHERE Cedula = '001-200802-1043L'));
 
 -- Info Personal: Juliana Saraí Matamoros Ordeñana
-INSERT INTO Personal_Info_Personal (ID_Persona, Estado_Civil, Condicion_Civil, Nombre_Conyuge, Conyuge_Ocupacion, Conyuge_Centro_Laboral, Tiene_Hijos, Numero_Hijos, Direccion, Ocupacion, Centro_Laboral, Nivel_Academico)
-SELECT (SELECT ID_Persona FROM Personas WHERE Cedula = '001-200802-1043L'), 'Soltero', 'Ninguna', NULL, NULL, NULL, FALSE, NULL, 'Km. 14 carretera nueva a León. Urbanización Valle  Sandino, casa L3-19', 'Estudiante universitaria/Maestra Apoyo 1er Nivel/Maestra de Guardería', 'Centro Educativo Pequeños Gigantes', 'Licenciatura'
+INSERT INTO Personal_Info_Personal (ID_Persona, Estado_Civil, Condicion_Civil, Nombre_Conyuge, Tiene_Hijos, Numero_Hijos, Direccion, Ocupacion, Centro_Laboral, Nivel_Academico)
+SELECT (SELECT ID_Persona FROM Personas WHERE Cedula = '001-200802-1043L'), 'Soltero', 'Ninguna', NULL, FALSE, NULL, 'Km. 14 carretera nueva a León. Urbanización Valle  Sandino, casa L3-19', 'Estudiante universitaria/Maestra Apoyo 1er Nivel/Maestra de Guardería', 'Centro Educativo Pequeños Gigantes', 'Licenciatura'
 WHERE NOT EXISTS (SELECT 1 FROM Personal_Info_Personal WHERE ID_Persona = (SELECT ID_Persona FROM Personas WHERE Cedula = '001-200802-1043L'));
 
 -- Info Iglesia: Juliana Saraí Matamoros Ordeñana
@@ -1119,7 +1119,7 @@ INSERT INTO Solicitudes_Personal (
   Capacitacion_Ensenanza, Capacitacion_Detalle,
   Observaciones_Espirituales_Sol,
   Asistio_Otra_Iglesia, Nombre_Otra_Iglesia, Denominacion_Otra_Iglesia
-) VALUES (
+) SELECT
   (SELECT ID_Persona FROM Personas WHERE Cedula = '561-090101-1006V'), 1, 1, 1,
   'Aprobado', NOW(), NOW(), 'Importación desde formulario Excel - Turno Miercoles',
   'Masculino', '561-090101-1006V', 'Soltero', 'Ninguna',
@@ -1136,7 +1136,7 @@ INSERT INTO Solicitudes_Personal (
   FALSE, 'Completado',
   NULL,
   TRUE, 'Luz del mundo, Apostólica en la fe.', 'Otro'
-);
+WHERE NOT EXISTS (SELECT 1 FROM Solicitudes_Personal WHERE ID_Persona = (SELECT ID_Persona FROM Personas WHERE Cedula = '561-090101-1006V') AND Estado = 'Aprobado');
 
 -- Requisitos: Adán de Jesús Martinez Jiménez
 INSERT INTO Solicitudes_Requisitos (ID_Solicitud, ID_Requisito, Cumplido, Fecha_Cumplido)
@@ -1161,8 +1161,8 @@ SELECT (SELECT ID_Persona FROM Personas WHERE Cedula = '561-090101-1006V'), 1,
 WHERE NOT EXISTS (SELECT 1 FROM Personal_Sistema WHERE ID_Persona = (SELECT ID_Persona FROM Personas WHERE Cedula = '561-090101-1006V'));
 
 -- Info Personal: Adán de Jesús Martinez Jiménez
-INSERT INTO Personal_Info_Personal (ID_Persona, Estado_Civil, Condicion_Civil, Nombre_Conyuge, Conyuge_Ocupacion, Conyuge_Centro_Laboral, Tiene_Hijos, Numero_Hijos, Direccion, Ocupacion, Centro_Laboral, Nivel_Academico)
-SELECT (SELECT ID_Persona FROM Personas WHERE Cedula = '561-090101-1006V'), 'Soltero', 'Ninguna', NULL, NULL, NULL, FALSE, NULL, 'De la carne asada el Dario 2 cuadra al lago, 1 arriba, costado sur de la Iglesia Cristo del Rosario.', 'Técnico', 'Walmart', 'Licenciatura'
+INSERT INTO Personal_Info_Personal (ID_Persona, Estado_Civil, Condicion_Civil, Nombre_Conyuge, Tiene_Hijos, Numero_Hijos, Direccion, Ocupacion, Centro_Laboral, Nivel_Academico)
+SELECT (SELECT ID_Persona FROM Personas WHERE Cedula = '561-090101-1006V'), 'Soltero', 'Ninguna', NULL, FALSE, NULL, 'De la carne asada el Dario 2 cuadra al lago, 1 arriba, costado sur de la Iglesia Cristo del Rosario.', 'Técnico', 'Walmart', 'Licenciatura'
 WHERE NOT EXISTS (SELECT 1 FROM Personal_Info_Personal WHERE ID_Persona = (SELECT ID_Persona FROM Personas WHERE Cedula = '561-090101-1006V'));
 
 -- Info Iglesia: Adán de Jesús Martinez Jiménez
@@ -1233,7 +1233,7 @@ INSERT INTO Solicitudes_Personal (
   Capacitacion_Ensenanza, Capacitacion_Detalle,
   Observaciones_Espirituales_Sol,
   Asistio_Otra_Iglesia, Nombre_Otra_Iglesia, Denominacion_Otra_Iglesia
-) VALUES (
+) SELECT
   (SELECT ID_Persona FROM Personas WHERE Cedula = '001-280994-0032L'), 1, 1, 1,
   'Aprobado', NOW(), NOW(), 'Importación desde formulario Excel - Turno Miercoles',
   'Femenino', '001-280994-0032L', 'Casado', 'Primer_Matrimonio',
@@ -1250,7 +1250,7 @@ INSERT INTO Solicitudes_Personal (
   FALSE, 'Completado',
   NULL,
   TRUE, 'Beraca - Bautista', 'Otro'
-);
+WHERE NOT EXISTS (SELECT 1 FROM Solicitudes_Personal WHERE ID_Persona = (SELECT ID_Persona FROM Personas WHERE Cedula = '001-280994-0032L') AND Estado = 'Aprobado');
 
 -- Requisitos: RITA CASSANDRA BASSETT MIRANDA
 INSERT INTO Solicitudes_Requisitos (ID_Solicitud, ID_Requisito, Cumplido, Fecha_Cumplido)
@@ -1278,8 +1278,8 @@ SELECT (SELECT ID_Persona FROM Personas WHERE Cedula = '001-280994-0032L'), 1,
 WHERE NOT EXISTS (SELECT 1 FROM Personal_Sistema WHERE ID_Persona = (SELECT ID_Persona FROM Personas WHERE Cedula = '001-280994-0032L'));
 
 -- Info Personal: RITA CASSANDRA BASSETT MIRANDA
-INSERT INTO Personal_Info_Personal (ID_Persona, Estado_Civil, Condicion_Civil, Nombre_Conyuge, Conyuge_Ocupacion, Conyuge_Centro_Laboral, Tiene_Hijos, Numero_Hijos, Direccion, Ocupacion, Centro_Laboral, Nivel_Academico)
-SELECT (SELECT ID_Persona FROM Personas WHERE Cedula = '001-280994-0032L'), 'Casado', 'Primer_Matrimonio', 'JUNIOR EVARISTO RAMIREZ ROJAS', 'Abogado', 'Abba Xpress', FALSE, NULL, 'Avenida 26, calle 6, casa S9', 'Diaeñadora', 'Abba Xpress', 'Licenciatura'
+INSERT INTO Personal_Info_Personal (ID_Persona, Estado_Civil, Condicion_Civil, Nombre_Conyuge, Tiene_Hijos, Numero_Hijos, Direccion, Ocupacion, Centro_Laboral, Nivel_Academico)
+SELECT (SELECT ID_Persona FROM Personas WHERE Cedula = '001-280994-0032L'), 'Casado', 'Primer_Matrimonio', 'JUNIOR EVARISTO RAMIREZ ROJAS', FALSE, NULL, 'Avenida 26, calle 6, casa S9', 'Diaeñadora', 'Abba Xpress', 'Licenciatura'
 WHERE NOT EXISTS (SELECT 1 FROM Personal_Info_Personal WHERE ID_Persona = (SELECT ID_Persona FROM Personas WHERE Cedula = '001-280994-0032L'));
 
 -- Info Iglesia: RITA CASSANDRA BASSETT MIRANDA
@@ -1359,7 +1359,7 @@ INSERT INTO Solicitudes_Personal (
   Capacitacion_Ensenanza, Capacitacion_Detalle,
   Observaciones_Espirituales_Sol,
   Asistio_Otra_Iglesia, Nombre_Otra_Iglesia, Denominacion_Otra_Iglesia
-) VALUES (
+) SELECT
   (SELECT ID_Persona FROM Personas WHERE Cedula = '085-171281-0002F'), 1, 1, 1,
   'Aprobado', NOW(), NOW(), 'Importación desde formulario Excel - Turno Miercoles',
   'Femenino', '085-171281-0002F', 'Soltero', 'Ninguna',
@@ -1376,7 +1376,7 @@ INSERT INTO Solicitudes_Personal (
   TRUE, 'Di clases en la universidad de computacion, clase matematica e ingles personalizada',
   NULL,
   TRUE, 'Asambleas de Dios / pentecoste', 'Otro'
-);
+WHERE NOT EXISTS (SELECT 1 FROM Solicitudes_Personal WHERE ID_Persona = (SELECT ID_Persona FROM Personas WHERE Cedula = '085-171281-0002F') AND Estado = 'Aprobado');
 
 -- Requisitos: Flor Patricia Ulloa Peralta
 INSERT INTO Solicitudes_Requisitos (ID_Solicitud, ID_Requisito, Cumplido, Fecha_Cumplido)
@@ -1404,8 +1404,8 @@ SELECT (SELECT ID_Persona FROM Personas WHERE Cedula = '085-171281-0002F'), 1,
 WHERE NOT EXISTS (SELECT 1 FROM Personal_Sistema WHERE ID_Persona = (SELECT ID_Persona FROM Personas WHERE Cedula = '085-171281-0002F'));
 
 -- Info Personal: Flor Patricia Ulloa Peralta
-INSERT INTO Personal_Info_Personal (ID_Persona, Estado_Civil, Condicion_Civil, Nombre_Conyuge, Conyuge_Ocupacion, Conyuge_Centro_Laboral, Tiene_Hijos, Numero_Hijos, Direccion, Ocupacion, Centro_Laboral, Nivel_Academico)
-SELECT (SELECT ID_Persona FROM Personas WHERE Cedula = '085-171281-0002F'), 'Soltero', 'Ninguna', NULL, NULL, NULL, FALSE, NULL, 'II etapa ; casa i8', 'Responsable de importaciones', 'Comercializadora de Mani S.A.', 'Ingenieria'
+INSERT INTO Personal_Info_Personal (ID_Persona, Estado_Civil, Condicion_Civil, Nombre_Conyuge, Tiene_Hijos, Numero_Hijos, Direccion, Ocupacion, Centro_Laboral, Nivel_Academico)
+SELECT (SELECT ID_Persona FROM Personas WHERE Cedula = '085-171281-0002F'), 'Soltero', 'Ninguna', NULL, FALSE, NULL, 'II etapa ; casa i8', 'Responsable de importaciones', 'Comercializadora de Mani S.A.', 'Ingenieria'
 WHERE NOT EXISTS (SELECT 1 FROM Personal_Info_Personal WHERE ID_Persona = (SELECT ID_Persona FROM Personas WHERE Cedula = '085-171281-0002F'));
 
 -- Info Iglesia: Flor Patricia Ulloa Peralta

@@ -86,11 +86,13 @@ const mapCondicionSoltero = (sv) => {
   return 'Ninguna';
 };
 
-const cleanText = (val) => {
+const cleanText = (val, maxLen = null) => {
   if (!val) return null;
   const s = String(val).trim();
   if (s === '' || s === 'No aplica' || s === 'no aplica' || s === 'No tengo' || s === 'no tengo' || s === 'No' || s === 'no' || s === '-' || s === '—' || s === 'No tengo experiencia') return null;
-  return s;
+  if (s === 'No tengo') return null;
+  if (s === 'No estoy segura') return null;
+  return maxLen ? s.slice(0, maxLen) : s;
 };
 
 const isYes = (val) => {
@@ -318,10 +320,10 @@ BEGIN;
     const sexo = row[COL.SEXO] ? String(row[COL.SEXO]).trim() : null;
     const fechaNac = serialToDate(row[COL.FECHA_NAC]);
 
-    const telClaro = cleanText(row[COL.TEL_CLARO]);
-    const telTigo = cleanText(row[COL.TEL_TIGO]);
-    const telCasa = cleanText(row[COL.TEL_CASA]);
-    const telTrabajo = cleanText(row[COL.TEL_TRABAJO]);
+    const telClaro = cleanText(row[COL.TEL_CLARO], 20);
+    const telTigo = cleanText(row[COL.TEL_TIGO], 20);
+    const telCasa = cleanText(row[COL.TEL_CASA], 20);
+    const telTrabajo = cleanText(row[COL.TEL_TRABAJO], 20);
     const telefonoPrincipal = telClaro || telTigo || telCasa || telTrabajo || null;
 
     // Estado civil
@@ -365,7 +367,7 @@ BEGIN;
 
     // Líder
     const liderNombreCompleto = cleanText(row[COL.LIDER_NOMBRE]);
-    let liderTel = cleanText(row[COL.LIDER_TEL]);
+    let liderTel = cleanText(row[COL.LIDER_TEL], 20);
     let liderNombres = null;
     let liderApellidos = null;
     if (liderNombreCompleto) {
@@ -535,7 +537,7 @@ BEGIN;
     sql += `  Capacitacion_Ensenanza, Capacitacion_Detalle,\n`;
     sql += `  Observaciones_Espirituales_Sol,\n`;
     sql += `  Asistio_Otra_Iglesia, Nombre_Otra_Iglesia, Denominacion_Otra_Iglesia\n`;
-    sql += `) VALUES (\n`;
+    sql += `) SELECT\n`;
     sql += `  ${idPersonaRef}, 1, ${ID_GESTIONADO}, ${ID_GESTIONADO},\n`;
     sql += `  'Aprobado', NOW(), NOW(), 'Importación desde formulario Excel - Turno Miercoles',\n`;
     sql += `  ${esc(sexo)}, ${esc(cedulaFinal)}, ${esc(ecFinal)}, ${esc(ccFinal)},\n`;
@@ -552,7 +554,7 @@ BEGIN;
     sql += `  ${escBool(capacitacionEnsenanza)}, ${esc(capacitacionDetalle || 'Completado')},\n`;
     sql += `  NULL,\n`;
     sql += `  ${escBool(asistioOtraIglesia)}, ${esc(nombreIglesiaAnterior)}, ${esc(denominacionOtraIglesia)}\n`;
-    sql += `);\n\n`;
+    sql += `WHERE NOT EXISTS (SELECT 1 FROM Solicitudes_Personal WHERE ID_Persona = ${idPersonaRef} AND Estado = 'Aprobado');\n\n`;
 
     const idSolicitudRef = `(SELECT MAX(ID_Solicitud) FROM Solicitudes_Personal WHERE ID_Persona = ${idPersonaRef})`;
 
@@ -590,8 +592,8 @@ BEGIN;
     // ── Personal_Info_Personal ────────────────────────────────────
 
     sql += `-- Info Personal: ${nombreCompleto}\n`;
-    sql += `INSERT INTO Personal_Info_Personal (ID_Persona, Estado_Civil, Condicion_Civil, Nombre_Conyuge, Conyuge_Ocupacion, Conyuge_Centro_Laboral, Tiene_Hijos, Numero_Hijos, Direccion, Ocupacion, Centro_Laboral, Nivel_Academico)\n`;
-    sql += `SELECT ${idPersonaRef}, ${esc(ecFinal)}, ${esc(ccFinal)}, ${esc(nombreConyuge)}, ${esc(conyugeOcupacion)}, ${esc(conyugeCentroLaboral)}, ${escBool(tieneHijos)}, ${tieneHijos ? numeroHijos : 'NULL'}, ${esc(dirExacta)}, ${esc(ocupacion)}, ${esc(centroLaboral)}, ${esc(nivelAcademico)}\n`;
+    sql += `INSERT INTO Personal_Info_Personal (ID_Persona, Estado_Civil, Condicion_Civil, Nombre_Conyuge, Tiene_Hijos, Numero_Hijos, Direccion, Ocupacion, Centro_Laboral, Nivel_Academico)\n`;
+    sql += `SELECT ${idPersonaRef}, ${esc(ecFinal)}, ${esc(ccFinal)}, ${esc(nombreConyuge)}, ${escBool(tieneHijos)}, ${tieneHijos ? numeroHijos : 'NULL'}, ${esc(dirExacta)}, ${esc(ocupacion)}, ${esc(centroLaboral)}, ${esc(nivelAcademico)}\n`;
     sql += `WHERE NOT EXISTS (SELECT 1 FROM Personal_Info_Personal WHERE ID_Persona = ${idPersonaRef});\n\n`;
 
     // ── Personal_Info_Iglesia ─────────────────────────────────────
