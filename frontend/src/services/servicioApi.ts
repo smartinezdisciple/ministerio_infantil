@@ -381,8 +381,8 @@ export interface PersonalAsistenciaApi {
 
 export const listarPersonalHoy = () => get<PersonalAsistenciaApi[]>('/personal/asistencia-hoy');
 
-export const registrarAsistenciaPersonal = (idPersona: number, estadoLlegada: string) =>
-  post<PersonalAsistenciaApi>('/personal/asistencia', { idPersona, estadoLlegada });
+export const registrarAsistenciaPersonal = (idPersona: number, estadoLlegada: string, idTurno: number) =>
+  post<PersonalAsistenciaApi>('/personal/asistencia', { idPersona, estadoLlegada, idTurno });
 
 // ══════════════════════════════════════════════════════════════════
 // CONTACTOS / DIRECTORIO — GET /api/contactos  |  GET /api/ninos/:id/contactos

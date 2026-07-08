@@ -5,7 +5,8 @@ import BadgeEstado from '../components/BadgeEstado';
 import { useAuth } from '../contexts/ContextoAuth';
 import { toast } from 'sonner';
 import type { PersonalAsistencia, EstadoLlegada, RolNombre, MetricasPersonal } from '../services/tipos';
-import { listarPersonalHoy, registrarAsistenciaPersonal } from '../services/servicioApi';
+import { listarPersonalHoy, listarTurnos, registrarAsistenciaPersonal } from '../services/servicioApi';
+import type { TurnoApi } from '../services/servicioApi';
 
 // ── Configuración de estados de llegada ───────────────────────────
 const ESTADOS_LLEGADA: Array<{
@@ -42,15 +43,22 @@ const PaginaAsistenciaPersonal: React.FC = () => {
   const [idSeleccionado,    setIdSeleccionado]    = useState<number | ''>('');
   const [estadoSeleccionado, setEstadoSeleccionado] = useState<EstadoLlegada | null>(null);
   const [enviando,           setEnviando]          = useState(false);
+  const [turnos, setTurnos] = useState<TurnoApi[]>([]);
+  const [idTurnoSeleccionado, setIdTurnoSeleccionado] = useState<number | ''>('');
 
   const cargarPersonal = useCallback(async () => {
     setCargando(true);
     try {
-      const datos = await listarPersonalHoy();
+      const [datos, turnosData] = await Promise.all([
+        listarPersonalHoy(),
+        listarTurnos(),
+      ]);
       setPersonal(datos as unknown as PersonalAsistencia[]);
+      setTurnos(turnosData.filter((t) => t.activo));
     } catch (err) {
       console.error('Error cargando personal:', err);
       setPersonal([]);
+      setTurnos([]);
     } finally {
       setCargando(false);
     }
@@ -100,10 +108,10 @@ const PaginaAsistenciaPersonal: React.FC = () => {
   }, [personal]);
 
   const handleRegistrar = async () => {
-    if (!idSeleccionado || !estadoSeleccionado) return;
+    if (!idSeleccionado || !estadoSeleccionado || !idTurnoSeleccionado) return;
     setEnviando(true);
     try {
-      await registrarAsistenciaPersonal(Number(idSeleccionado), estadoSeleccionado);
+      await registrarAsistenciaPersonal(Number(idSeleccionado), estadoSeleccionado, Number(idTurnoSeleccionado));
       const hora = new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
       setPersonal((prev) => prev.map((p) =>
         p.idPersona === idSeleccionado
@@ -177,6 +185,31 @@ const PaginaAsistenciaPersonal: React.FC = () => {
                   </div>
                 </div>
 
+                {/* Selector de turno */}
+                <div className="space-y-stack-sm">
+                  <label htmlFor="sel-turno" className="text-label-md font-label-md text-on-surface-variant ml-1 block">
+                    Turno <span className="text-error">*</span>
+                  </label>
+                  <div className="relative">
+                    <select
+                      id="sel-turno"
+                      value={idTurnoSeleccionado}
+                      onChange={(e) => setIdTurnoSeleccionado(e.target.value ? Number(e.target.value) : '')}
+                      className="w-full h-12 bg-transparent border border-outline rounded-lg px-4 pr-10 focus:border-primary focus:ring-2 focus:ring-primary/20 appearance-none text-body-md text-on-surface outline-none"
+                    >
+                      <option value="" disabled>Seleccionar turno...</option>
+                      {turnos.map((t) => (
+                        <option key={t.idTurno} value={t.idTurno}>
+                          {t.nombre}
+                        </option>
+                      ))}
+                    </select>
+                    <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-on-surface-variant" aria-hidden="true">
+                      expand_more
+                    </span>
+                  </div>
+                </div>
+
                 {/* Selector de estado (grid 2×2) */}
                 <div className="space-y-stack-sm">
                   <p className="text-label-md font-label-md text-on-surface-variant ml-1">
@@ -207,7 +240,7 @@ const PaginaAsistenciaPersonal: React.FC = () => {
 
                 <button
                   type="submit"
-                  disabled={!idSeleccionado || !estadoSeleccionado || enviando}
+                  disabled={!idSeleccionado || !estadoSeleccionado || !idTurnoSeleccionado || enviando}
                   className="w-full h-12 bg-primary text-on-primary rounded-lg text-label-md font-label-md shadow-md active:scale-95 transition-transform hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   {enviando ? (
