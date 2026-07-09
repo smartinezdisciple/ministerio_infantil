@@ -498,7 +498,7 @@ export const obtenerPerfilCompleto = async (req: Request, res: Response) => {
         p.Apellidos                                    AS "apellidos",
         p.Sexo                                         AS "sexo",
         p.Cedula                                       AS "cedula",
-        p.Fecha_Nacimiento                             AS "fechaNacimiento",
+        p.Fecha_Nacimiento::TEXT                       AS "fechaNacimiento",
         ps.Usuario                                     AS "usuario",
         r.Nombre_Rol                                   AS "rol",
         r.Nivel_Jerarquico                             AS "nivelJerarquico",

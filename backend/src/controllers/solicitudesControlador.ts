@@ -137,7 +137,7 @@ const CONSULTA_SOLICITUD_BASE = `
     p_cand.Nombres || ' ' || p_cand.Apellidos                AS "candidato",
     p_cand.Sexo                                               AS "sexoPersona",
     -- Datos base de la persona (no en snapshot)
-    p_cand.Fecha_Nacimiento                                   AS "fechaNacimiento",
+    p_cand.Fecha_Nacimiento::TEXT                             AS "fechaNacimiento",
     -- Bloque A — datos del candidato en el snapshot
     sp.Sexo_Candidato                                         AS "sexoCandidato",
     sp.Cedula_Candidato                                       AS "cedulaCandidato",
