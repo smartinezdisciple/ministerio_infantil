@@ -33,12 +33,19 @@ export const verificarToken = (req: Request, res: Response, siguiente: NextFunct
     return;
   }
 
-  const encabezado = req.headers.authorization;
   let token: string | undefined;
 
-  if (encabezado && encabezado.toLowerCase().startsWith('bearer ')) {
-    token = encabezado.slice(7).trim();
-  } else {
+  // 1. Intentar desde Authorization header
+  const encabezado = req.headers.authorization;
+  if (encabezado) {
+    const partes = encabezado.split(' ');
+    if (partes.length === 2 && partes[0].toLowerCase() === 'bearer') {
+      token = partes[1].trim();
+    }
+  }
+
+  // 2. Fallback: token en query param (para window.open / descargas)
+  if (!token) {
     token = req.query.token as string | undefined;
   }
 

@@ -381,6 +381,11 @@ export interface PersonalAsistenciaApi {
 
 export const listarPersonalHoy = () => get<PersonalAsistenciaApi[]>('/personal/asistencia-hoy');
 
+export const listarPersonalPorFecha = (fecha: string) => {
+  const params = new URLSearchParams({ fecha });
+  return get<PersonalAsistenciaApi[]>(`/personal/asistencia-hoy?${params}`);
+};
+
 export const registrarAsistenciaPersonal = (idPersona: number, estadoLlegada: string, idTurno: number) =>
   post<PersonalAsistenciaApi>('/personal/asistencia', { idPersona, estadoLlegada, idTurno });
 
@@ -907,14 +912,14 @@ export const obtenerHistorialCambios = (id: number) =>
 // REPORTES — Generación y exportación (Spec §9.12)
 // ══════════════════════════════════════════════════════════════════
 
+export const exportarReporteCSV = (tipo: string, params?: Record<string, string>) => {
+  window.open(`${URL_BASE}/reportes/${tipo}/csv${inyectarToken(params)}`, '_blank');
+};
+
 const inyectarToken = (params?: Record<string, string>): string => {
   const token = localStorage.getItem('ed_token') || '';
   const paramsConToken = { ...params, token };
   return `?${new URLSearchParams(paramsConToken).toString()}`;
-};
-
-export const exportarReporteCSV = (tipo: string, params?: Record<string, string>) => {
-  window.open(`${URL_BASE}/reportes/${tipo}/csv${inyectarToken(params)}`, '_blank');
 };
 
 export const exportarReporteExcel = (tipo: string, params?: Record<string, string>) => {

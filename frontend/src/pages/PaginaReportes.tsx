@@ -270,7 +270,7 @@ const PaginaReportes: React.FC = () => {
                 {reporteSeleccionado.titulo}
               </h2>
               {reporteSeleccionado.id === 'incidencias' ? (
-                <button onClick={() => exportarReporteExcel('incidencias', { fecha: filtros.fecha || '' })}
+                <button onClick={() => exportarReporteExcel('incidencias', { fecha: filtros.fecha })}
                   className="flex items-center gap-2 bg-success text-on-success rounded-xl px-4 py-2 font-label-md shadow-md hover:bg-success/90 active:scale-95 transition-all">
                   <span className="material-symbols-outlined text-[18px]">download</span>
                   Descargar Excel

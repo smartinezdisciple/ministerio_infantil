@@ -221,12 +221,22 @@ const FILA_POR_EDAD: Record<string, number> = {
   '12-14': 16,
 };
 
-/** Turnos dominicales que aparecen en la plantilla (ID_Turno → columna Excel) */
-const TURNOS_INCIDENCIAS = [
-  { idTurno: 2, columna: 'B', etiqueta: 'Domingo_8am' },
-  { idTurno: 3, columna: 'C', etiqueta: 'Domingo_11am' },
-  { idTurno: 4, columna: 'D', etiqueta: 'Domingo_5pm' },
-];
+/** Turnos por día (ID_Turno → columna Excel) */
+const TURNOS_POR_DIA: Record<number, Array<{ idTurno: number; columna: string }>> = {
+  0: [  // Domingo
+    { idTurno: 2, columna: 'B' },
+    { idTurno: 3, columna: 'C' },
+    { idTurno: 4, columna: 'D' },
+  ],
+  3: [  // Miércoles
+    { idTurno: 1, columna: 'B' },
+  ],
+};
+
+const PLANTILLA_POR_DIA: Record<number, string> = {
+  0: 'incidencias_domingo.xlsx',
+  3: 'incidencias_miercoles.xlsx',
+};
 
 /**
  * GET /api/reportes/incidencias/excel
@@ -236,18 +246,26 @@ export const exportarIncidenciasExcel = async (req: Request, res: Response): Pro
   try {
     const XLSX = (await import('xlsx')).default;
 
-    const rutaPlantilla = new URL('../../incidencias.xlsx', import.meta.url).pathname;
+    const fechaStr = (req.query.fecha as string) || new Date().toISOString().split('T')[0];
+    const diaSemana = new Date(fechaStr + 'T12:00:00').getDay();
+
+    const nombrePlantilla = PLANTILLA_POR_DIA[diaSemana];
+    if (!nombrePlantilla) {
+      res.status(400).json({ exito: false, mensaje: 'No hay plantilla para el día seleccionado. Solo Domingos y Miércoles.' });
+      return;
+    }
+
+    const rutaPlantilla = new URL(`../../${nombrePlantilla}`, import.meta.url).pathname;
     const wb = XLSX.readFile(rutaPlantilla);
     const ws = wb.Sheets[wb.SheetNames[0]];
-
-    const fechaStr = (req.query.fecha as string) || new Date().toISOString().split('T')[0];
+    const turnosActivos = TURNOS_POR_DIA[diaSemana];
 
     // Localidad y fecha
     ws['B3'] = { t: 's', v: 'Linda Vista' };
     ws['E3'] = { t: 's', v: fechaStr };
 
-    // Para cada turno dominical, contar niños por edad
-    for (const turno of TURNOS_INCIDENCIAS) {
+    // Para cada turno, contar niños por edad
+    for (const turno of turnosActivos) {
       const { rows } = await pool.query(`
         SELECT EXTRACT(YEAR FROM AGE($1::date, p.Fecha_Nacimiento))::int AS edad
         FROM Asistencia_Ninos an
@@ -277,16 +295,28 @@ export const exportarIncidenciasExcel = async (req: Request, res: Response): Pro
 
     // Actualizar valores cacheados de las fórmulas SUM para que se vean sin recálculo
     for (let fila = 8; fila <= 16; fila++) {
-      const suma = TURNOS_INCIDENCIAS.reduce((acc, t) => acc + ((ws[`${t.columna}${fila}`]?.v as number) || 0), 0);
+      const suma = turnosActivos.reduce((acc, t) => acc + ((ws[`${t.columna}${fila}`]?.v as number) || 0), 0);
       if (ws[`E${fila}`]) ws[`E${fila}`].v = suma;
     }
-    for (const t of TURNOS_INCIDENCIAS) {
+    for (const t of turnosActivos) {
       let suma = 0;
       for (let fila = 8; fila <= 16; fila++) suma += (ws[`${t.columna}${fila}`]?.v as number) || 0;
       if (ws[`${t.columna}17`]) ws[`${t.columna}17`].v = suma;
     }
-    const totalGeneral = TURNOS_INCIDENCIAS.reduce((acc, t) => acc + ((ws[`${t.columna}17`]?.v as number) || 0), 0);
+    const totalGeneral = turnosActivos.reduce((acc, t) => acc + ((ws[`${t.columna}17`]?.v as number) || 0), 0);
     if (ws['E17']) ws['E17'].v = totalGeneral;
+
+    // Servidores (asistencia maestros) por turno
+    for (const turno of turnosActivos) {
+      const { rows } = await pool.query(`
+        SELECT COUNT(DISTINCT id_personal)::int AS total
+        FROM Asistencia_Maestros
+        WHERE fecha = $1 AND id_turno = $2
+      `, [fechaStr, turno.idTurno]);
+      ws[`${turno.columna}19`] = { t: 'n', v: rows[0]?.total ?? 0 };
+    }
+    const totalServidores = turnosActivos.reduce((acc, t) => acc + ((ws[`${t.columna}19`]?.v as number) || 0), 0);
+    ws['E19'] = { t: 'n', v: totalServidores };
 
     const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
     const nombreArchivo = `incidencias-${fechaStr}.xlsx`;
@@ -298,7 +328,6 @@ export const exportarIncidenciasExcel = async (req: Request, res: Response): Pro
     res.status(500).json({ exito: false, mensaje: 'Error generando el reporte de incidencias.' });
   }
 };
-
 /** Normaliza el nombre del turno enviado por el cliente para hacerlo coincidir con el enum de la BD */
 const normalizarTurno = (turno: string): string => {
   const t = turno.trim().toLowerCase();

@@ -22,7 +22,7 @@ enrutador.get('/cumpleanos/datos', requerirNivel(3), obtenerCumpleanosDatos);
 
 /**
  * GET /api/reportes/incidencias/excel
- * Reporte especial con plantilla predefinida (incidencias.xlsx)
+ * Reporte especial con plantilla según día (incidencias_domingo.xlsx o incidencias_miercoles.xlsx)
  */
 enrutador.get('/incidencias/excel', requerirNivel(3), exportarIncidenciasExcel);
 

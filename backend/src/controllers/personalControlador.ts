@@ -8,11 +8,16 @@ import bcrypt from 'bcryptjs';
 
 /**
  * GET /api/personal/asistencia-hoy
- * Lista todo el personal con su estado en Asistencia_Maestros hoy.
- * Teléfono proviene de Telefonos_Personas (número principal activo).
+ * Lista el personal con su estado en Asistencia_Maestros para una fecha.
+ * Query params: ?fecha=YYYY-MM-DD (opcional, defaults a hoy)
+ * - Si fecha = hoy: LEFT JOIN (todo el personal activo, con/sin registro)
+ * - Si fecha ≠ hoy: INNER JOIN (solo personal con registro ese día)
  */
-export const listarPersonalHoy = async (_req: Request, res: Response) => {
+export const listarPersonalHoy = async (req: Request, res: Response) => {
   const hoy = new Date().toISOString().split('T')[0];
+  const fecha = (req.query.fecha as string) || hoy;
+  const esHoy = fecha === hoy;
+  const joinTipo = esHoy ? 'LEFT' : 'INNER';
   try {
     const { rows } = await pool.query(`
       SELECT
@@ -22,26 +27,26 @@ export const listarPersonalHoy = async (_req: Request, res: Response) => {
         CONCAT(p.Nombres, ' ', p.Apellidos)              AS "nombreCompleto",
         r.Nombre_Rol                                     AS "rol",
         r.Nivel_Jerarquico                               AS "nivelJerarquico",
-        g.Nombre                                         AS "grupoAsignado",
-        ps.Fecha_Ingreso_Servicio                        AS "fechaIngreso",
+        ${esHoy ? 'g.Nombre' : 'NULL::text'}             AS "grupoAsignado",
+        ${esHoy ? 'ps.Fecha_Ingreso_Servicio' : 'NULL::date'} AS "fechaIngreso",
         am.Estado_Llegada                                AS "estadoLlegada",
         to_char(am.Hora_Llegada, 'HH12:MI AM')           AS "horaLlegada",
-        tp.Numero                                        AS "telefono",
-        tp.Tiene_Whatsapp                                AS "tieneWhatsapp"
+        ${esHoy ? `tp.Numero` : 'NULL::varchar'}         AS "telefono",
+        ${esHoy ? `tp.Tiene_Whatsapp` : 'NULL::boolean'} AS "tieneWhatsapp"
       FROM   Personal_Sistema ps
       JOIN   Personas         p  ON p.ID_Persona  = ps.ID_Persona
       JOIN   Roles            r  ON r.ID_Rol      = ps.ID_Rol
-      LEFT JOIN Personal_Grupos pg ON pg.ID_Personal = ps.ID_Persona
-      LEFT JOIN Grupos          g  ON g.ID_Grupo    = pg.ID_Grupo
-      LEFT JOIN Asistencia_Maestros am
+      ${joinTipo} JOIN Asistencia_Maestros am
              ON am.ID_Personal = ps.ID_Persona AND am.Fecha = $1
+      ${esHoy ? `LEFT JOIN Personal_Grupos pg ON pg.ID_Personal = ps.ID_Persona
+      LEFT JOIN Grupos          g  ON g.ID_Grupo    = pg.ID_Grupo
       LEFT JOIN Telefonos_Personas tp
              ON tp.ID_Persona = ps.ID_Persona
-            AND tp.Es_Principal = TRUE AND tp.Activo = TRUE
+            AND tp.Es_Principal = TRUE AND tp.Activo = TRUE` : ''}
       WHERE  ps.Activo = TRUE
         AND  r.Nivel_Jerarquico < 4
       ORDER  BY r.Nivel_Jerarquico DESC, p.Apellidos
-    `, [hoy]);
+    `, [fecha]);
     res.json({ exito: true, datos: rows });
   } catch (err) {
     console.error('Error al listar personal:', err);
