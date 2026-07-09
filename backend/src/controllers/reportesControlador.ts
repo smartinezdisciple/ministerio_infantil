@@ -209,6 +209,125 @@ export const exportarExcel = async (req: Request, res: Response): Promise<void> 
   }
 };
 
+/**
+ * Mapeo edad → fila en la plantilla incidencias.xlsx (filas 8-16)
+ * Edad exacta → número de fila (1-indexed en Excel)
+ */
+const FILA_POR_EDAD: Record<string, number> = {
+  '3':  8,  '4':  9,  '5':  10,
+  '6':  11, '7':  12, '8':  13,
+  '9':  14,
+  '10-11': 15,
+  '12-14': 16,
+};
+
+/** Turnos por día (ID_Turno → columna Excel) */
+const TURNOS_POR_DIA: Record<number, Array<{ idTurno: number; columna: string }>> = {
+  0: [  // Domingo
+    { idTurno: 2, columna: 'B' },
+    { idTurno: 3, columna: 'C' },
+    { idTurno: 4, columna: 'D' },
+  ],
+  3: [  // Miércoles
+    { idTurno: 1, columna: 'B' },
+  ],
+};
+
+const PLANTILLA_POR_DIA: Record<number, string> = {
+  0: 'incidencias_domingo.xlsx',
+  3: 'incidencias_miercoles.xlsx',
+};
+
+/**
+ * GET /api/reportes/incidencias/excel
+ * Descarga el archivo incidencias.xlsx con los conteos de asistencia por edad y turno.
+ */
+export const exportarIncidenciasExcel = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const XLSX = (await import('xlsx')).default;
+
+    const fechaStr = (req.query.fecha as string) || new Date().toISOString().split('T')[0];
+    const diaSemana = new Date(fechaStr + 'T12:00:00').getDay();
+
+    const nombrePlantilla = PLANTILLA_POR_DIA[diaSemana];
+    if (!nombrePlantilla) {
+      res.status(400).json({ exito: false, mensaje: 'No hay plantilla para el día seleccionado. Solo Domingos y Miércoles.' });
+      return;
+    }
+
+    const rutaPlantilla = new URL(`../../${nombrePlantilla}`, import.meta.url).pathname;
+    const wb = XLSX.readFile(rutaPlantilla);
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const turnosActivos = TURNOS_POR_DIA[diaSemana];
+
+    // Localidad y fecha
+    ws['B3'] = { t: 's', v: 'Linda Vista' };
+    ws['E3'] = { t: 's', v: fechaStr };
+
+    // Para cada turno, contar niños por edad
+    for (const turno of turnosActivos) {
+      const { rows } = await pool.query(`
+        SELECT EXTRACT(YEAR FROM AGE($1::date, p.Fecha_Nacimiento))::int AS edad
+        FROM Asistencia_Ninos an
+        JOIN Personas p ON an.ID_Nino = p.ID_Persona
+        WHERE an.Fecha = $1 AND an.ID_Turno = $2
+      `, [fechaStr, turno.idTurno]);
+
+      const conteo: Record<number, number> = {};
+      for (const row of rows) {
+        const e = row.edad as number;
+        conteo[e] = (conteo[e] || 0) + 1;
+      }
+
+      for (let edad = 3; edad <= 14; edad++) {
+        const key = edad <= 9 ? String(edad) : (edad <= 11 ? '10-11' : '12-14');
+        if (key === '10-11' && edad > 11) continue;
+        if (key === '12-14' && edad < 12) continue;
+
+        const fila = FILA_POR_EDAD[key];
+        if (!fila) continue;
+
+        const celda = `${turno.columna}${fila}`;
+        const actual = (ws[celda]?.v as number) || 0;
+        ws[celda] = { t: 'n', v: actual + (conteo[edad] || 0) };
+      }
+    }
+
+    // Actualizar valores cacheados de las fórmulas SUM para que se vean sin recálculo
+    for (let fila = 8; fila <= 16; fila++) {
+      const suma = turnosActivos.reduce((acc, t) => acc + ((ws[`${t.columna}${fila}`]?.v as number) || 0), 0);
+      if (ws[`E${fila}`]) ws[`E${fila}`].v = suma;
+    }
+    for (const t of turnosActivos) {
+      let suma = 0;
+      for (let fila = 8; fila <= 16; fila++) suma += (ws[`${t.columna}${fila}`]?.v as number) || 0;
+      if (ws[`${t.columna}17`]) ws[`${t.columna}17`].v = suma;
+    }
+    const totalGeneral = turnosActivos.reduce((acc, t) => acc + ((ws[`${t.columna}17`]?.v as number) || 0), 0);
+    if (ws['E17']) ws['E17'].v = totalGeneral;
+
+    // Servidores (asistencia maestros) por turno
+    for (const turno of turnosActivos) {
+      const { rows } = await pool.query(`
+        SELECT COUNT(DISTINCT id_personal)::int AS total
+        FROM Asistencia_Maestros
+        WHERE fecha = $1 AND id_turno = $2
+      `, [fechaStr, turno.idTurno]);
+      ws[`${turno.columna}19`] = { t: 'n', v: rows[0]?.total ?? 0 };
+    }
+    const totalServidores = turnosActivos.reduce((acc, t) => acc + ((ws[`${t.columna}19`]?.v as number) || 0), 0);
+    ws['E19'] = { t: 'n', v: totalServidores };
+
+    const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+    const nombreArchivo = `incidencias-${fechaStr}.xlsx`;
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="${nombreArchivo}"`);
+    res.send(buffer);
+  } catch (err) {
+    console.error('Error exportando incidencias Excel:', err);
+    res.status(500).json({ exito: false, mensaje: 'Error generando el reporte de incidencias.' });
+  }
+};
 /** Normaliza el nombre del turno enviado por el cliente para hacerlo coincidir con el enum de la BD */
 const normalizarTurno = (turno: string): string => {
   const t = turno.trim().toLowerCase();

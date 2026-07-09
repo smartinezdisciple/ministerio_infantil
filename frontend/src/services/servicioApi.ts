@@ -381,6 +381,11 @@ export interface PersonalAsistenciaApi {
 
 export const listarPersonalHoy = () => get<PersonalAsistenciaApi[]>('/personal/asistencia-hoy');
 
+export const listarPersonalPorFecha = (fecha: string) => {
+  const params = new URLSearchParams({ fecha });
+  return get<PersonalAsistenciaApi[]>(`/personal/asistencia-hoy?${params}`);
+};
+
 export const registrarAsistenciaPersonal = (idPersona: number, estadoLlegada: string, idTurno: number) =>
   post<PersonalAsistenciaApi>('/personal/asistencia', { idPersona, estadoLlegada, idTurno });
 

@@ -5,8 +5,9 @@ import BadgeEstado from '../components/BadgeEstado';
 import { useAuth } from '../contexts/ContextoAuth';
 import { toast } from 'sonner';
 import type { PersonalAsistencia, EstadoLlegada, RolNombre, MetricasPersonal } from '../services/tipos';
-import { listarPersonalHoy, listarTurnos, registrarAsistenciaPersonal } from '../services/servicioApi';
+import { listarPersonalPorFecha, listarTurnos, registrarAsistenciaPersonal } from '../services/servicioApi';
 import type { TurnoApi } from '../services/servicioApi';
+import { fechaLocalHoy } from '../services/fechaUtils';
 
 // ── Configuración de estados de llegada ───────────────────────────
 const ESTADOS_LLEGADA: Array<{
@@ -32,8 +33,12 @@ const colorAvatar = (nombre: string) => {
 const PaginaAsistenciaPersonal: React.FC = () => {
   const { usuario } = useAuth();
 
-  // Solo Coordinador (nivel 4) puede registrar asistencia de personal
+  // Solo Staff (nivel 3+) puede registrar asistencia de personal
   const puedeRegistrar = (usuario?.nivelJerarquico ?? 0) >= 3;
+
+  const hoyLocal = fechaLocalHoy();
+  const [filtroFecha, setFiltroFecha] = useState(hoyLocal);
+  const esHoy = filtroFecha === hoyLocal;
 
   // Estado de datos
   const [personal, setPersonal]   = useState<PersonalAsistencia[]>([]);
@@ -49,20 +54,20 @@ const PaginaAsistenciaPersonal: React.FC = () => {
   const cargarPersonal = useCallback(async () => {
     setCargando(true);
     try {
-      const [datos, turnosData] = await Promise.all([
-        listarPersonalHoy(),
-        listarTurnos(),
-      ]);
+      const datos = await listarPersonalPorFecha(filtroFecha);
       setPersonal(datos as unknown as PersonalAsistencia[]);
-      setTurnos(turnosData.filter((t) => t.activo));
+      if (esHoy) {
+        const turnosData = await listarTurnos();
+        setTurnos(turnosData.filter((t) => t.activo));
+      }
     } catch (err) {
       console.error('Error cargando personal:', err);
       setPersonal([]);
-      setTurnos([]);
+      if (esHoy) setTurnos([]);
     } finally {
       setCargando(false);
     }
-  }, []);
+  }, [filtroFecha, esHoy]);
 
   useEffect(() => { cargarPersonal(); }, [cargarPersonal]);
 
@@ -78,13 +83,12 @@ const PaginaAsistenciaPersonal: React.FC = () => {
       maestrosPresentes:        presentes(maestros),
       totalColaboradores:       colaboradores.length,
       colaboradoresPresentes:   presentes(colaboradores),
-      // Calculado en tiempo real en base a Fecha_Ingreso_Servicio (promedio en años)
-      tiempoPromedioServicio:   personal.length > 0
+      tiempoPromedioServicio:   esHoy && personal.length > 0 && personal[0].fechaIngreso
         ? (() => {
-            const hoy = new Date();
+            const h = new Date();
             const promAnios = personal.reduce((acc, p) => {
               const ingreso = new Date(p.fechaIngreso);
-              return acc + (hoy.getFullYear() - ingreso.getFullYear());
+              return acc + (h.getFullYear() - ingreso.getFullYear());
             }, 0) / personal.length;
             return `${promAnios.toFixed(1)} años`;
           })()
@@ -134,9 +138,23 @@ const PaginaAsistenciaPersonal: React.FC = () => {
     <LayoutPrincipal titulo="Asistencia de Personal">
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-stack-lg max-w-7xl">
 
-        {/* ── Columna izquierda: Registro rápido ── */}
+        {/* ── Columna izquierda: selector de fecha + Registro rápido ── */}
         <div className="xl:col-span-1 space-y-stack-md">
           <h2 className="text-headline-md font-headline-md text-primary">Registro Rápido</h2>
+
+          {/* Selector de fecha */}
+          <div className="space-y-stack-sm">
+            <label htmlFor="filtro-fecha-personal" className="text-label-md font-label-md text-on-surface-variant ml-1 block">
+              Fecha
+            </label>
+            <input
+              id="filtro-fecha-personal"
+              type="date"
+              value={filtroFecha}
+              onChange={(e) => { setFiltroFecha(e.target.value); setIdSeleccionado(''); setEstadoSeleccionado(null); }}
+              className="w-full bg-surface-container-low border border-outline-variant rounded-lg px-4 py-2.5 text-body-sm text-on-surface focus:ring-2 focus:ring-primary focus:border-primary focus:outline-none"
+            />
+          </div>
 
           <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-gutter shadow-sm">
             {!puedeRegistrar ? (
@@ -146,6 +164,15 @@ const PaginaAsistenciaPersonal: React.FC = () => {
                 </span>
                 <p className="text-body-sm text-on-surface-variant">
                   Solo Staff y Coordinadores pueden registrar la asistencia del personal.
+                </p>
+              </div>
+            ) : !esHoy ? (
+              <div className="flex flex-col items-center gap-3 py-8 text-center">
+                <span className="material-symbols-outlined text-[40px] text-on-surface-variant/40" aria-hidden="true">
+                  calendar_month
+                </span>
+                <p className="text-body-sm text-on-surface-variant">
+                  Solo se puede registrar asistencia para el día de hoy.
                 </p>
               </div>
             ) : (
@@ -324,9 +351,11 @@ const PaginaAsistenciaPersonal: React.FC = () => {
           </section>
 
           {/* Tabla del día */}
-          <section aria-label="Lista del personal del día">
+          <section aria-label="Lista del personal">
             <div className="flex justify-between items-center mb-stack-md">
-              <h2 className="text-headline-md font-headline-md text-primary">Personal del Día</h2>
+              <h2 className="text-headline-md font-headline-md text-primary">
+                {esHoy ? 'Personal del Día' : `Personal — ${filtroFecha}`}
+              </h2>
               <span className="text-label-sm text-on-surface-variant">
                 {personal.filter((p) => p.estadoLlegada).length} registrados de {personal.length}
               </span>
@@ -367,7 +396,7 @@ const PaginaAsistenciaPersonal: React.FC = () => {
                     {!cargando && personal.length === 0 && (
                       <tr>
                         <td colSpan={4} className="px-2.5 py-8 text-center text-body-sm text-on-surface-variant">
-                          No hay personal registrado para hoy.
+                          {esHoy ? 'No hay personal registrado para hoy.' : 'No hay personal registrado para esta fecha.'}
                         </td>
                       </tr>
                     )}
