@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import LayoutPrincipal from '../components/LayoutPrincipal';
 import { fechaLocalHoy } from '../services/fechaUtils';
-import { obtenerNinosPorGrupoDatos, obtenerCumpleanosDatos, type DatosNinoPorGrupoReporte, type CumpleanosReporteApi } from '../services/servicioApi';
+import { obtenerNinosPorGrupoDatos, obtenerCumpleanosDatos, exportarReporteExcel, type DatosNinoPorGrupoReporte, type CumpleanosReporteApi } from '../services/servicioApi';
 
 interface TipoReporte {
   id: string;
@@ -112,6 +112,17 @@ const TIPOS_REPORTE: TipoReporte[] = [
     fondoIcono: 'bg-secondary/10',
     filtros: [
       { id: 'mes', label: 'Mes', tipo: 'select', opciones: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'] },
+    ],
+  },
+  {
+    id: 'incidencias',
+    titulo: 'Incidencias (Excel)',
+    descripcion: 'Reporte de asistencia e incidencias en Excel con conteo por edades y turno',
+    icono: 'assignment',
+    colorIcono: 'text-error',
+    fondoIcono: 'bg-error/10',
+    filtros: [
+      { id: 'fecha', label: 'Fecha', tipo: 'date' },
     ],
   },
 ];
@@ -258,11 +269,19 @@ const PaginaReportes: React.FC = () => {
               <h2 className="text-headline-md font-headline-md text-on-surface">
                 {reporteSeleccionado.titulo}
               </h2>
-              <button onClick={() => window.print()}
-                className="flex items-center gap-2 bg-error text-on-error rounded-xl px-4 py-2 font-label-md shadow-md hover:bg-error/90 active:scale-95 transition-all">
-                <span className="material-symbols-outlined text-[18px]">picture_as_pdf</span>
-                Imprimir / Guardar PDF
-              </button>
+              {reporteSeleccionado.id === 'incidencias' ? (
+                <button onClick={() => exportarReporteExcel('incidencias', { fecha: filtros.fecha })}
+                  className="flex items-center gap-2 bg-success text-on-success rounded-xl px-4 py-2 font-label-md shadow-md hover:bg-success/90 active:scale-95 transition-all">
+                  <span className="material-symbols-outlined text-[18px]">download</span>
+                  Descargar Excel
+                </button>
+              ) : (
+                <button onClick={() => window.print()}
+                  className="flex items-center gap-2 bg-error text-on-error rounded-xl px-4 py-2 font-label-md shadow-md hover:bg-error/90 active:scale-95 transition-all">
+                  <span className="material-symbols-outlined text-[18px]">picture_as_pdf</span>
+                  Imprimir / Guardar PDF
+                </button>
+              )}
             </div>
 
             {/* Filtros */}
