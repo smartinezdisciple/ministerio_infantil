@@ -44,11 +44,11 @@ enrutador.get('/:id/contactos', requerirNivel(1), fichaContactoNino);
 enrutador.get('/:id/tutores', requerirNivel(1), listarTutoresPorNino);
 
 /**
- * POST /api/ninos — Registrar nuevo niño sin padres (nivel ≥ 3, limitador + validación)
+ * POST /api/ninos — Registrar nuevo niño sin padres (nivel ≥ 2, limitador + validación)
  */
 enrutador.post(
   '/',
-  requerirNivel(3),
+  requerirNivel(2),
   limitadorGeneral,
   validar(esquemaNino),
   crearNino
@@ -56,11 +56,11 @@ enrutador.post(
 
 /**
  * POST /api/ninos/con-padres — Registrar niño + padres en una sola transacción (MVP-01 + MVP-03)
- * Nivel ≥ 3 (Staff / Coordinador).
+ * Nivel ≥ 2 (Maestro / Staff / Coordinador).
  */
 enrutador.post(
   '/con-padres',
-  requerirNivel(3),
+  requerirNivel(2),
   limitadorGeneral,
   validar(esquemaNinoConPadres),
   crearNinoConPadresControlador
@@ -68,11 +68,11 @@ enrutador.post(
 
 /**
  * PUT /api/ninos/:id — Actualizar los datos de un niño existente (MVP-01)
- * Nivel ≥ 3 (Staff / Coordinador).
+ * Nivel ≥ 2 (Maestro / Staff / Coordinador).
  */
 enrutador.put(
   '/:id',
-  requerirNivel(3),
+  requerirNivel(2),
   limitadorGeneral,
   validar(esquemaNino),
   actualizarNino
