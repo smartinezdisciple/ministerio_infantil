@@ -1,6 +1,12 @@
 // src/services/ninosServicio.ts — Lógica de negocio de niños (MVP-01, MVP-02)
-import pool from '../config/db.js';
-import { crearNino, crearNinoConPadres, obtenerNinos, obtenerNinoPorId, obtenerNinoCompleto, actualizarNino, verificarNinoDuplicado, eliminarNino, listarExpedientes, crearExpediente, resolverExpediente, type DatosPadre, type DatosInfoMedica } from '../repositories/ninosRepositorio.js';
+import {
+  crearNino, crearNinoConPadres, obtenerNinos, obtenerNinoPorId, obtenerNinoCompleto,
+  actualizarNino, verificarNinoDuplicado, eliminarNino, listarExpedientes, crearExpediente,
+  resolverExpediente, obtenerGrupoPorEdad,
+  type DatosPadre, type DatosInfoMedica,
+} from '../repositories/ninosRepositorio.js';
+
+
 
 /** Calcula la edad en años a partir de una fecha de nacimiento YYYY-MM-DD */
 const calcularEdad = (fechaNacimiento: string): number => {
@@ -10,29 +16,6 @@ const calcularEdad = (fechaNacimiento: string): number => {
   const mes  = hoy.getMonth() - nac.getMonth();
   if (mes < 0 || (mes === 0 && hoy.getDate() < nac.getDate())) edad--;
   return edad;
-};
-
-/** Retorna el ID del grupo correspondiente a una edad (MVP-02) */
-const obtenerGrupoPorEdad = async (edad: number): Promise<number | null> => {
-  const resultado = await pool.query<{ id_grupo: number }>(
-    `SELECT ID_Grupo AS id_grupo
-     FROM Grupos
-     WHERE Edad_Minima <= $1 AND Edad_Maxima >= $1 AND Activo = TRUE
-     LIMIT 1`,
-    [edad]
-  );
-  if (resultado.rows[0]?.id_grupo) {
-    return resultado.rows[0].id_grupo;
-  }
-  // Si la edad excede todos los grupos (ej: >= 13 años), asignar al grupo activo de mayor edad
-  const fallback = await pool.query<{ id_grupo: number }>(
-    `SELECT ID_Grupo AS id_grupo
-     FROM Grupos
-     WHERE Activo = TRUE
-     ORDER BY Edad_Maxima DESC
-     LIMIT 1`
-  );
-  return fallback.rows[0]?.id_grupo ?? null;
 };
 
 export interface DatosCrearNino {

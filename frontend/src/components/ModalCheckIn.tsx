@@ -1,5 +1,5 @@
 // ModalCheckIn.tsx — Modal de registro de nuevo ingreso de niño (Spec §4.1, R-09 a R-14)
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import ModalBase from './ModalBase';
 import type { Ficha, DatosCheckIn } from '../services/tipos';
 import { useAuth } from '../contexts/ContextoAuth';
@@ -72,6 +72,7 @@ const ModalCheckIn: React.FC<PropsModalCheckIn> = ({ abierto, fecha, onCerrar, o
   const [turnos, setTurnos] = useState<TurnoApi[]>([]);
   const [cargandoTurnos, setCargandoTurnos] = useState(false);
   const [grupos, setGrupos] = useState<GrupoApi[]>([]);
+  const idsNinosYaPresentesRef = useRef<Set<number>>(new Set());
 
   // Estados para búsqueda de tutor autocompletable en check-in
   const [busquedaTutor, setBusquedaTutor] = useState('');
@@ -194,7 +195,14 @@ const ModalCheckIn: React.FC<PropsModalCheckIn> = ({ abierto, fecha, onCerrar, o
             .filter((asistencia: any) => asistencia.idFichaEntrada && asistencia.estado === 'Presente')
             .map((asistencia: any) => asistencia.idFichaEntrada)
         );
-        
+
+        const idsNinosYaPresentes = new Set(
+          (asistenciasHoy as any[])
+            .filter((a: any) => a.estado === 'Presente')
+            .map((a: any) => a.idNino)
+        );
+        idsNinosYaPresentesRef.current = idsNinosYaPresentes;
+
         const fichasDisponibles = fichasActivas.filter(
           ficha => ficha.tipo === 'Entrada' && !fichasEnUso.has(ficha.idFicha)
         );
@@ -289,7 +297,9 @@ const ModalCheckIn: React.FC<PropsModalCheckIn> = ({ abierto, fecha, onCerrar, o
         const q = normalizar(estado.busqueda);
         setNinosFiltrados(
           lista.filter(
-            (n) => normalizar(n.nombreCompleto).includes(q) || String(n.idPersona).includes(estado.busqueda)
+            (n) =>
+              !idsNinosYaPresentesRef.current.has(n.idPersona) &&
+              (normalizar(n.nombreCompleto).includes(q) || String(n.idPersona).includes(estado.busqueda))
           )
         );
       } catch {

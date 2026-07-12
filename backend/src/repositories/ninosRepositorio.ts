@@ -17,6 +17,28 @@ export interface DatosPadre {
   tipoTutor?: string;
 }
 
+/** Retorna el ID del grupo correspondiente a una edad (MVP-02) */
+export const obtenerGrupoPorEdad = async (edad: number): Promise<number | null> => {
+  const resultado = await pool.query<{ id_grupo: number }>(
+    `SELECT ID_Grupo AS id_grupo
+     FROM Grupos
+     WHERE Edad_Minima <= $1 AND Edad_Maxima >= $1 AND Activo = TRUE
+     LIMIT 1`,
+    [edad]
+  );
+  if (resultado.rows[0]?.id_grupo) {
+    return resultado.rows[0].id_grupo;
+  }
+  const fallback = await pool.query<{ id_grupo: number }>(
+    `SELECT ID_Grupo AS id_grupo
+     FROM Grupos
+     WHERE Activo = TRUE
+     ORDER BY Edad_Maxima DESC
+     LIMIT 1`
+  );
+  return fallback.rows[0]?.id_grupo ?? null;
+};
+
 /** Datos de una condición/alergia/medicamento del niño (Spec §2.7) */
 export interface DatosInfoMedica {
   tipo:         'Condicion' | 'Alergia' | 'Medicamento';

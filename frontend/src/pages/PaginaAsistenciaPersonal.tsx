@@ -50,6 +50,8 @@ const PaginaAsistenciaPersonal: React.FC = () => {
   const [enviando,           setEnviando]          = useState(false);
   const [turnos, setTurnos] = useState<TurnoApi[]>([]);
   const [idTurnoSeleccionado, setIdTurnoSeleccionado] = useState<number | ''>('');
+  const [busquedaPersonal, setBusquedaPersonal] = useState('');
+  const [mostrarDropdown, setMostrarDropdown] = useState(false);
 
   const cargarPersonal = useCallback(async () => {
     setCargando(true);
@@ -71,10 +73,13 @@ const PaginaAsistenciaPersonal: React.FC = () => {
 
   useEffect(() => { cargarPersonal(); }, [cargarPersonal]);
 
+  // Solo personal con registro para tabla y métricas
+  const personalConRegistro = useMemo(() => personal.filter((p) => p.estadoLlegada), [personal]);
+
   // Métricas calculadas
   const metricas: MetricasPersonal = useMemo(() => {
-    const maestros       = personal.filter((p) => p.rol === 'Maestro');
-    const colaboradores  = personal.filter((p) => p.rol === 'Colaborador');
+    const maestros       = personalConRegistro.filter((p) => p.rol === 'Maestro');
+    const colaboradores  = personalConRegistro.filter((p) => p.rol === 'Colaborador');
     const presentes      = (lista: PersonalAsistencia[]) =>
       lista.filter((p) => p.estadoLlegada === 'Temprano' || p.estadoLlegada === 'Tarde').length;
 
@@ -83,26 +88,26 @@ const PaginaAsistenciaPersonal: React.FC = () => {
       maestrosPresentes:        presentes(maestros),
       totalColaboradores:       colaboradores.length,
       colaboradoresPresentes:   presentes(colaboradores),
-      tiempoPromedioServicio:   esHoy && personal.length > 0 && personal[0].fechaIngreso
+      tiempoPromedioServicio:   esHoy && personalConRegistro.length > 0 && personalConRegistro[0].fechaIngreso
         ? (() => {
             const h = new Date();
-            const promAnios = personal.reduce((acc, p) => {
+            const promAnios = personalConRegistro.reduce((acc, p) => {
               const ingreso = new Date(p.fechaIngreso);
               return acc + (h.getFullYear() - ingreso.getFullYear());
-            }, 0) / personal.length;
+            }, 0) / personalConRegistro.length;
             return `${promAnios.toFixed(1)} años`;
           })()
         : '—',
     };
-  }, [personal]);
+  }, [personalConRegistro, esHoy]);
 
   const pctMaestros      = metricas.totalMaestros > 0
     ? Math.round((metricas.maestrosPresentes / metricas.totalMaestros) * 100) : 0;
   const pctColaboradores = metricas.totalColaboradores > 0
     ? Math.round((metricas.colaboradoresPresentes / metricas.totalColaboradores) * 100) : 0;
 
-  // Opciones del selector agrupadas por rol
-  const opcionesSelector = useMemo(() => {
+  // Personal disponible para registrar (sin asistencia aún)
+  const personalDisponible = useMemo(() => {
     const grupos: Partial<Record<RolNombre, PersonalAsistencia[]>> = {};
     personal.filter((p) => !p.estadoLlegada).forEach((p) => {
       if (!grupos[p.rol]) grupos[p.rol] = [];
@@ -110,6 +115,26 @@ const PaginaAsistenciaPersonal: React.FC = () => {
     });
     return grupos;
   }, [personal]);
+
+  // Resultados filtrados por búsqueda
+  const resultadosBusqueda = useMemo(() => {
+    if (!busquedaPersonal.trim()) return personalDisponible;
+    const q = busquedaPersonal.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const result: typeof personalDisponible = {};
+    for (const entry of Object.entries(personalDisponible) as [RolNombre, PersonalAsistencia[]][]) {
+      const [rol, lista] = entry;
+      const filtrados = lista.filter((p) =>
+        p.nombreCompleto.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').includes(q)
+      );
+      if (filtrados.length > 0) result[rol] = filtrados;
+    }
+    return result;
+  }, [busquedaPersonal, personalDisponible]);
+
+  const personaSeleccionada = useMemo(() => {
+    if (!idSeleccionado) return null;
+    return personal.find((p) => p.idPersona === idSeleccionado) ?? null;
+  }, [idSeleccionado, personal]);
 
   const handleRegistrar = async () => {
     if (!idSeleccionado || !estadoSeleccionado || !idTurnoSeleccionado) return;
@@ -151,7 +176,7 @@ const PaginaAsistenciaPersonal: React.FC = () => {
               id="filtro-fecha-personal"
               type="date"
               value={filtroFecha}
-              onChange={(e) => { setFiltroFecha(e.target.value); setIdSeleccionado(''); setEstadoSeleccionado(null); }}
+              onChange={(e) => { setFiltroFecha(e.target.value); setIdSeleccionado(''); setEstadoSeleccionado(null); setBusquedaPersonal(''); setMostrarDropdown(false); }}
               className="w-full bg-surface-container-low border border-outline-variant rounded-lg px-4 py-2.5 text-body-sm text-on-surface focus:ring-2 focus:ring-primary focus:border-primary focus:outline-none"
             />
           </div>
@@ -181,35 +206,71 @@ const PaginaAsistenciaPersonal: React.FC = () => {
                 className="space-y-stack-md"
                 aria-label="Formulario de registro rápido de asistencia"
               >
-                {/* Selector de personal */}
+                {/* Selector de personal con búsqueda */}
                 <div className="space-y-stack-sm">
-                  <label htmlFor="sel-personal" className="text-label-md font-label-md text-on-surface-variant ml-1 block">
+                  <label htmlFor="busqueda-personal" className="text-label-md font-label-md text-on-surface-variant ml-1 block">
                     Personal <span className="text-error">*</span>
                   </label>
-                  <div className="relative">
-                    <select
-                      id="sel-personal"
-                      value={idSeleccionado}
-                      onChange={(e) => setIdSeleccionado(e.target.value ? Number(e.target.value) : '')}
-                      className="w-full h-12 bg-transparent border border-outline rounded-lg px-4 pr-10 focus:border-primary focus:ring-2 focus:ring-primary/20 appearance-none text-body-md text-on-surface outline-none"
-                    >
-                      <option value="" disabled>Seleccionar personal...</option>
-                      {(Object.entries(opcionesSelector) as [RolNombre, PersonalAsistencia[]][]).map(
-                        ([rol, lista]) => (
-                          <optgroup key={rol} label={`${rol}s`}>
-                            {lista.map((p) => (
-                              <option key={p.idPersona} value={p.idPersona}>
-                                {p.nombreCompleto}{p.grupoAsignado ? ` — ${p.grupoAsignado}` : ''}
-                              </option>
-                            ))}
-                          </optgroup>
-                        )
+                  {personaSeleccionada ? (
+                    <div className="bg-surface-container-low border border-outline-variant rounded-xl p-3 flex justify-between items-center">
+                      <div>
+                        <p className="text-label-md font-label-md text-on-surface">{personaSeleccionada.nombreCompleto}</p>
+                        <p className="text-body-sm text-on-surface-variant">
+                          {personaSeleccionada.rol}
+                          {personaSeleccionada.grupoAsignado ? ` — ${personaSeleccionada.grupoAsignado}` : ''}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => { setIdSeleccionado(''); setBusquedaPersonal(''); }}
+                        className="text-label-sm font-semibold text-error hover:underline"
+                      >
+                        Cambiar
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="relative">
+                      <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline" aria-hidden="true">search</span>
+                      <input
+                        id="busqueda-personal"
+                        type="text"
+                        value={busquedaPersonal}
+                        onChange={(e) => { setBusquedaPersonal(e.target.value); setMostrarDropdown(true); }}
+                        onFocus={() => setMostrarDropdown(true)}
+                        onBlur={() => setTimeout(() => setMostrarDropdown(false), 200)}
+                        placeholder="Buscar personal..."
+                        className="w-full pl-10 pr-4 py-3 border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all text-body-md"
+                      />
+                      {mostrarDropdown && (
+                        <div className="absolute z-10 mt-1 w-full bg-surface-container-lowest border border-outline-variant rounded-xl shadow-lg overflow-hidden">
+                          {Object.keys(resultadosBusqueda).length === 0 ? (
+                            <div className="px-4 py-3 text-body-sm text-on-surface-variant">
+                              {busquedaPersonal ? 'Sin resultados' : 'No hay personal pendiente'}
+                            </div>
+                          ) : (
+                            (Object.entries(resultadosBusqueda) as [RolNombre, PersonalAsistencia[]][]).map(([rol, lista]) => (
+                              <div key={rol}>
+                                <div className="px-4 py-1.5 text-label-sm font-label-md text-on-surface-variant bg-surface-container-high/50">
+                                  {rol}s
+                                </div>
+                                {lista.map((p) => (
+                                  <button
+                                    key={p.idPersona}
+                                    type="button"
+                                    onMouseDown={(e) => { e.preventDefault(); setIdSeleccionado(p.idPersona); setMostrarDropdown(false); setBusquedaPersonal(''); }}
+                                    className="w-full text-left px-4 py-2.5 hover:bg-surface-container-high transition-colors"
+                                  >
+                                    <p className="text-label-md font-label-md text-on-surface">{p.nombreCompleto}</p>
+                                    {p.grupoAsignado && <p className="text-body-sm text-on-surface-variant">{p.grupoAsignado}</p>}
+                                  </button>
+                                ))}
+                              </div>
+                            ))
+                          )}
+                        </div>
                       )}
-                    </select>
-                    <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-on-surface-variant" aria-hidden="true">
-                      expand_more
-                    </span>
-                  </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Selector de turno */}
@@ -357,7 +418,7 @@ const PaginaAsistenciaPersonal: React.FC = () => {
                 {esHoy ? 'Personal del Día' : `Personal — ${filtroFecha}`}
               </h2>
               <span className="text-label-sm text-on-surface-variant">
-                {personal.filter((p) => p.estadoLlegada).length} registrados de {personal.length}
+                {personalConRegistro.length} registrados
               </span>
             </div>
 
@@ -393,7 +454,7 @@ const PaginaAsistenciaPersonal: React.FC = () => {
                     ))}
 
                     {/* Sin registros */}
-                    {!cargando && personal.length === 0 && (
+                    {!cargando && personalConRegistro.length === 0 && (
                       <tr>
                         <td colSpan={4} className="px-2.5 py-8 text-center text-body-sm text-on-surface-variant">
                           {esHoy ? 'No hay personal registrado para hoy.' : 'No hay personal registrado para esta fecha.'}
@@ -402,14 +463,13 @@ const PaginaAsistenciaPersonal: React.FC = () => {
                     )}
 
                     {/* Filas */}
-                    {!cargando && personal.map((p) => {
+                    {!cargando && personalConRegistro.map((p) => {
                       const iniciales = `${p.nombres[0]}${p.apellidos[0]}`;
-                      const sinRegistro = !p.estadoLlegada;
 
                       return (
                         <tr
                           key={p.idPersona}
-                          className={`hover:bg-surface-container-high/30 transition-colors ${sinRegistro ? 'opacity-60' : ''}`}
+                          className="hover:bg-surface-container-high/30 transition-colors"
                         >
                           {/* Nombre + rol */}
                           <td className="px-2.5 py-2">
@@ -441,14 +501,10 @@ const PaginaAsistenciaPersonal: React.FC = () => {
 
                           {/* Estado */}
                           <td className="px-2.5 py-2">
-                            {p.estadoLlegada ? (
-                              <BadgeEstado
-                                estado={p.estadoLlegada}
-                                mayusculas
-                              />
-                            ) : (
-                              <span className="text-body-sm text-on-surface-variant/40 italic">Sin registro</span>
-                            )}
+                            <BadgeEstado
+                              estado={p.estadoLlegada!}
+                              mayusculas
+                            />
                           </td>
                         </tr>
                       );

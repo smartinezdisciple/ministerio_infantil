@@ -1,424 +1,116 @@
-// src/controllers/asistenciaControlador.ts — Check-in / Check-out y listado diario de asistencia
-// Esquema v4: Asistencia_Ninos con ID_Turno obligatorio (UNIQUE ID_Nino, Fecha, ID_Turno).
-// Check-in: ID_Ingresado_Por = ID del padre/tutor, Registrado_Por = ID del personal logueado.
-// Check-out: ID_Retirado_Por = padre/tutor, Checkout_Por = personal. Trigger valida autorización.
-import { Request, Response } from 'express';
-import pool from '../config/db.js';
+import type { Request, Response } from 'express';
+import {
+  listarAsistencia,
+  realizarCheckIn,
+  realizarCheckOut,
+  modificarAsistencia,
+  removerAsistencia,
+} from '../services/asistenciaServicio.js';
+import { respuestaExito, respuestaError } from '../utils/respuesta.js';
 
-/**
- * GET /api/asistencia?fecha=YYYY-MM-DD&grupo=<id>&turno=<id>
- * Listado de asistencia con filtros opcionales de grupo y turno.
- */
 export const listarAsistenciaDia = async (req: Request, res: Response): Promise<void> => {
-  // Si no viene fecha, calcular en zona horaria local del servidor (evitar desfase UTC)
-  const ahora = new Date();
-  const fechaHoy = `${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, '0')}-${String(ahora.getDate()).padStart(2, '0')}`;
-  const fecha    = (req.query.fecha  as string) || fechaHoy;
-  const idGrupo  = req.query.grupo   as string | undefined;
-  const idTurno  = req.query.turno   as string | undefined;
-
   try {
-    const params: (string | number)[] = [fecha];
-    let filtros = '';
+    const fecha   = req.query.fecha as string | undefined;
+    const idGrupo = req.query.grupo ? Number(req.query.grupo) : undefined;
+    const idTurno = req.query.turno ? Number(req.query.turno) : undefined;
 
-    if (idGrupo) {
-      filtros += ` AND an.ID_Grupo_Asistido = $${params.length + 1}`;
-      params.push(Number(idGrupo));
-    }
-    if (idTurno) {
-      filtros += ` AND an.ID_Turno = $${params.length + 1}`;
-      params.push(Number(idTurno));
-    }
-
-    const { rows } = await pool.query(`
-      SELECT
-        an.ID_Asistencia                               AS "idAsistencia",
-        an.Fecha                                       AS "fecha",
-        an.ID_Turno                                    AS "idTurno",
-        t.Nombre                                       AS "turno",
-        to_char(an.Hora_Entrada - INTERVAL '6 hours', 'HH12:MI AM')        AS "horaEntrada",
-        to_char(an.Hora_Salida - INTERVAL '6 hours',  'HH12:MI AM')        AS "horaSalida",
-        an.ID_Ficha_Entrada                            AS "idFichaEntrada",
-        fe.Codigo_Ficha                                AS "codigoFichaEntrada",
-        an.ID_Ficha_Salida                             AS "idFichaSalida",
-        fs.Codigo_Ficha                                AS "codigoFichaSalida",
-        an.Acompanante_En_Aula                         AS "acompananteEnAula",
-        an.Notas                                       AS "notas",
-        an.Estado                                      AS "estado",
-        CONCAT(ting.Nombres, ' ', ting.Apellidos)      AS "ingresadoPor",
-        CONCAT(tret.Nombres, ' ', tret.Apellidos)      AS "retiradoPor",
-        p.ID_Persona                                   AS "idPersona",
-        p.Nombres                                      AS "nombres",
-        p.Apellidos                                    AS "apellidos",
-        CONCAT(p.Nombres, ' ', p.Apellidos)            AS "nombreCompleto",
-        p.Fecha_Nacimiento                             AS "fechaNacimiento",
-        ni.Observaciones_Generales                     AS "observacionesGenerales",
-        g.ID_Grupo                                     AS "idGrupo",
-        CASE 
-          WHEN g.ID_Grupo = 1 AND DATE_PART('year', AGE(an.Fecha, p.Fecha_Nacimiento))::INT < 4 THEN 'Menores de 4 años'
-          ELSE g.Nombre 
-        END                                            AS "nombreGrupo",
-        g.Edad_Minima                                  AS "edadMinima",
-        g.Edad_Maxima                                  AS "edadMaxima",
-        an.Es_Primera_Vez                              AS "esPrimeraVez"
-      FROM   Asistencia_Ninos an
-      JOIN   Personas   p    ON p.ID_Persona    = an.ID_Nino
-      JOIN   Ninos      ni   ON ni.ID_Persona   = an.ID_Nino
-      JOIN   Grupos     g    ON g.ID_Grupo      = an.ID_Grupo_Asistido
-      JOIN   Turnos     t    ON t.ID_Turno      = an.ID_Turno
-      JOIN   Fichas     fe   ON fe.ID_Ficha     = an.ID_Ficha_Entrada
-      LEFT JOIN Fichas     fs  ON fs.ID_Ficha   = an.ID_Ficha_Salida
-      LEFT JOIN Personas   ting ON ting.ID_Persona = an.ID_Ingresado_Por
-      LEFT JOIN Personas   tret ON tret.ID_Persona = an.ID_Retirado_Por
-      WHERE  an.Fecha = $1${filtros}
-      ORDER  BY an.Hora_Entrada DESC
-    `, params);
-
-    if (rows.length === 0) {
-      res.json({ exito: true, datos: [] });
-      return;
-    }
-
-    // Alertas médicas en lote
-    const idsPersonas = rows.map((r: { idPersona: number }) => r.idPersona);
-    const { rows: alertaRows } = await pool.query(`
-      SELECT ID_Info       AS "idInfo",
-             ID_Nino       AS "idPersona",
-             Tipo          AS "tipo",
-             Descripcion   AS "descripcion",
-             Severidad     AS "severidad",
-             Instrucciones AS "instrucciones"
-      FROM   Info_Medica_Ninos
-      WHERE  ID_Nino = ANY($1)
-    `, [idsPersonas]);
-
-    const alertas: Record<number, object[]> = {};
-    for (const a of alertaRows as { idPersona: number }[]) {
-      if (!alertas[a.idPersona]) alertas[a.idPersona] = [];
-      alertas[a.idPersona].push(a);
-    }
-
-    const resultado = rows.map((r: {
-      idPersona: number; idGrupo: number; nombreGrupo: string; edadMinima: number; edadMaxima: number;
-      idAsistencia: number; fecha: string; idTurno: number; turno: string;
-      horaEntrada: string; horaSalida?: string;
-      idFichaEntrada: number; codigoFichaEntrada: string; idFichaSalida?: number; codigoFichaSalida?: string;
-      estado: string; acompananteEnAula: boolean; ingresadoPor: string; retiradoPor?: string; notas?: string;
-      nombres: string; apellidos: string; nombreCompleto: string; fechaNacimiento: string;
-      observacionesGenerales?: string; esPrimeraVez: boolean;
-    }) => ({
-      idAsistencia:       r.idAsistencia,
-      fecha:              r.fecha,
-      idTurno:            r.idTurno,
-      turno:              r.turno,
-      horaEntrada:        r.horaEntrada,
-      horaSalida:         r.horaSalida,
-      idFichaEntrada:     r.idFichaEntrada,
-      codigoFichaEntrada: r.codigoFichaEntrada,
-      idFichaSalida:      r.idFichaSalida,
-      codigoFichaSalida:  r.codigoFichaSalida,
-      estado:             r.estado,
-      acompananteEnAula:  r.acompananteEnAula,
-      ingresadoPor:       r.ingresadoPor,
-      retiradoPor:        r.retiradoPor,
-      notas:              r.notas,
-      nino: {
-        idPersona:            r.idPersona,
-        nombres:              r.nombres,
-        apellidos:            r.apellidos,
-        nombreCompleto:       r.nombreCompleto,
-        fechaNacimiento:      r.fechaNacimiento,
-        observacionesGenerales: r.observacionesGenerales,
-        grupo: { idGrupo: r.idGrupo, nombre: r.nombreGrupo, edadMinima: r.edadMinima, edadMaxima: r.edadMaxima },
-        alertasMedicas:       alertas[r.idPersona] ?? [],
-      },
-      esPrimeraVez: r.esPrimeraVez,   // nivel raíz — coincide con RegistroAsistenciaNino
-    }));
-
-    res.json({ exito: true, datos: resultado });
-  } catch (err) {
-    console.error('Error al listar asistencia:', err);
-    res.status(500).json({ exito: false, mensaje: 'Error interno del servidor.' });
+    const resultado = await listarAsistencia(fecha, idGrupo, idTurno);
+    respuestaExito(res, resultado);
+  } catch (error) {
+    const mensaje = error instanceof Error ? error.message : 'Error al listar la asistencia.';
+    respuestaError(res, mensaje, 500);
   }
 };
 
-/**
- * POST /api/asistencia/checkin
- * Body: { idNino, idFichaEntrada, idIngresadoPor?, acompananteEnAula, idGrupo, idTurno, fecha? }
- * Registrado_Por se extrae del JWT.
- * ID_Turno es OBLIGATORIO para cumplir UNIQUE (ID_Nino, Fecha, ID_Turno).
- */
 export const registrarCheckIn = async (req: Request, res: Response): Promise<void> => {
-  const { idNino, idFichaEntrada, idIngresadoPor, acompananteEnAula, idGrupo, idTurno, fecha, motivoExcepcion } = req.body;
-  const idRegistradoPor = req.usuario?.idPersona;
-  const fechaAsistencia = fecha || new Date().toISOString().split('T')[0];
-  const hora            = new Date().toISOString().slice(11, 19); // HH:MM:SS
-
-  if (!idNino || !idFichaEntrada || !idGrupo || !idTurno) {
-    res.status(400).json({ exito: false, mensaje: 'Campos obligatorios: idNino, idFichaEntrada, idGrupo, idTurno.' });
-    return;
-  }
-
   try {
-    /**
-     * Validaciones y escritura en UN SOLO round-trip a la BD (evita la latencia de red ×3).
-     * El CTE valida: ficha activa, tipo Entrada, grupo correcto y ausencia de duplicado.
-     * Si alguna validación falla, devuelve 0 filas y consultamos qué falló en validaciones.
-     */
-    const { rows: validRows } = await pool.query(`
-      WITH validaciones AS (
-        SELECT
-          f.ID_Ficha,
-          f.Tipo,
-          f.ID_Grupo,
-          f.Estado,
-          EXISTS (
-            SELECT 1 FROM Asistencia_Ninos
-            WHERE ID_Nino = $3 AND Fecha = $1 AND ID_Turno = $2
-          ) AS ya_presente
-        FROM Fichas f
-        WHERE f.ID_Ficha = $5
-      )
-      SELECT
-        v.ID_Ficha   IS NULL              AS ficha_no_activa,
-        v.Tipo       <> 'Entrada'         AS ficha_no_entrada,
-        v.ID_Grupo   <> $4                AS ficha_grupo_incorrecto,
-        v.ya_presente                      AS ya_presente
-      FROM validaciones v
-      WHERE v.Estado = 'Activa'
-      UNION ALL
-      -- Fila vacía cuando la ficha no existe o no está activa
-      SELECT TRUE, FALSE, FALSE, FALSE
-      WHERE NOT EXISTS (SELECT 1 FROM Fichas WHERE ID_Ficha = $5 AND Estado = 'Activa')
-    `, [fechaAsistencia, idTurno, idNino, idGrupo, idFichaEntrada]);
-
-    if (validRows.length === 0 || validRows[0].ficha_no_activa) {
-      res.status(409).json({ exito: false, mensaje: 'La ficha seleccionada no está activa.' });
-      return;
-    }
-    if (validRows[0].ficha_no_entrada) {
-      res.status(400).json({ exito: false, mensaje: 'La ficha seleccionada debe ser de tipo Entrada.' });
-      return;
-    }
-    if (validRows[0].ficha_grupo_incorrecto) {
-      res.status(400).json({ exito: false, mensaje: 'La ficha seleccionada no corresponde al grupo de la asistencia.' });
-      return;
-    }
-    if (validRows[0].ya_presente) {
-      res.status(409).json({ exito: false, mensaje: 'El niño ya tiene un registro de asistencia para ese turno.' });
-      return;
-    }
-
-    // INSERT (segundo round-trip: las validaciones previas ya confirmaron que es seguro)
-    const { rows } = await pool.query(`
-      INSERT INTO Asistencia_Ninos
-        (Fecha, ID_Turno, ID_Nino, ID_Grupo_Asistido, ID_Ficha_Entrada,
-         ID_Ingresado_Por, Hora_Entrada, Registrado_Por, Acompanante_En_Aula,
-         motivo_excepcion_asistencia, Es_Primera_Vez)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
-        (SELECT NOT EXISTS (SELECT 1 FROM Asistencia_Ninos WHERE ID_Nino = $3)))
-      RETURNING ID_Asistencia    AS "idAsistencia",
-                Fecha             AS "fecha",
-                ID_Turno          AS "idTurno",
-                to_char(Hora_Entrada - INTERVAL '6 hours', 'HH12:MI AM') AS "horaEntrada",
-                Estado            AS "estado",
-                Es_Primera_Vez    AS "esPrimeraVez"
-    `, [
-      fechaAsistencia, idTurno, idNino, idGrupo, idFichaEntrada,
-      idIngresadoPor ?? idRegistradoPor,
-      hora, idRegistradoPor, acompananteEnAula ?? false,
-      motivoExcepcion ?? null,
-    ]);
-
-    res.status(201).json({ exito: true, datos: rows[0] });
-  } catch (err) {
-    console.error('Error en check-in:', err);
-    res.status(500).json({ exito: false, mensaje: 'Error interno del servidor.' });
+    const idRegistradoPor = req.usuario!.idPersona;
+    const resultado = await realizarCheckIn(req.body, idRegistradoPor);
+    respuestaExito(res, resultado, 201);
+  } catch (error) {
+    const mensaje = error instanceof Error ? error.message : 'Error al registrar el check-in.';
+    const codigo = mensaje.includes('ya fue utilizada') || mensaje.includes('ya tiene') || mensaje.includes('no está activa') ? 409 : 400;
+    respuestaError(res, mensaje, codigo);
   }
 };
 
-/**
- * PATCH /api/asistencia/:id/checkout
- * Body: { idRetiradoPor, idFichaSalida? }
- * El trigger trg_validar_retiro_nino verifica autorización (padre/tutor registrado).
- */
 export const registrarCheckOut = async (req: Request, res: Response): Promise<void> => {
-  const idAsistencia  = Number(req.params.id);
-  const { idRetiradoPor, id_ficha_salida } = req.body;
-  const idCheckoutPor = req.usuario?.idPersona;
-  const hora          = new Date().toISOString().slice(11, 19);
-
-  if (!idRetiradoPor) {
-    res.status(400).json({ exito: false, mensaje: 'Debe indicar idRetiradoPor (ID de quien retira).' });
-    return;
-  }
-
   try {
-    /**
-     * Intentar el UPDATE directamente filtrando por Estado = 'Presente'.
-     * Si devuelve 0 filas: o no existe el registro, o ya estaba retirado.
-     * Evita el SELECT previo de verificación (ahorra 1 round-trip a Neon).
-     * El trigger trg_validar_retiro_nino valida la autorización en la BD.
-     */
-    const { rows, rowCount } = await pool.query(`
-      UPDATE Asistencia_Ninos
-      SET Hora_Salida     = $1,
-          ID_Retirado_Por = $2,
-          Checkout_Por    = $3,
-          Estado          = 'Retirado',
-          ID_Ficha_Salida = $4
-      WHERE ID_Asistencia = $5 AND Estado = 'Presente'
-      RETURNING ID_Asistencia              AS "idAsistencia",
-                to_char(Hora_Salida - INTERVAL '6 hours', 'HH12:MI AM') AS "horaSalida",
-                Estado                     AS "estado"
-    `, [hora, idRetiradoPor, idCheckoutPor, id_ficha_salida ?? null, idAsistencia]);
-
-    if ((rowCount ?? 0) === 0) {
-      // Distinguir entre "no existe" y "ya retirado" (1 query extra solo en el camino de error)
-      const check = await pool.query(
-        `SELECT Estado FROM Asistencia_Ninos WHERE ID_Asistencia = $1`,
-        [idAsistencia]
-      );
-      if ((check.rowCount ?? 0) === 0) {
-        res.status(404).json({ exito: false, mensaje: 'Registro de asistencia no encontrado.' });
-      } else {
-        res.status(409).json({ exito: false, mensaje: 'El niño ya fue retirado.' });
-      }
+    const idAsistencia  = Number(req.params.id);
+    if (!Number.isInteger(idAsistencia) || idAsistencia <= 0) {
+      respuestaError(res, 'El ID debe ser un número entero positivo.', 400);
       return;
     }
 
-    res.json({ exito: true, datos: rows[0] });
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : '';
-    // El trigger lanza excepción si la persona no está autorizada
-    if (msg.includes('NO autorizada')) {
-      res.status(403).json({ exito: false, mensaje: 'Persona no autorizada para retirar a este niño.' });
+    const { idRetiradoPor, id_ficha_salida } = req.body;
+    const idCheckoutPor = req.usuario!.idPersona;
+
+    const resultado = await realizarCheckOut(idAsistencia, idRetiradoPor, idCheckoutPor, id_ficha_salida);
+    respuestaExito(res, resultado);
+  } catch (error) {
+    const mensaje = error instanceof Error ? error.message : 'Error al registrar el check-out.';
+    if (mensaje.includes('NO autorizada')) {
+      respuestaError(res, 'Persona no autorizada para retirar a este niño.', 403);
       return;
     }
-    console.error('Error en check-out:', err);
-    res.status(500).json({ exito: false, mensaje: 'Error interno del servidor.' });
+    if (mensaje.includes('no encontrado')) {
+      respuestaError(res, mensaje, 404);
+      return;
+    }
+    if (mensaje.includes('ya fue retirado')) {
+      respuestaError(res, mensaje, 409);
+      return;
+    }
+    respuestaError(res, mensaje, 400);
   }
 };
 
-/**
- * PATCH /api/asistencia/:id
- * Actualiza dinámicamente un registro de asistencia. Requiere nivel >= 3.
- */
 export const actualizarAsistencia = async (req: Request, res: Response): Promise<void> => {
-  const idAsistencia = Number(req.params.id);
-  const {
-    idTurno,
-    idFichaEntrada,
-    idFichaSalida,
-    idIngresadoPor,
-    idRetiradoPor,
-    horaEntrada,
-    horaSalida,
-    acompananteEnAula,
-    estado,
-    notas,
-    idGrupoAsistido,
-    fecha
-  } = req.body;
-
-  if (req.usuario && req.usuario.nivelJerarquico < 3) {
-    res.status(403).json({ exito: false, mensaje: 'No tiene permisos para modificar la asistencia.' });
-    return;
-  }
-
   try {
-    // 1. Obtener la asistencia actual
-    const checkRes = await pool.query(
-      `SELECT * FROM Asistencia_Ninos WHERE ID_Asistencia = $1`,
-      [idAsistencia]
-    );
-    if ((checkRes.rowCount ?? 0) === 0) {
-      res.status(404).json({ exito: false, mensaje: 'Registro de asistencia no encontrado.' });
+    const idAsistencia = Number(req.params.id);
+    if (!Number.isInteger(idAsistencia) || idAsistencia <= 0) {
+      respuestaError(res, 'El ID debe ser un número entero positivo.', 400);
       return;
     }
-    const actual = checkRes.rows[0];
 
-    // 2. Determinar los nuevos valores
-    const nuevoEstado = estado ?? actual.estado;
-    
-    // Si cambia a Presente, limpiamos los datos de salida
-    let nuevoIdFichaSalida = idFichaSalida !== undefined ? idFichaSalida : actual.id_ficha_salida;
-    let nuevoIdRetiradoPor = idRetiradoPor !== undefined ? idRetiradoPor : actual.id_retirado_por;
-    let nuevoHoraSalida = horaSalida !== undefined ? horaSalida : actual.hora_salida;
-
-    if (nuevoEstado === 'Presente') {
-      nuevoIdFichaSalida = null;
-      nuevoIdRetiradoPor = null;
-      nuevoHoraSalida = null;
+    const nivelJerarquico = req.usuario!.nivelJerarquico;
+    const resultado = await modificarAsistencia(idAsistencia, req.body, nivelJerarquico);
+    respuestaExito(res, resultado);
+  } catch (error) {
+    const mensaje = error instanceof Error ? error.message : 'Error al actualizar la asistencia.';
+    if (mensaje.includes('no encontrado')) {
+      respuestaError(res, mensaje, 404);
+      return;
     }
-
-    const query = `
-      UPDATE Asistencia_Ninos
-      SET ID_Turno = $1,
-          ID_Ficha_Entrada = $2,
-          ID_Ficha_Salida = $3,
-          ID_Ingresado_Por = $4,
-          ID_Retirado_Por = $5,
-          Hora_Entrada = $6,
-          Hora_Salida = $7,
-          Acompanante_En_Aula = $8,
-          Estado = $9,
-          Notas = $10,
-          ID_Grupo_Asistido = $11,
-          Fecha = $12
-      WHERE ID_Asistencia = $13
-      RETURNING *
-    `;
-
-    const { rows } = await pool.query(query, [
-      idTurno !== undefined ? idTurno : actual.id_turno,
-      idFichaEntrada !== undefined ? idFichaEntrada : actual.id_ficha_entrada,
-      nuevoIdFichaSalida,
-      idIngresadoPor !== undefined ? idIngresadoPor : actual.id_ingresado_por,
-      nuevoIdRetiradoPor,
-      horaEntrada !== undefined ? horaEntrada : actual.hora_entrada,
-      nuevoHoraSalida,
-      acompananteEnAula !== undefined ? acompananteEnAula : actual.acompanante_en_aula,
-      nuevoEstado,
-      notas !== undefined ? (notas === '' ? null : notas) : actual.notas,
-      idGrupoAsistido !== undefined ? idGrupoAsistido : actual.id_grupo_asistido,
-      fecha !== undefined ? fecha : actual.fecha,
-      idAsistencia
-    ]);
-
-    res.json({ exito: true, datos: rows[0] });
-  } catch (err: any) {
-    console.error('Error al actualizar asistencia:', err);
-    res.status(500).json({ exito: false, mensaje: err.message || 'Error interno del servidor.' });
+    if (mensaje.includes('No tiene permisos')) {
+      respuestaError(res, mensaje, 403);
+      return;
+    }
+    respuestaError(res, mensaje, 400);
   }
 };
 
-/**
- * DELETE /api/asistencia/:id
- * Elimina un registro de asistencia. Requiere nivel >= 3.
- */
 export const eliminarAsistencia = async (req: Request, res: Response): Promise<void> => {
-  const idAsistencia = Number(req.params.id);
-
-  if (req.usuario && req.usuario.nivelJerarquico < 3) {
-    res.status(403).json({ exito: false, mensaje: 'No tiene permisos para eliminar la asistencia.' });
-    return;
-  }
-
   try {
-    const { rowCount } = await pool.query(
-      `DELETE FROM Asistencia_Ninos WHERE ID_Asistencia = $1`,
-      [idAsistencia]
-    );
-
-    if ((rowCount ?? 0) === 0) {
-      res.status(404).json({ exito: false, mensaje: 'Registro de asistencia no encontrado.' });
+    const idAsistencia = Number(req.params.id);
+    if (!Number.isInteger(idAsistencia) || idAsistencia <= 0) {
+      respuestaError(res, 'El ID debe ser un número entero positivo.', 400);
       return;
     }
 
-    res.json({ exito: true, mensaje: 'Registro de asistencia eliminado correctamente.' });
-  } catch (err: any) {
-    console.error('Error al eliminar asistencia:', err);
-    res.status(500).json({ exito: false, mensaje: 'Error interno del servidor.' });
+    const nivelJerarquico = req.usuario!.nivelJerarquico;
+    await removerAsistencia(idAsistencia, nivelJerarquico);
+    respuestaExito(res, { mensaje: 'Registro de asistencia eliminado correctamente.' });
+  } catch (error) {
+    const mensaje = error instanceof Error ? error.message : 'Error al eliminar la asistencia.';
+    if (mensaje.includes('no encontrado')) {
+      respuestaError(res, mensaje, 404);
+      return;
+    }
+    if (mensaje.includes('No tiene permisos')) {
+      respuestaError(res, mensaje, 403);
+      return;
+    }
+    respuestaError(res, mensaje, 400);
   }
 };

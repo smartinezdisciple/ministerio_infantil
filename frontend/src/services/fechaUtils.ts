@@ -123,7 +123,8 @@ export const formatearFechaVisual = (fechaDb: string): string => {
   const partes = limpia.split('-');
   if (partes.length !== 3) return fechaDb;
   const [yyyy, mm, dd] = partes;
-  return `${dd}-${mm}-${yyyy}`;
+  const diaSinCero = String(parseInt(dd, 10));
+  return `${diaSinCero}-${mm}-${yyyy}`;
 };
 
 /**
@@ -135,11 +136,12 @@ export const formatearFechaConMesTexto = (fechaDb: string): string => {
   const partes = limpia.split('-');
   if (partes.length !== 3) return fechaDb;
   const [yyyy, mm, dd] = partes;
+  const diaSinCero = String(parseInt(dd, 10));
   const mIdx = parseInt(mm, 10) - 1;
   const mesNombre = NOMBRES_MESES[mIdx];
   // Capitalizar nombre de mes
   const mesCap = mesNombre.charAt(0).toUpperCase() + mesNombre.slice(1);
-  return `${dd}-${mesCap}-${yyyy}`;
+  return `${diaSinCero}-${mesCap}-${yyyy}`;
 };
 
 /**
