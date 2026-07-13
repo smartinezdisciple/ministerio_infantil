@@ -312,6 +312,7 @@ export const exportarIncidenciasExcel = async (req: Request, res: Response): Pro
         SELECT COUNT(DISTINCT id_personal)::int AS total
         FROM Asistencia_Maestros
         WHERE fecha = $1 AND id_turno = $2
+          AND Estado_Llegada IN ('Temprano', 'Tarde')
       `, [fechaStr, turno.idTurno]);
       ws[`${turno.columna}19`] = { t: 'n', v: rows[0]?.total ?? 0 };
     }

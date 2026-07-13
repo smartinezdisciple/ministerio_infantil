@@ -14,7 +14,8 @@ import bcrypt from 'bcryptjs';
  * - Si fecha ≠ hoy: INNER JOIN (solo personal con registro ese día)
  */
 export const listarPersonalHoy = async (req: Request, res: Response) => {
-  const hoy = new Date().toISOString().split('T')[0];
+  const ahoraNicaragua = new Date(Date.now() - 6 * 60 * 60 * 1000);
+  const hoy = ahoraNicaragua.toISOString().split('T')[0];
   const fecha = (req.query.fecha as string) || hoy;
   const esHoy = fecha === hoy;
   const joinTipo = esHoy ? 'LEFT' : 'INNER';
@@ -85,7 +86,8 @@ export const misTurnos = async (req: Request, res: Response) => {
  */
 export const registrarAsistenciaPersonal = async (req: Request, res: Response) => {
   const { idPersona, estadoLlegada, idTurno, idGrupo, razonAusencia } = req.body;
-  const hoy  = new Date().toISOString().split('T')[0];
+  const ahoraNicaragua = new Date(Date.now() - 6 * 60 * 60 * 1000);
+  const hoy  = ahoraNicaragua.toISOString().split('T')[0];
   const hora = new Date().toISOString().slice(11, 19);
 
   if (!idPersona || !estadoLlegada || !idTurno) {
