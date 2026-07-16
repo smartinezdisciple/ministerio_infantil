@@ -304,7 +304,7 @@ export const exportarIncidenciasExcel = async (req: Request, res: Response): Pro
       if (ws[`${t.columna}17`]) ws[`${t.columna}17`].v = suma;
     }
     const totalGeneral = turnosActivos.reduce((acc, t) => acc + ((ws[`${t.columna}17`]?.v as number) || 0), 0);
-    if (ws['E17']) ws['E17'].v = totalGeneral;
+    ws['E17'] = { t: 'n', v: totalGeneral };
 
     // Servidores (asistencia maestros) por turno
     for (const turno of turnosActivos) {
