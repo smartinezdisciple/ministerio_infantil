@@ -19,6 +19,8 @@ export const listarPersonalHoy = async (req: Request, res: Response) => {
   const fecha = (req.query.fecha as string) || hoy;
   const esHoy = fecha === hoy;
   const joinTipo = esHoy ? 'LEFT' : 'INNER';
+  const nivelUsuario = req.usuario?.nivelJerarquico ?? 4;
+  const idStaff = req.usuario?.idPersona;
   try {
     const { rows } = await pool.query(`
       SELECT
@@ -46,8 +48,19 @@ export const listarPersonalHoy = async (req: Request, res: Response) => {
             AND tp.Es_Principal = TRUE AND tp.Activo = TRUE` : ''}
       WHERE  ps.Activo = TRUE
         AND  r.Nivel_Jerarquico < 4
+        AND  (${nivelUsuario} >= 4
+          OR  (r.Nivel_Jerarquico = 2
+           AND ps.ID_Persona IN (
+             SELECT pt2.ID_Personal
+             FROM   Personal_Turnos pt2
+             WHERE  pt2.ID_Turno IN (
+               SELECT pt3.ID_Turno
+               FROM   Personal_Turnos pt3
+               WHERE  pt3.ID_Personal = $2
+             )
+           )))
       ORDER  BY r.Nivel_Jerarquico DESC, p.Apellidos
-    `, [fecha]);
+    `, [fecha, idStaff]);
     res.json({ exito: true, datos: rows });
   } catch (err) {
     console.error('Error al listar personal:', err);
