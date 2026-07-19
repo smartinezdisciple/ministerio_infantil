@@ -52,6 +52,7 @@ const PaginaAsistenciaPersonal: React.FC = () => {
   const [idTurnoSeleccionado, setIdTurnoSeleccionado] = useState<number | ''>('');
   const [busquedaPersonal, setBusquedaPersonal] = useState('');
   const [mostrarDropdown, setMostrarDropdown] = useState(false);
+  const [motivoInjustificado, setMotivoInjustificado] = useState('');
 
   const cargarPersonal = useCallback(async () => {
     setCargando(true);
@@ -140,7 +141,8 @@ const PaginaAsistenciaPersonal: React.FC = () => {
     if (!idSeleccionado || !estadoSeleccionado || !idTurnoSeleccionado) return;
     setEnviando(true);
     try {
-      await registrarAsistenciaPersonal(Number(idSeleccionado), estadoSeleccionado, Number(idTurnoSeleccionado));
+      const razon = estadoSeleccionado === 'Injustificado' ? motivoInjustificado : undefined;
+      await registrarAsistenciaPersonal(Number(idSeleccionado), estadoSeleccionado, Number(idTurnoSeleccionado), razon);
       const hora = new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
       setPersonal((prev) => prev.map((p) =>
         p.idPersona === idSeleccionado
@@ -151,6 +153,7 @@ const PaginaAsistenciaPersonal: React.FC = () => {
       toast.success(`${persona?.nombreCompleto ?? 'Personal'} registrado como ${estadoSeleccionado}`);
       setIdSeleccionado('');
       setEstadoSeleccionado(null);
+      setMotivoInjustificado('');
     } catch (err) {
       console.error('Error registrando asistencia:', err);
       toast.error(err instanceof Error ? err.message : 'Error al registrar. Intente nuevamente.');
@@ -326,9 +329,26 @@ const PaginaAsistenciaPersonal: React.FC = () => {
                   </div>
                 </div>
 
+                {/* Motivo para Injustificado */}
+                {estadoSeleccionado === 'Injustificado' && (
+                  <div className="space-y-stack-sm">
+                    <label htmlFor="motivo-injustificado" className="text-label-md font-label-md text-on-surface-variant ml-1 block">
+                      Motivo de ausencia <span className="text-error">*</span>
+                    </label>
+                    <textarea
+                      id="motivo-injustificado"
+                      value={motivoInjustificado}
+                      onChange={(e) => setMotivoInjustificado(e.target.value)}
+                      placeholder="Describa el motivo de la ausencia..."
+                      rows={3}
+                      className="w-full bg-surface-container-low border border-outline-variant rounded-lg px-4 py-2.5 text-body-sm text-on-surface focus:ring-2 focus:ring-primary focus:border-primary focus:outline-none resize-none"
+                    />
+                  </div>
+                )}
+
                 <button
                   type="submit"
-                  disabled={!idSeleccionado || !estadoSeleccionado || !idTurnoSeleccionado || enviando}
+                  disabled={!idSeleccionado || !estadoSeleccionado || !idTurnoSeleccionado || enviando || (estadoSeleccionado === 'Injustificado' && !motivoInjustificado.trim())}
                   className="w-full h-12 bg-primary text-on-primary rounded-lg text-label-md font-label-md shadow-md active:scale-95 transition-transform hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   {enviando ? (

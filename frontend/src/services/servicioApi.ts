@@ -386,8 +386,8 @@ export const listarPersonalPorFecha = (fecha: string) => {
   return get<PersonalAsistenciaApi[]>(`/personal/asistencia-hoy?${params}`);
 };
 
-export const registrarAsistenciaPersonal = (idPersona: number, estadoLlegada: string, idTurno: number) =>
-  post<PersonalAsistenciaApi>('/personal/asistencia', { idPersona, estadoLlegada, idTurno });
+export const registrarAsistenciaPersonal = (idPersona: number, estadoLlegada: string, idTurno: number, razonAusencia?: string) =>
+  post<PersonalAsistenciaApi>('/personal/asistencia', { idPersona, estadoLlegada, idTurno, ...(razonAusencia ? { razonAusencia } : {}) });
 
 // ══════════════════════════════════════════════════════════════════
 // CONTACTOS / DIRECTORIO — GET /api/contactos  |  GET /api/ninos/:id/contactos
