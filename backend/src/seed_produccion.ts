@@ -13,6 +13,7 @@ const CONTRASENA_LECTURA = 'Lectura123!';
 
 async function runSeed() {
   console.log('🌱 Iniciando sembrado seguro para producción...');
+  console.log('🔍 DIAG: conectando a', process.env.PGHOST, process.env.PGDATABASE, process.env.PGUSER);
   let cliente;
   try {
     cliente = await pool.connect();
