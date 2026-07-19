@@ -9,7 +9,8 @@ import pool from '../config/db.js';
  * Un contacto está "activo hoy" si alguno de sus niños está presente en Asistencia_Ninos.
  */
 export const listarContactos = async (_req: Request, res: Response) => {
-  const hoy = new Date().toISOString().split('T')[0];
+  const ahoraNicaragua = new Date(Date.now() - 6 * 60 * 60 * 1000);
+  const hoy = ahoraNicaragua.toISOString().split('T')[0];
 
   try {
     const { rows } = await pool.query(`

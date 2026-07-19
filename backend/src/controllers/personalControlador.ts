@@ -31,7 +31,7 @@ export const listarPersonalHoy = async (req: Request, res: Response) => {
         ${esHoy ? 'g.Nombre' : 'NULL::text'}             AS "grupoAsignado",
         ${esHoy ? 'ps.Fecha_Ingreso_Servicio' : 'NULL::date'} AS "fechaIngreso",
         am.Estado_Llegada                                AS "estadoLlegada",
-        to_char(am.Hora_Llegada, 'HH12:MI AM')           AS "horaLlegada",
+        to_char(am.Hora_Llegada - INTERVAL '6 hours', 'HH12:MI AM') AS "horaLlegada",
         ${esHoy ? `tp.Numero` : 'NULL::varchar'}         AS "telefono",
         ${esHoy ? `tp.Tiene_Whatsapp` : 'NULL::boolean'} AS "tieneWhatsapp"
       FROM   Personal_Sistema ps
