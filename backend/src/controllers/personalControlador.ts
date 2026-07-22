@@ -49,7 +49,7 @@ export const listarPersonalHoy = async (req: Request, res: Response) => {
       WHERE  ps.Activo = TRUE
         AND  r.Nivel_Jerarquico < 4
         AND  (${nivelUsuario} >= 4
-          OR  (r.Nivel_Jerarquico = 2
+          OR  (r.Nivel_Jerarquico IN (2, 3)
            AND ps.ID_Persona IN (
              SELECT pt2.ID_Personal
              FROM   Personal_Turnos pt2

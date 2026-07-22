@@ -487,7 +487,11 @@ const ModalCheckIn: React.FC<PropsModalCheckIn> = ({ abierto, fecha, onCerrar, o
         fecha,
         motivoExcepcion: esExcepcion ? estado.motivoExcepcion.trim() : undefined,
       });
-      onCerrar();
+      setEstado(ESTADO_INICIAL);
+      setNinosFiltrados([]);
+      setTutoresNino([]);
+      setBusquedaTutor('');
+      setMostrarDropdownTutor(false);
     } finally {
       setEstado((prev) => ({ ...prev, enviando: false }));
     }

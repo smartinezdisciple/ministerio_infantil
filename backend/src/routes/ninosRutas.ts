@@ -31,7 +31,7 @@ enrutador.get('/:id', requerirNivel(1), obtenerPorId);
 /**
  * GET /api/ninos/:id/completo — Detalle completo con padres para edición (nivel ≥ 3)
  */
-enrutador.get('/:id/completo', requerirNivel(3), obtenerCompleto);
+enrutador.get('/:id/completo', requerirNivel(2), obtenerCompleto);
 
 /**
  * GET /api/ninos/:id/contactos — Ficha de contactos del niño (nivel ≥ 1)

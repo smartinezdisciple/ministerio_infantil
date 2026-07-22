@@ -4,9 +4,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import ModalBase from './ModalBase';
 import type { RegistroAsistenciaNino } from '../services/tipos';
-import { obtenerFichaContacto, registrarCheckOut, listarFichasActivas, listarAsistenciaDia } from '../services/servicioApi';
-import type { Ficha } from '../services/tipos';
-import { fechaLocalHoy } from '../services/fechaUtils';
+import { obtenerFichaContacto, registrarCheckOut } from '../services/servicioApi';
 import { toast } from 'sonner';
 
 interface PropsModalCheckOut {
@@ -14,7 +12,7 @@ interface PropsModalCheckOut {
   onCerrar: () => void;
   registro: RegistroAsistenciaNino | null;
   /** Callback cuando el retiro se confirma exitosamente */
-  onRetirado: (idAsistencia: number, codigoFichaSalida?: string) => void;
+  onRetirado: (idAsistencia: number) => void;
 }
 
 interface OpcionContacto {
@@ -42,8 +40,7 @@ const ModalCheckOut: React.FC<PropsModalCheckOut> = ({
   };
   const [enviando, setEnviando]       = useState(false);
   const [cargandoContactos, setCargandoContactos] = useState(false);
-  const [fichas, setFichas] = useState<Ficha[]>([]);
-  const [fichaSalidaId, setFichaSalidaId] = useState<string>('');
+
 
   // Estados para búsqueda de tutor autocompletable
   const [busquedaTutor, setBusquedaTutor] = useState('');
@@ -84,48 +81,6 @@ const ModalCheckOut: React.FC<PropsModalCheckOut> = ({
      setMostrarDropdown(false);
      setError('');
      setCargandoContactos(true);
-     setFichaSalidaId('');
-
-     // Obtener fichas activas y asistencias del día para filtrar fichas en uso
-     Promise.all([
-       listarFichasActivas(),
-       listarAsistenciaDia(fechaLocalHoy())
-     ])
-     .then(([fichasResult, asistenciasResult]) => {
-       const fichasActivas = fichasResult as unknown as Ficha[];
-       const asistenciasHoy = asistenciasResult as unknown[]; // Tipo básico para evitar problemas
-       
-       // Obtener IDs de fichas de salida actualmente en uso
-       const fichasSalidaEnUso = new Set(
-         asistenciasHoy
-           .filter((asistencia: any) => asistencia.idFichaSalida && asistencia.estado === 'Pendiente')
-           .map((asistencia: any) => asistencia.idFichaSalida)
-       );
-       
-       // Obtener IDs de fichas de entrada actualmente en uso
-       const fichasEntradaEnUso = new Set(
-         asistenciasHoy
-           .filter((asistencia: any) => asistencia.idFichaEntrada && asistencia.estado === 'Pendiente')
-           .map((asistencia: any) => asistencia.idFichaEntrada)
-       );
-       
-       // Combinar ambas colecciones para excluir cualquier ficha en uso (entrada o salida)
-       const fichasEnUso = new Set([...fichasSalidaEnUso, ...fichasEntradaEnUso]);
-       
-       // Filtrar fichas: solo mostrar las de tipo 'Salida' del grupo del niño que NO están en uso
-       const fichasDisponibles = fichasActivas.filter(
-         ficha => ficha.tipo === 'Salida' && ficha.idGrupo === registro.nino.grupo.idGrupo && !fichasEnUso.has(ficha.idFicha)
-       );
-       
-       setFichas(fichasDisponibles);
-     })
-     .catch((error) => {
-       console.error('Error loading fichas or asistencia:', error);
-       // Fallback al comportamiento original si falla
-       listarFichasActivas()
-         .then((datos) => setFichas(datos as unknown as Ficha[]))
-         .catch(() => setFichas([]));
-     });
 
      obtenerFichaContacto(registro.nino.idPersona)
        .then((ficha: any) => {
@@ -156,17 +111,17 @@ const ModalCheckOut: React.FC<PropsModalCheckOut> = ({
 
     setEnviando(true);
     try {
-      const idFichaSalida = fichaSalidaId ? Number(fichaSalidaId) : undefined;
       if (idSeleccionado) {
-       await registrarCheckOut(registro.idAsistencia, idSeleccionado, idFichaSalida);
+       await registrarCheckOut(registro.idAsistencia, idSeleccionado);
        } else {
-         // Sin ID conocido — el backend rechazará si no es persona autorizada.
-         // En este caso enviamos 0 para que el trigger lo rechace correctamente.
-         await registrarCheckOut(registro.idAsistencia, 0, idFichaSalida);
+         await registrarCheckOut(registro.idAsistencia, 0);
        }
-       const codigoFichaSalidaSeleccionado = fichas.find(f => f.idFicha === Number(idFichaSalida))?.codigoFicha;
-       onRetirado(registro.idAsistencia, codigoFichaSalidaSeleccionado);
-      onCerrar();
+       onRetirado(registro.idAsistencia);
+      setSeleccion('');
+      setNombreLibre('');
+      setBusquedaTutor('');
+      setMostrarDropdown(false);
+      setError('');
     } catch (err) {
       mostrarError(err instanceof Error ? err.message : 'Error al registrar el retiro.');
     } finally {
@@ -314,26 +269,6 @@ const ModalCheckOut: React.FC<PropsModalCheckOut> = ({
           <p className="text-body-sm text-on-surface-variant/70 mt-1">
             Solo personas registradas como padre, autorizado o tutor temporal vigente.
           </p>
-        </div>
-
-        {/* Selector de ficha de salida */}
-        <div>
-          <label htmlFor="ficha-salida" className="block text-label-md font-label-md text-on-surface mb-2">
-            Ficha de Salida <span className="text-secondary">(opcional)</span>
-          </label>
-          <select
-            id="ficha-salida"
-            value={fichaSalidaId}
-            onChange={(e) => setFichaSalidaId(e.target.value)}
-            className="w-full h-11 border border-outline-variant rounded-xl px-4 bg-surface-container-lowest text-body-md focus:ring-2 focus:ring-primary focus:outline-none appearance-none"
-          >
-            <option value="">— Seleccionar ficha —</option>
-            {fichas.map((f) => (
-              <option key={f.idFicha} value={String(f.idFicha)}>
-                {f.codigoFicha}
-              </option>
-            ))}
-          </select>
         </div>
 
         {/* Hora estimada de salida */}
