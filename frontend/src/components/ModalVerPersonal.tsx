@@ -108,11 +108,11 @@ const ModalVerPersonal: React.FC<PropsModalVerPersonal> = ({ abierto, personal, 
 
         <div className="border-t border-outline-variant/20 pt-4">
           <h4 className="text-label-sm font-bold text-on-surface mb-2">Grupos Asignados</h4>
-          {perfil.grupos.length === 0 ? (
+          {(perfil.grupos ?? []).length === 0 ? (
             <p className="text-body-sm text-on-surface-variant italic">Sin grupos asignados.</p>
           ) : (
             <div>
-              {perfil.grupos.map((g) => (
+              {(perfil.grupos ?? []).map((g) => (
                 <Chip key={g.idGrupo} texto={g.grupo} icono="group" />
               ))}
             </div>
@@ -121,11 +121,11 @@ const ModalVerPersonal: React.FC<PropsModalVerPersonal> = ({ abierto, personal, 
 
         <div className="border-t border-outline-variant/20 pt-4">
           <h4 className="text-label-sm font-bold text-on-surface mb-2">Turnos Asignados</h4>
-          {perfil.turnos.length === 0 ? (
+          {(perfil.turnos ?? []).length === 0 ? (
             <p className="text-body-sm text-on-surface-variant italic">Sin turnos asignados.</p>
           ) : (
             <div>
-              {perfil.turnos.map((t) => (
+              {(perfil.turnos ?? []).map((t) => (
                 <Chip key={t.idTurno} texto={formatearTurno(t.turno)} icono="schedule" />
               ))}
             </div>
@@ -164,11 +164,11 @@ const ModalVerPersonal: React.FC<PropsModalVerPersonal> = ({ abierto, personal, 
             <Icono nombre="contact_phone" color="var(--color-primary)" />
             Teléfonos
           </h4>
-          {perfil.telefonos.length === 0 ? (
+          {(perfil.telefonos ?? []).length === 0 ? (
             <p className="text-body-sm text-on-surface-variant italic">No hay teléfonos registrados.</p>
           ) : (
             <div className="space-y-2">
-              {perfil.telefonos.map((tel) => (
+              {(perfil.telefonos ?? []).map((tel) => (
                 <div key={tel.idTelefono} className="flex justify-between items-center bg-surface-container-low/50 p-2.5 rounded-lg">
                   <div>
                     <p className="text-body-sm font-semibold text-on-surface">{tel.numero}</p>
@@ -196,11 +196,11 @@ const ModalVerPersonal: React.FC<PropsModalVerPersonal> = ({ abierto, personal, 
             <Icono nombre="location_on" color="var(--color-primary)" />
             Direcciones
           </h4>
-          {perfil.direcciones.length === 0 ? (
+          {(perfil.direcciones ?? []).length === 0 ? (
             <p className="text-body-sm text-on-surface-variant italic">No hay direcciones registradas.</p>
           ) : (
             <div className="space-y-2">
-              {perfil.direcciones.map((dir) => (
+              {(perfil.direcciones ?? []).map((dir) => (
                 <div key={dir.idDireccion} className="bg-surface-container-low/50 p-3 rounded-lg space-y-1">
                   <div className="flex justify-between items-center">
                     <span className="text-label-sm font-bold text-primary">{dir.tipoDireccion}</span>
