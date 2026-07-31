@@ -35,7 +35,13 @@ export const listarPersonalHoy = async (req: Request, res: Response) => {
         am.Estado_Llegada                                AS "estadoLlegada",
         to_char(am.Hora_Llegada - INTERVAL '6 hours', 'HH12:MI AM') AS "horaLlegada",
         ${esHoy ? `tp.Numero` : 'NULL::varchar'}         AS "telefono",
-        ${esHoy ? `tp.Tiene_Whatsapp` : 'NULL::boolean'} AS "tieneWhatsapp"
+        ${esHoy ? `tp.Tiene_Whatsapp` : 'NULL::boolean'} AS "tieneWhatsapp",
+        (SELECT json_agg(json_build_object(
+          'idTurno', pt.ID_Turno, 'turno', t.Nombre
+        ))
+         FROM Personal_Turnos pt
+         JOIN Turnos t ON t.ID_Turno = pt.ID_Turno
+         WHERE pt.ID_Personal = ps.ID_Persona AND pt.Activo = TRUE) AS "turnos"
       FROM   Personal_Sistema ps
       JOIN   Personas         p  ON p.ID_Persona  = ps.ID_Persona
       JOIN   Roles            r  ON r.ID_Rol      = ps.ID_Rol

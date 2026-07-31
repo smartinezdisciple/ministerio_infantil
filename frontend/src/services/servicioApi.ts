@@ -366,6 +366,11 @@ export const listarGrupos = () => get<GrupoApi[]>('/grupos');
 //                        POST /api/personal/asistencia
 // ══════════════════════════════════════════════════════════════════
 
+export interface TurnoAsignado {
+  idTurno: number;
+  turno: string;
+}
+
 export interface PersonalAsistenciaApi {
   idPersona: number;
   nombres: string;
@@ -377,6 +382,7 @@ export interface PersonalAsistenciaApi {
   fechaIngreso: string;
   estadoLlegada?: 'Temprano' | 'Tarde' | 'Justificado' | 'Injustificado';
   horaLlegada?: string;
+  turnos?: TurnoAsignado[];
 }
 
 export const listarPersonalHoy = () => get<PersonalAsistenciaApi[]>('/personal/asistencia-hoy');

@@ -4,6 +4,7 @@ import useSWR from 'swr';
 import LayoutPrincipal from '../components/LayoutPrincipal';
 import TablaBase, { type ColumnaTabla } from '../components/TablaBase';
 import ModalConfirmar from '../components/ModalConfirmar';
+import ModalVerPersonal from '../components/ModalVerPersonal';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/ContextoAuth';
 import type { DatosRegistroPersonal, RolNombre, ValidacionContrasena } from '../services/tipos';
@@ -22,7 +23,8 @@ import {
   type TurnoApi,
   type RolApi,
 } from '../services/servicioApi';
-import { fechaLocalHoy } from '../services/fechaUtils';
+import { fechaLocalHoy, formatearFechaVisual } from '../services/fechaUtils';
+import { formatearTurno } from '../services/turnoUtils';
 
 // ── Constantes ────────────────────────────────────────────────────
 const ROLES_DISPONIBLES: RolNombre[] = ['Colaborador', 'Maestro', 'Staff', 'Coordinador General'];
@@ -519,6 +521,7 @@ const PaginaRegistroPersonal: React.FC = () => {
   const [cargando, setCargando] = useState(true);
   const [busqueda, setBusqueda] = useState('');
   const [filtroRol, setFiltroRol] = useState('');
+  const [filtroTurno, setFiltroTurno] = useState('');
   const [pagina, setPagina] = useState(1);
   const [porPagina, setPorPagina] = useState(20);
   const [coordinadores, setCoordinadores] = useState<Array<{ id: number; nombre: string; rol?: string }>>([]);
@@ -527,6 +530,7 @@ const PaginaRegistroPersonal: React.FC = () => {
   const [roles, setRoles] = useState<RolApi[]>([]);
   const [modalConfirmarEliminar, setModalConfirmarEliminar] = useState(false);
   const [personalAEliminar, setPersonalAEliminar] = useState<PersonalAsistenciaApi | null>(null);
+  const [personalVer, setPersonalVer] = useState<PersonalAsistenciaApi | null>(null);
 
   // ── Carga de personal con SWR ────────────────
   const { data: swrPersonal, isLoading: isLoadingPersonal, mutate: mutatePersonal } = useSWR(
@@ -586,9 +590,10 @@ const PaginaRegistroPersonal: React.FC = () => {
     return personal.filter(p => {
       const coincideNombre = busqueda ? normalizar(p.nombreCompleto).includes(q) : true;
       const coincideRol = filtroRol ? p.rol === filtroRol : true;
-      return coincideNombre && coincideRol;
+      const coincideTurno = filtroTurno ? (p.turnos ?? []).some(t => t.idTurno === Number(filtroTurno)) : true;
+      return coincideNombre && coincideRol && coincideTurno;
     });
-  }, [personal, busqueda, filtroRol]);
+  }, [personal, busqueda, filtroRol, filtroTurno]);
 
   const personalPaginado = useMemo(() => {
     const inicio = (pagina - 1) * porPagina;
@@ -621,6 +626,25 @@ const PaginaRegistroPersonal: React.FC = () => {
       render: (p) => <span className="text-on-surface-variant">{p.rol}</span>,
     },
     {
+      id: 'turno',
+      encabezado: 'Turno',
+      ordenablePor: (p) => (p.turnos ?? []).map(t => t.turno).join(', '),
+      render: (p) => (
+        <div className="flex flex-wrap gap-1">
+          {(p.turnos ?? []).length === 0 ? (
+            <span className="text-on-surface-variant">—</span>
+          ) : (
+            (p.turnos ?? []).map((t) => (
+              <span key={t.idTurno} className="inline-flex items-center gap-1 bg-surface-container-low text-on-surface px-2 py-0.5 rounded-full text-label-sm">
+                <span className="material-symbols-outlined text-[12px] text-secondary">schedule</span>
+                {formatearTurno(t.turno)}
+              </span>
+            ))
+          )}
+        </div>
+      ),
+    },
+    {
       id: 'grupo',
       encabezado: 'Grupo',
       ordenablePor: (p) => p.grupoAsignado ?? '',
@@ -630,7 +654,7 @@ const PaginaRegistroPersonal: React.FC = () => {
       id: 'fecha',
       encabezado: 'Fecha Ingreso',
       ordenablePor: 'fechaIngreso',
-      render: (p) => <span className="text-on-surface-variant">{p.fechaIngreso}</span>,
+      render: (p) => <span className="text-on-surface-variant">{formatearFechaVisual(p.fechaIngreso)}</span>,
     },
   ];
 
@@ -645,8 +669,8 @@ const PaginaRegistroPersonal: React.FC = () => {
   }, []);
 
   const handleVer = useCallback((p: PersonalAsistenciaApi) => {
-    handleEditar(p);
-  }, [handleEditar]);
+    setPersonalVer(p);
+  }, []);
 
   const handleEliminar = useCallback((p: PersonalAsistenciaApi) => {
     setPersonalAEliminar(p);
@@ -702,6 +726,11 @@ const PaginaRegistroPersonal: React.FC = () => {
             <option value="">Todos los roles</option>
             {ROLES_DISPONIBLES.map(r => <option key={r} value={r}>{r}</option>)}
           </select>
+          <select value={filtroTurno} onChange={(e) => { setFiltroTurno(e.target.value); setPagina(1); }}
+            className="bg-surface-container-low border border-outline-variant rounded-md px-3 py-2 font-body-sm text-on-surface focus:outline-none focus:border-primary">
+            <option value="">Todos los turnos</option>
+            {turnos.map(t => <option key={t.idTurno} value={t.idTurno}>{formatearTurno(t.nombre)}</option>)}
+          </select>
         </div>
 
         {/* ── Tabla ───────────────────────────────── */}
@@ -716,7 +745,7 @@ const PaginaRegistroPersonal: React.FC = () => {
           onCambiarPorPagina={setPorPagina}
           cargando={cargando}
           mensajeVacio={
-            busqueda || filtroRol
+            busqueda || filtroRol || filtroTurno
               ? 'No se encontraron resultados.'
               : 'No hay personal registrado aún.'
           }
@@ -742,6 +771,11 @@ const PaginaRegistroPersonal: React.FC = () => {
         mensaje={`¿Estás seguro de eliminar a ${personalAEliminar?.nombreCompleto}?`}
         onConfirmar={confirmarEliminar}
         tipo="danger"
+      />
+      <ModalVerPersonal
+        abierto={!!personalVer}
+        personal={personalVer}
+        onCerrar={() => setPersonalVer(null)}
       />
     </LayoutPrincipal>
   );
