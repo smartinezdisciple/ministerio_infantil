@@ -108,115 +108,125 @@ const ModalCheckIn: React.FC<PropsModalCheckIn> = ({ abierto, fecha, onCerrar, o
     );
   }, [tutoresNino, busquedaTutor, estado.tutorSeleccionadoId]);
 
+  /**
+   * Inicializa el formulario del check-in: resetea el estado y vuelve a cargar
+   * los catálogos (fichas activas, turnos, grupos y asistencias del día).
+   * Se reutiliza al abrir el modal y tras cada ingreso exitoso para poder
+   * registrar varios niños de forma consecutiva con el turno preseleccionado.
+   */
+  const inicializarFormulario = useCallback(() => {
+    setEstado(ESTADO_INICIAL);
+    setNinosFiltrados([]);
+    setTodosNinos([]);
+    setTutoresNino([]);
+    setCargandoTutores(false);
+    setTurnos([]);
+    setCargandoTurnos(true);
+    setBusquedaTutor('');
+    setMostrarDropdownTutor(false);
+
+    const cargarTurnosPromesa = () => {
+      if (usuario && usuario.nivelJerarquico < 4) {
+        return obtenerPerfilPersonal(usuario.idPersona)
+          .then((res) => {
+            const turnosPerfil = (res.turnos || []).map((t) => ({
+              idTurno: t.idTurno,
+              nombre: t.turno as any,
+              diaSemana: 0,
+              horaInicio: '',
+              activo: true,
+            } as TurnoApi));
+            
+            if (turnosPerfil.length > 0) {
+              setTurnos(turnosPerfil);
+              setEstado(prev => ({ ...prev, idTurnoSeleccionado: String(turnosPerfil[0].idTurno) }));
+            } else {
+              // Si el usuario no tiene turnos asignados en su perfil, cargamos todos los activos
+              return listarTurnos()
+                .then((datos) => {
+                  const activos = datos.filter(t => t.activo);
+                  setTurnos(activos);
+                  const dom8 = activos.find(t => t.nombre === 'Domingo_8am');
+                  if (dom8) {
+                    setEstado(prev => ({ ...prev, idTurnoSeleccionado: String(dom8.idTurno) }));
+                  } else if (activos.length > 0) {
+                    setEstado(prev => ({ ...prev, idTurnoSeleccionado: String(activos[0].idTurno) }));
+                  }
+                });
+            }
+          });
+      } else {
+        return listarTurnos()
+          .then((datos) => {
+            const activos = datos.filter(t => t.activo);
+            setTurnos(activos);
+            const dom8 = activos.find(t => t.nombre === 'Domingo_8am');
+            if (dom8) {
+              setEstado(prev => ({ ...prev, idTurnoSeleccionado: String(dom8.idTurno) }));
+            } else if (activos.length > 0) {
+              setEstado(prev => ({ ...prev, idTurnoSeleccionado: String(activos[0].idTurno) }));
+            }
+          });
+      }
+    };
+
+    Promise.all([
+      listarFichasActivas().catch(err => {
+        console.error('Error al listar fichas activas:', err);
+        return [] as Ficha[];
+      }),
+      listarAsistenciaDia(fechaLocalHoy()).catch(err => {
+        console.error('Error al listar asistencia de hoy:', err);
+        return [] as unknown[];
+      }),
+      cargarTurnosPromesa().catch(err => {
+        console.error('Error al cargar turnos:', err);
+        return undefined;
+      }),
+      listarGrupos().catch(err => {
+        console.error('Error al listar grupos:', err);
+        return [] as GrupoApi[];
+      })
+    ])
+    .then(([fichasResult, asistenciasResult, _turnosResult, gruposResult]) => {
+      const fichasActivas = fichasResult as unknown as Ficha[];
+      const asistenciasHoy = asistenciasResult as unknown[];
+      const listaGrupos = (gruposResult as GrupoApi[]) || [];
+      
+      setGrupos(listaGrupos);
+
+      const fichasEnUso = new Set(
+        asistenciasHoy
+          .filter((asistencia: any) => asistencia.idFichaEntrada && asistencia.estado === 'Presente')
+          .map((asistencia: any) => asistencia.idFichaEntrada)
+      );
+
+      const idsNinosYaPresentes = new Set(
+        (asistenciasHoy as any[])
+          .filter((a: any) => a.estado === 'Presente')
+          .map((a: any) => a.idNino)
+      );
+      idsNinosYaPresentesRef.current = idsNinosYaPresentes;
+
+      const fichasDisponibles = fichasActivas.filter(
+        ficha => ficha.tipo === 'Entrada' && !fichasEnUso.has(ficha.idFicha)
+      );
+      
+      setFichas(fichasDisponibles);
+    })
+    .catch((error) => {
+      console.error('Error general loading initialization data in ModalCheckIn:', error);
+    })
+    .finally(() => {
+      setCargandoTurnos(false);
+    });
+  }, [usuario]);
+
   useEffect(() => {
     if (abierto) {
-      setEstado(ESTADO_INICIAL);
-      setNinosFiltrados([]);
-      setTodosNinos([]);
-      setTutoresNino([]);
-      setCargandoTutores(false);
-      setTurnos([]);
-      setCargandoTurnos(true);
-      setBusquedaTutor('');
-      setMostrarDropdownTutor(false);
-
-      const cargarTurnosPromesa = () => {
-        if (usuario && usuario.nivelJerarquico < 4) {
-          return obtenerPerfilPersonal(usuario.idPersona)
-            .then((res) => {
-              const turnosPerfil = (res.turnos || []).map((t) => ({
-                idTurno: t.idTurno,
-                nombre: t.turno as any,
-                diaSemana: 0,
-                horaInicio: '',
-                activo: true,
-              } as TurnoApi));
-              
-              if (turnosPerfil.length > 0) {
-                setTurnos(turnosPerfil);
-                setEstado(prev => ({ ...prev, idTurnoSeleccionado: String(turnosPerfil[0].idTurno) }));
-              } else {
-                // Si el usuario no tiene turnos asignados en su perfil, cargamos todos los activos
-                return listarTurnos()
-                  .then((datos) => {
-                    const activos = datos.filter(t => t.activo);
-                    setTurnos(activos);
-                    const dom8 = activos.find(t => t.nombre === 'Domingo_8am');
-                    if (dom8) {
-                      setEstado(prev => ({ ...prev, idTurnoSeleccionado: String(dom8.idTurno) }));
-                    } else if (activos.length > 0) {
-                      setEstado(prev => ({ ...prev, idTurnoSeleccionado: String(activos[0].idTurno) }));
-                    }
-                  });
-              }
-            });
-        } else {
-          return listarTurnos()
-            .then((datos) => {
-              const activos = datos.filter(t => t.activo);
-              setTurnos(activos);
-              const dom8 = activos.find(t => t.nombre === 'Domingo_8am');
-              if (dom8) {
-                setEstado(prev => ({ ...prev, idTurnoSeleccionado: String(dom8.idTurno) }));
-              } else if (activos.length > 0) {
-                setEstado(prev => ({ ...prev, idTurnoSeleccionado: String(activos[0].idTurno) }));
-              }
-            });
-        }
-      };
-
-      Promise.all([
-        listarFichasActivas().catch(err => {
-          console.error('Error al listar fichas activas:', err);
-          return [] as Ficha[];
-        }),
-        listarAsistenciaDia(fechaLocalHoy()).catch(err => {
-          console.error('Error al listar asistencia de hoy:', err);
-          return [] as unknown[];
-        }),
-        cargarTurnosPromesa().catch(err => {
-          console.error('Error al cargar turnos:', err);
-          return undefined;
-        }),
-        listarGrupos().catch(err => {
-          console.error('Error al listar grupos:', err);
-          return [] as GrupoApi[];
-        })
-      ])
-      .then(([fichasResult, asistenciasResult, _turnosResult, gruposResult]) => {
-        const fichasActivas = fichasResult as unknown as Ficha[];
-        const asistenciasHoy = asistenciasResult as unknown[];
-        const listaGrupos = (gruposResult as GrupoApi[]) || [];
-        
-        setGrupos(listaGrupos);
-
-        const fichasEnUso = new Set(
-          asistenciasHoy
-            .filter((asistencia: any) => asistencia.idFichaEntrada && asistencia.estado === 'Presente')
-            .map((asistencia: any) => asistencia.idFichaEntrada)
-        );
-
-        const idsNinosYaPresentes = new Set(
-          (asistenciasHoy as any[])
-            .filter((a: any) => a.estado === 'Presente')
-            .map((a: any) => a.idNino)
-        );
-        idsNinosYaPresentesRef.current = idsNinosYaPresentes;
-
-        const fichasDisponibles = fichasActivas.filter(
-          ficha => ficha.tipo === 'Entrada' && !fichasEnUso.has(ficha.idFicha)
-        );
-        
-        setFichas(fichasDisponibles);
-      })
-      .catch((error) => {
-        console.error('Error general loading initialization data in ModalCheckIn:', error);
-      })
-      .finally(() => {
-        setCargandoTurnos(false);
-      });
+      inicializarFormulario();
     }
-  }, [abierto, usuario]);
+  }, [abierto, inicializarFormulario]);
 
   useEffect(() => {
     if (!abierto || !ninoIdInicial) return;
@@ -487,11 +497,9 @@ const ModalCheckIn: React.FC<PropsModalCheckIn> = ({ abierto, fecha, onCerrar, o
         fecha,
         motivoExcepcion: esExcepcion ? estado.motivoExcepcion.trim() : undefined,
       });
-      setEstado(ESTADO_INICIAL);
-      setNinosFiltrados([]);
-      setTutoresNino([]);
-      setBusquedaTutor('');
-      setMostrarDropdownTutor(false);
+      // Prepara el formulario para el siguiente ingreso consecutivo:
+      // vuelve a preseleccionar el turno y refresca fichas disponibles.
+      inicializarFormulario();
     } finally {
       setEstado((prev) => ({ ...prev, enviando: false }));
     }
