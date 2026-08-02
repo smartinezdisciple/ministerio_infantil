@@ -968,6 +968,31 @@ export const obtenerCumpleanosDatos = (mes: string) => {
   return get<CumpleanosReporteApi[]>(`/reportes/cumpleanos/datos?mes=${encodeURIComponent(mes)}`);
 };
 
+export interface DatosAsistenciaNinoReporte {
+  idAsistencia: number;
+  fecha: string;
+  turno: string;
+  nombreNino: string;
+  grupo: string;
+  horaEntrada: string;
+  horaSalida: string | null;
+  estado: string;
+  fichaEntrada: string;
+  fichaSalida: string;
+  ingresadoPor?: string;
+  retiradoPor?: string;
+}
+
+export const obtenerAsistenciaNinosDatos = (fecha?: string, turno?: string, estado?: string) => {
+  const params = new URLSearchParams();
+  if (fecha) params.append('fecha', fecha);
+  if (turno) params.append('turno', turno);
+  if (estado) params.append('estado', estado);
+  const query = params.toString() ? `?${params.toString()}` : '';
+  return get<DatosAsistenciaNinoReporte[]>(`/reportes/asistencia-ninos/datos${query}`);
+};
+
+
 // ══════════════════════════════════════════════════════════════════
 // TURNOS Y EVENTOS (Spec §9.13)
 // ══════════════════════════════════════════════════════════════════

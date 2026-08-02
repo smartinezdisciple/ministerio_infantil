@@ -465,3 +465,69 @@ export const obtenerCumpleanosDatos = async (req: Request, res: Response): Promi
     respuestaError(res, 'Error al generar los datos del reporte.', 500);
   }
 };
+
+/**
+ * GET /api/reportes/asistencia-ninos/datos
+ * Retorna los registros de asistencia de niños filtrados por fecha, turno y estado.
+ */
+export const obtenerAsistenciaNinosReporteDatos = async (req: Request, res: Response): Promise<void> => {
+  const { fecha, turno, estado } = req.query;
+  const fechaStr = (fecha as string) || '';
+  const turnoStr = (turno as string) || 'Todos';
+  const estadoStr = (estado as string) || 'Todos';
+
+  try {
+    let sql = `
+      SELECT an.ID_Asistencia AS "idAsistencia",
+             TO_CHAR(an.Fecha, 'YYYY-MM-DD') AS "fecha",
+             t.Nombre AS "turno",
+             CONCAT(p.Nombres, ' ', p.Apellidos) AS "nombreNino",
+             CASE 
+               WHEN g.ID_Grupo = 1 AND DATE_PART('year', AGE(an.Fecha, p.Fecha_Nacimiento))::INT < 4 THEN 'Menores de 4 años'
+               ELSE COALESCE(g.Nombre, '') 
+             END AS "grupo",
+             to_char(an.Hora_Entrada - INTERVAL '6 hours', 'HH12:MI AM') AS "horaEntrada",
+             to_char(an.Hora_Salida - INTERVAL '6 hours', 'HH12:MI AM') AS "horaSalida",
+             an.Estado AS "estado",
+             fe.Codigo_Ficha AS "fichaEntrada",
+             COALESCE(fs.Codigo_Ficha, '') AS "fichaSalida",
+             CONCAT(p_ing.Nombres, ' ', p_ing.Apellidos) AS "ingresadoPor",
+             CONCAT(p_ret.Nombres, ' ', p_ret.Apellidos) AS "retiradoPor"
+      FROM Asistencia_Ninos an
+      JOIN Personas p ON an.ID_Nino = p.ID_Persona
+      JOIN Turnos t ON an.ID_Turno = t.ID_Turno
+      JOIN Grupos g ON an.ID_Grupo_Asistido = g.ID_Grupo
+      JOIN Fichas fe ON an.ID_Ficha_Entrada = fe.ID_Ficha
+      LEFT JOIN Fichas fs ON an.ID_Ficha_Salida = fs.ID_Ficha
+      LEFT JOIN Personas p_ing ON an.ID_Ingresado_Por = p_ing.ID_Persona
+      LEFT JOIN Personas p_ret ON an.ID_Retirado_Por = p_ret.ID_Persona
+      WHERE 1=1
+    `;
+    const params: any[] = [];
+
+    if (fechaStr) {
+      params.push(fechaStr);
+      sql += ` AND an.Fecha = $${params.length}`;
+    }
+
+    if (turnoStr && turnoStr !== 'Todos') {
+      const dbTurno = normalizarTurno(turnoStr);
+      params.push(dbTurno);
+      sql += ` AND t.Nombre = $${params.length}`;
+    }
+
+    if (estadoStr && estadoStr !== 'Todos') {
+      params.push(estadoStr);
+      sql += ` AND an.Estado = $${params.length}`;
+    }
+
+    sql += ` ORDER BY an.Fecha DESC, an.Hora_Entrada DESC LIMIT 5000`;
+
+    const { rows } = await pool.query(sql, params);
+    respuestaExito(res, rows);
+  } catch (err) {
+    console.error('Error al obtener datos de asistencia de niños:', err);
+    respuestaError(res, 'Error al generar los datos del reporte.', 500);
+  }
+};
+
