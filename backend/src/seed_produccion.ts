@@ -19,7 +19,11 @@ async function runSeed() {
     cliente = await pool.connect();
     await cliente.query('BEGIN');
 
+    // Asegurar columna Solo_Lectura en Personal_Sistema si falta
+    await cliente.query('ALTER TABLE Personal_Sistema ADD COLUMN IF NOT EXISTS Solo_Lectura BOOLEAN NOT NULL DEFAULT FALSE;');
+
     // ── 1. Roles del sistema ──────────────────────────────────────────
+
     const countRolesRes = await cliente.query('SELECT COUNT(*)::int AS count FROM Roles');
     const rolesCount = countRolesRes.rows[0].count;
     const idRolesPorNombre: Record<string, number> = {};

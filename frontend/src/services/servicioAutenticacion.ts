@@ -1,8 +1,10 @@
 // servicioAutenticacion.ts — Llamada al API de login (CLAUDE.md §3.1: async/await con try/catch)
 import type { RespuestaLogin } from './tipos';
 
-const URL_BASE_API = `${import.meta.env.VITE_API_URL ?? 'http://localhost:3001/api'}/auth`;
-
+const baseRaw = (import.meta.env.VITE_API_URL ?? 'http://localhost:3001/api').replace(/\/+$/, '');
+const URL_BASE_API = baseRaw.endsWith('/auth') || baseRaw.endsWith('/autenticacion')
+  ? baseRaw
+  : `${baseRaw}/auth`;
 
 /**
  * Envía las credenciales al backend para autenticación.
@@ -29,15 +31,16 @@ export const iniciarSesion = async (
       };
     }
 
+    const datosError = await respuesta.json().catch(() => ({}));
+
     // 401 Unauthorized — Credenciales incorrectas
     if (respuesta.status === 401) {
-      const datos = await respuesta.json();
       return {
         exito: false,
         error: {
           tipo: 'credencialesInvalidas',
-          mensaje: 'Usuario o contraseña incorrectos.',
-          intentosRestantes: datos.intentosRestantes ?? undefined,
+          mensaje: datosError.mensaje || 'Usuario o contraseña incorrectos.',
+          intentosRestantes: datosError.intentosRestantes ?? undefined,
         },
       };
     }
@@ -50,20 +53,21 @@ export const iniciarSesion = async (
         exito: false,
         error: {
           tipo: 'rateLimitAlcanzado',
-          mensaje: 'Cuenta bloqueada temporalmente por exceder el límite de intentos.',
+          mensaje: datosError.mensaje || 'Cuenta bloqueada temporalmente por exceder el límite de intentos.',
           tiempoBloqueoSegundos: segundosBloqueo,
         },
       };
     }
 
-    // Cualquier otro error del servidor
+    // Cualquier otro error del servidor (e.g. 404, 500)
     return {
       exito: false,
       error: {
         tipo: 'errorServidor',
-        mensaje: 'Error de conexión. Intenta más tarde.',
+        mensaje: datosError.mensaje || 'Error de conexión. Intenta más tarde.',
       },
     };
+
   } catch (errorRed) {
     // Error de red (servidor caído, sin conexión, etc.)
     return {

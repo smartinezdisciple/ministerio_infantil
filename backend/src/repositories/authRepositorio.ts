@@ -18,22 +18,47 @@ export interface UsuarioDB {
  * SOLO consultas parametrizadas — inyección SQL tolerancia cero (CLAUDE.md §4.1).
  */
 export const encontrarUsuarioPorNombre = async (usuario: string): Promise<UsuarioDB | null> => {
-  const resultado = await pool.query<UsuarioDB>(
-    `    SELECT
-       ps.ID_Persona        AS "idPersona",
-       p.Nombres || ' ' || p.Apellidos  AS "nombreCompleto",
-       ps.Usuario           AS "usuario",
-       ps.Password_Hash     AS "passwordHash",
-       r.ID_Rol             AS "idRol",
-       r.Nombre_Rol         AS "nombreRol",
-       r.Nivel_Jerarquico   AS "nivelJerarquico",
-       ps.Activo            AS "activo",
-       ps.Solo_Lectura      AS "soloLectura"
-     FROM Personal_Sistema ps
-     JOIN Personas p  ON p.ID_Persona = ps.ID_Persona
-     JOIN Roles    r  ON r.ID_Rol     = ps.ID_Rol
-     WHERE ps.Usuario = $1`,
-    [usuario]
-  );
-  return resultado.rows[0] ?? null;
+  try {
+    const resultado = await pool.query<UsuarioDB>(
+      `SELECT
+         ps.ID_Persona        AS "idPersona",
+         p.Nombres || ' ' || p.Apellidos  AS "nombreCompleto",
+         ps.Usuario           AS "usuario",
+         ps.Password_Hash     AS "passwordHash",
+         r.ID_Rol             AS "idRol",
+         r.Nombre_Rol         AS "nombreRol",
+         r.Nivel_Jerarquico   AS "nivelJerarquico",
+         ps.Activo            AS "activo",
+         ps.Solo_Lectura      AS "soloLectura"
+       FROM Personal_Sistema ps
+       JOIN Personas p  ON p.ID_Persona = ps.ID_Persona
+       JOIN Roles    r  ON r.ID_Rol     = ps.ID_Rol
+       WHERE ps.Usuario = $1`,
+      [usuario]
+    );
+    return resultado.rows[0] ?? null;
+  } catch (err: any) {
+    if (err?.code === '42703') {
+      const resultado = await pool.query<UsuarioDB>(
+        `SELECT
+           ps.ID_Persona        AS "idPersona",
+           p.Nombres || ' ' || p.Apellidos  AS "nombreCompleto",
+           ps.Usuario           AS "usuario",
+           ps.Password_Hash     AS "passwordHash",
+           r.ID_Rol             AS "idRol",
+           r.Nombre_Rol         AS "nombreRol",
+           r.Nivel_Jerarquico   AS "nivelJerarquico",
+           ps.Activo            AS "activo",
+           FALSE                AS "soloLectura"
+         FROM Personal_Sistema ps
+         JOIN Personas p  ON p.ID_Persona = ps.ID_Persona
+         JOIN Roles    r  ON r.ID_Rol     = ps.ID_Rol
+         WHERE ps.Usuario = $1`,
+        [usuario]
+      );
+      return resultado.rows[0] ?? null;
+    }
+    throw err;
+  }
 };
+

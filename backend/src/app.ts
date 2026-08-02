@@ -69,6 +69,8 @@ app.get('/api/salud', (_req, res) => {
 
 // ── Rutas del dominio ─────────────────────────────────────────────
 app.use('/api/auth', authRutas);
+app.use('/api/autenticacion', authRutas);
+
 app.use('/api/ninos', ninosRutas);
 app.use('/api/dashboard', dashboardRutas);
 app.use('/api/asistencia', asistenciaRutas);
