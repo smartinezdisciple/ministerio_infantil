@@ -10,6 +10,12 @@ build/
 .env.local
 .env.*.local
 
+# ── Archivos de diagnóstico/scripts con credenciales (NUNCA commitear) ──
+backend/.env.neon
+backend/.env.local.backup2
+backend/crear-aurora.mjs
+backend/test-hoy.mjs
+
 # ── Logs ─────────────────────────────────────────────────────────
 *.log
 npm-debug.log*
