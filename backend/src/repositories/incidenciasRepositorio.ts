@@ -85,7 +85,7 @@ export const insertarIncidencia = async (
   const { rows } = await pool.query<IncidenciaRow>(
     `INSERT INTO Incidencias (ID_Turno, ID_Personal, Tipo, Descripcion, Fecha)
      VALUES ($1, $2, $3, $4, $5)
-     RETURNING ID_Incidencia`,
+     RETURNING ID_Incidencia AS "idIncidencia"`,
     [idTurno, idPersonal, tipo, descripcion, fecha]
   );
   const idIncidencia = rows[0].idIncidencia;
