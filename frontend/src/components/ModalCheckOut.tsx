@@ -30,15 +30,15 @@ interface OpcionContacto {
 const ModalCheckOut: React.FC<PropsModalCheckOut> = ({
   abierto, onCerrar, registro, onRetirado,
 }) => {
-  const [contactos, setContactos]     = useState<OpcionContacto[]>([]);
-  const [seleccion, setSeleccion]     = useState<string>('');   // idPersona como string
+  const [contactos, setContactos] = useState<OpcionContacto[]>([]);
+  const [seleccion, setSeleccion] = useState<string>('');   // idPersona como string
   const [nombreLibre, setNombreLibre] = useState('');           // fallback si no hay ID
-  const [error, setError]             = useState('');
+  const [error, setError] = useState('');
   const mostrarError = (msg: string) => {
     setError(msg);
     if (msg) toast.error(msg);
   };
-  const [enviando, setEnviando]       = useState(false);
+  const [enviando, setEnviando] = useState(false);
   const [cargandoContactos, setCargandoContactos] = useState(false);
 
 
@@ -72,32 +72,32 @@ const ModalCheckOut: React.FC<PropsModalCheckOut> = ({
     );
   }, [contactos, busquedaTutor, seleccion]);
 
-   // Cargar contactos del niño al abrir
-   useEffect(() => {
-     if (!abierto || !registro) return;
-     setSeleccion('');
-     setNombreLibre('');
-     setBusquedaTutor('');
-     setMostrarDropdown(false);
-     setError('');
-     setCargandoContactos(true);
+  // Cargar contactos del niño al abrir
+  useEffect(() => {
+    if (!abierto || !registro) return;
+    setSeleccion('');
+    setNombreLibre('');
+    setBusquedaTutor('');
+    setMostrarDropdown(false);
+    setError('');
+    setCargandoContactos(true);
 
-     obtenerFichaContacto(registro.nino.idPersona)
-       .then((ficha: any) => {
-         const lista: OpcionContacto[] = [];
-         const tutores = ficha.tutores || [];
-         for (const t of tutores) {
-           lista.push({
-             idPersona: t.idPersona,
-             etiqueta: `${t.nombres} ${t.apellidos} (${t.parentesco || 'Tutor'})`,
-             tipo: t.parentesco || 'Tutor'
-           });
-         }
-         setContactos(lista);
-       })
-       .catch(() => setContactos([]))
-       .finally(() => setCargandoContactos(false));
-   }, [abierto, registro]);
+    obtenerFichaContacto(registro.nino.idPersona)
+      .then((ficha: any) => {
+        const lista: OpcionContacto[] = [];
+        const tutores = ficha.tutores || [];
+        for (const t of tutores) {
+          lista.push({
+            idPersona: t.idPersona,
+            etiqueta: `${t.nombres} ${t.apellidos} (${t.parentesco || 'Tutor'})`,
+            tipo: t.parentesco || 'Tutor'
+          });
+        }
+        setContactos(lista);
+      })
+      .catch(() => setContactos([]))
+      .finally(() => setCargandoContactos(false));
+  }, [abierto, registro]);
 
   const handleConfirmar = async () => {
     if (!registro) return;
@@ -112,16 +112,17 @@ const ModalCheckOut: React.FC<PropsModalCheckOut> = ({
     setEnviando(true);
     try {
       if (idSeleccionado) {
-       await registrarCheckOut(registro.idAsistencia, idSeleccionado);
-       } else {
-         await registrarCheckOut(registro.idAsistencia, 0);
-       }
-       onRetirado(registro.idAsistencia);
+        await registrarCheckOut(registro.idAsistencia, idSeleccionado);
+      } else {
+        await registrarCheckOut(registro.idAsistencia, 0);
+      }
+      onRetirado(registro.idAsistencia);
       setSeleccion('');
       setNombreLibre('');
       setBusquedaTutor('');
       setMostrarDropdown(false);
       setError('');
+      onCerrar();
     } catch (err) {
       mostrarError(err instanceof Error ? err.message : 'Error al registrar el retiro.');
     } finally {
