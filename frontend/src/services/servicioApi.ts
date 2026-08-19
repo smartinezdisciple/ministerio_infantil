@@ -1323,3 +1323,41 @@ export const obtenerHistorialSolicitud = (idSolicitud: number) =>
 export const obtenerPerfilCompletoPersonal = (id: number) =>
   get<any>(`/personal/${id}/perfil-completo`);
 
+// ══════════════════════════════════════════════════════════════════
+// INCIDENCIAS — Módulo v10 (Staff y Coordinador General)
+// ══════════════════════════════════════════════════════════════════
+
+export type TipoIncidenciaApi = 'Ninos' | 'Maestros' | 'Infraestructura' | 'Observaciones';
+
+/** Etiquetas legibles de cada tipo de incidencia */
+export const TIPOS_INCIDENCIA: { valor: TipoIncidenciaApi; etiqueta: string }[] = [
+  { valor: 'Ninos',          etiqueta: 'Con Niños' },
+  { valor: 'Maestros',       etiqueta: 'Maestros' },
+  { valor: 'Infraestructura', etiqueta: 'Infraestructura' },
+  { valor: 'Observaciones',  etiqueta: 'Observaciones Generales' },
+];
+
+export interface IncidenciaApi {
+  idIncidencia:   number;
+  idTurno:        number;
+  nombreTurno:    string;
+  idPersonal:     number;
+  nombrePersonal: string;
+  tipo:           TipoIncidenciaApi;
+  descripcion:    string;
+  fecha:          string;
+  creadoEn:       string;
+}
+
+/** Lista incidencias. `turno` opcional; para Staff se restringe a sus turnos en el backend. */
+export const listarIncidencias = (turno?: string) => {
+  const params = turno ? `?turno=${encodeURIComponent(turno)}` : '';
+  return get<IncidenciaApi[]>(`/incidencias${params}`);
+};
+
+export const crearIncidencia = (datos: { idTurno: number; tipo: TipoIncidenciaApi; descripcion: string }) =>
+  post<IncidenciaApi>('/incidencias', datos);
+
+export const eliminarIncidencia = (id: number) =>
+  delete_<IncidenciaApi>(`/incidencias/${id}`);
+

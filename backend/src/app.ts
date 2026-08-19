@@ -23,6 +23,8 @@ import reportesRutas from './routes/reportesRutas.js';
 import lideresRutas from './routes/lideresRutas.js';
 import circulosRutas from './routes/circulosRutas.js';
 import telefonosDireccionesRutas from './routes/telefonosDireccionesRutas.js';
+// v10 — módulo de incidencias
+import incidenciasRutas from './routes/incidenciasRutas.js';
 
 const app = express();
 
@@ -89,6 +91,8 @@ app.use('/api/reportes', reportesRutas);
 app.use('/api/lideres', lideresRutas);
 app.use('/api/circulos', circulosRutas);
 app.use('/api/personas', telefonosDireccionesRutas);
+// v10 — módulo de incidencias
+app.use('/api/incidencias', incidenciasRutas);
 
 // ── Ruta no encontrada (404) ──────────────────────────────────────
 app.use((_req, res) => {

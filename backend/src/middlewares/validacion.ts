@@ -68,6 +68,16 @@ export const esquemaPersonal = z.object({
   idPersonaExistente: z.number().int().positive().optional(),
 });
 
+/** Esquema de creación de incidencia (módulo Incidencias) */
+export const esquemaIncidencia = z.object({
+  idTurno:    z.number().int().positive({ message: 'Se debe seleccionar un turno válido.' }),
+  tipo:       z.enum(['Ninos', 'Maestros', 'Infraestructura', 'Observaciones'], {
+    message: 'El tipo de incidencia no es válido.',
+  }),
+  descripcion: z.string().min(3, { message: 'La incidencia debe tener al menos 3 caracteres.' }),
+  fecha:      z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+});
+
 /**
  * Fábrica de middleware de validación Zod.
  * Valida req.body contra el esquema. Si falla → 400 con detalles específicos.

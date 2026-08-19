@@ -361,3 +361,19 @@ export interface MetricasPersonal {
   tiempoPromedioServicio: string;
 }
 
+// ── Módulo de Incidencias ─────────────────────────────────────────
+
+export type TipoIncidencia = 'Ninos' | 'Maestros' | 'Infraestructura' | 'Observaciones';
+
+export interface Incidencia {
+  idIncidencia:   number;
+  idTurno:        number;
+  nombreTurno:    string;
+  idPersonal:     number;
+  nombrePersonal: string;
+  tipo:           TipoIncidencia;
+  descripcion:    string;
+  fecha:          string;
+  creadoEn:       string;
+}
+
