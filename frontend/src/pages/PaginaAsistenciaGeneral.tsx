@@ -10,7 +10,7 @@ import ModalCheckOut from '../components/ModalCheckOut';
 import { useAuth } from '../contexts/ContextoAuth';
 import type { RegistroAsistenciaNino, EstadoAsistencia, DatosCheckIn } from '../services/tipos';
 import { listarAsistenciaDia, registrarCheckIn, eliminarAsistencia, listarTurnos, obtenerPerfilPersonal } from '../services/servicioApi';
-import { fechaLocalHoy, esCumpleanosHoy } from '../services/fechaUtils';
+import { fechaLocalHoy, esCumpleanosHoy, esCumpleMesActual } from '../services/fechaUtils';
 import { formatearTurno } from '../services/turnoUtils';
 import ModalEditarAsistencia from '../components/ModalEditarAsistencia';
 import ModalBase from '../components/ModalBase';
@@ -71,10 +71,16 @@ const construirColumnas = (
   },
   {
     id: 'fecha',
-    encabezado: 'Fecha',
+    encabezado: 'f.cumple',
     ancho: 'w-[95px]',
-    ordenablePor: 'fecha',
-    render: (r) => <span className="text-[12px] text-on-surface">{formatearFecha(r.fecha)}</span>,
+    ordenablePor: (r) => r.nino.fechaNacimiento ?? '',
+    render: (r) => (
+      <span
+        className={`text-[12px] ${esCumpleMesActual(r.nino.fechaNacimiento, filtroFecha) ? 'text-blue-600 font-semibold' : 'text-on-surface'}`}
+      >
+        {formatearFecha(r.nino.fechaNacimiento)}
+      </span>
+    ),
   },
   {
     id: 'fichaEntrada',

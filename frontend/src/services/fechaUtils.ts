@@ -161,5 +161,19 @@ export const esCumpleanosHoy = (fechaNacimientoStr: string, fechaReferenciaStr: 
   return mesNac === mesRef && diaNac === diaRef;
 };
 
+/**
+ * Compara el MES de una fecha de nacimiento con el mes de una fecha de referencia.
+ * Retorna true si el niño cumple años en el mismo mes (sin importar el día).
+ */
+export const esCumpleMesActual = (fechaNacimientoStr: string, fechaReferenciaStr: string): boolean => {
+  if (!fechaNacimientoStr || !fechaReferenciaStr) return false;
+
+  const partesNac = fechaNacimientoStr.split('T')[0].split('-');
+  const partesRef = fechaReferenciaStr.split('T')[0].split('-');
+  if (partesNac.length !== 3 || partesRef.length !== 3) return false;
+
+  return partesNac[1] === partesRef[1];
+};
+
 
 
