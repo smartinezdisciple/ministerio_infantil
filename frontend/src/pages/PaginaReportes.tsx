@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import LayoutPrincipal from '../components/LayoutPrincipal';
 import { fechaLocalHoy } from '../services/fechaUtils';
-import { obtenerNinosPorGrupoDatos, obtenerCumpleanosDatos, obtenerAsistenciaNinosDatos, exportarReporteExcel, type DatosNinoPorGrupoReporte, type CumpleanosReporteApi, type DatosAsistenciaNinoReporte } from '../services/servicioApi';
+import { obtenerNinosPorGrupoDatos, obtenerCumpleanosDatos, obtenerAsistenciaNinosDatos, obtenerAsistenciaMaestrosDatos, exportarReporteExcel, type DatosNinoPorGrupoReporte, type CumpleanosReporteApi, type DatosAsistenciaNinoReporte, type DatosAsistenciaMaestroReporte } from '../services/servicioApi';
 
 interface TipoReporte {
   id: string;
@@ -63,7 +63,8 @@ const TIPOS_REPORTE: TipoReporte[] = [
     colorIcono: 'text-secondary',
     fondoIcono: 'bg-secondary/10',
     filtros: [
-      { id: 'fecha', label: 'Fecha', tipo: 'date' },
+      { id: 'desde', label: 'Desde', tipo: 'date' },
+      { id: 'hasta', label: 'Hasta', tipo: 'date' },
       { id: 'turno', label: 'Turno', tipo: 'select', opciones: ['Todos', 'Miercoles 6:30pm', 'Domingo 8am', 'Domingo 11am', 'Domingo 5pm'] },
       { id: 'rol', label: 'Rol', tipo: 'select', opciones: ['Todos', 'Colaborador', 'Maestro', 'Staff'] },
     ],
@@ -137,14 +138,21 @@ const PaginaReportes: React.FC = () => {
   const [cargandoCumpleanos, setCargandoCumpleanos] = useState(false);
   const [datosAsistenciaNinos, setDatosAsistenciaNinos] = useState<DatosAsistenciaNinoReporte[]>([]);
   const [cargandoAsistenciaNinos, setCargandoAsistenciaNinos] = useState(false);
+  const [datosAsistenciaMaestros, setDatosAsistenciaMaestros] = useState<DatosAsistenciaMaestroReporte[]>([]);
+  const [cargandoAsistenciaMaestros, setCargandoAsistenciaMaestros] = useState(false);
 
   // Inicialización de filtros con valores por defecto
   useEffect(() => {
     if (reporteSeleccionado) {
       const iniciales: Record<string, string> = {};
+      const hoy = fechaLocalHoy();
+      // Para el reporte de asistencia de maestros el rango por defecto es el mes actual
+      const primerDiaMes = reporteSeleccionado.id === 'asistencia-maestros'
+        ? `${hoy.slice(0, 8)}01`
+        : '';
       reporteSeleccionado.filtros.forEach(f => {
         if (f.tipo === 'date') {
-          iniciales[f.id] = fechaLocalHoy();
+          iniciales[f.id] = f.id === 'desde' && primerDiaMes ? primerDiaMes : fechaLocalHoy();
         } else {
           iniciales[f.id] = '';
         }
@@ -220,6 +228,30 @@ const PaginaReportes: React.FC = () => {
       setDatosAsistenciaNinos([]);
     }
   }, [reporteSeleccionado, filtros.fecha, filtros.turno, filtros.estado]);
+
+  useEffect(() => {
+    if (reporteSeleccionado?.id === 'asistencia-maestros') {
+      const cargarDatos = async () => {
+        setCargandoAsistenciaMaestros(true);
+        try {
+          const desde = filtros.desde || '';
+          const hasta = filtros.hasta || '';
+          const turno = filtros.turno || 'Todos';
+          const rol = filtros.rol || 'Todos';
+          const res = await obtenerAsistenciaMaestrosDatos(desde, hasta, turno, rol);
+          setDatosAsistenciaMaestros(res);
+        } catch (err) {
+          console.error('Error cargando asistencia de maestros:', err);
+          setDatosAsistenciaMaestros([]);
+        } finally {
+          setCargandoAsistenciaMaestros(false);
+        }
+      };
+      cargarDatos();
+    } else {
+      setDatosAsistenciaMaestros([]);
+    }
+  }, [reporteSeleccionado, filtros.desde, filtros.hasta, filtros.turno, filtros.rol]);
 
 
   const gruposConNinos = useMemo(() => {
@@ -457,6 +489,62 @@ const PaginaReportes: React.FC = () => {
               </div>
             )}
 
+            {/* Vista Previa — Asistencia de Maestros */}
+            {reporteSeleccionado.id === 'asistencia-maestros' && (
+              <div className="mt-8 pt-6 border-t border-outline-variant/30">
+                <h3 className="text-title-lg font-headline-md text-on-surface mb-4">Vista Previa del Reporte</h3>
+                {cargandoAsistenciaMaestros ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="w-8 h-8 rounded-full border-4 border-primary border-t-transparent animate-spin" />
+                  </div>
+                ) : datosAsistenciaMaestros.length === 0 ? (
+                  <div className="text-center py-12 bg-surface-container-low rounded-xl border border-dashed border-outline-variant">
+                    <p className="text-body-md text-on-surface-variant font-medium">No hay registros de asistencia de maestros para los filtros seleccionados.</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="bg-primary-container text-on-primary-container">
+                          <th className="px-4 py-3 text-label-sm font-bold">Fecha</th>
+                          <th className="px-4 py-3 text-label-sm font-bold">Turno</th>
+                          <th className="px-4 py-3 text-label-sm font-bold">Personal</th>
+                          <th className="px-4 py-3 text-label-sm font-bold">Rol</th>
+                          <th className="px-4 py-3 text-label-sm font-bold">Grupo</th>
+                          <th className="px-4 py-3 text-label-sm font-bold">Hora Llegada</th>
+                          <th className="px-4 py-3 text-label-sm font-bold">Estado</th>
+                          <th className="px-4 py-3 text-label-sm font-bold">Razón Ausencia</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {datosAsistenciaMaestros.map((row) => (
+                          <tr key={row.idAsistencia} className="border-b border-outline-variant/20 hover:bg-surface-container-low">
+                            <td className="px-4 py-3 text-body-sm text-on-surface">{row.fecha}</td>
+                            <td className="px-4 py-3 text-body-sm text-on-surface-variant">{row.turno}</td>
+                            <td className="px-4 py-3 text-body-sm font-semibold text-on-surface">{row.nombrePersonal}</td>
+                            <td className="px-4 py-3 text-body-sm text-on-surface-variant">{row.rol}</td>
+                            <td className="px-4 py-3 text-body-sm text-on-surface-variant">{row.grupo || '-'}</td>
+                            <td className="px-4 py-3 text-body-sm text-on-surface-variant">{row.horaLlegada || '-'}</td>
+                            <td className="px-4 py-3 text-body-sm">
+                              <span className={`px-2.5 py-0.5 rounded-full text-label-sm font-medium ${
+                                row.estado === 'Temprano' ? 'bg-success/15 text-success'
+                                : row.estado === 'Tarde' ? 'bg-secondary/15 text-secondary'
+                                : row.estado === 'Injustificado' ? 'bg-error/15 text-error'
+                                : 'bg-surface-variant text-on-surface-variant'
+                              }`}>
+                                {row.estado}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-body-sm text-on-surface-variant">{row.razonAusencia || '-'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Vista Previa — Cumpleaños */}
             {reporteSeleccionado.id === 'cumpleanos' && (
               <div className="mt-8 pt-6 border-t border-outline-variant/30">
@@ -593,6 +681,46 @@ const PaginaReportes: React.FC = () => {
           </div>
         )}
 
+
+        {/* Asistencia de Maestros (PDF / Print) */}
+        {reporteSeleccionado?.id === 'asistencia-maestros' && datosAsistenciaMaestros.length > 0 && (
+          <div id="printable-asistencia-maestros" className="hidden print:block">
+            <div style={{ textAlign: 'center', marginBottom: '30px' }}>
+              <h1 style={{ fontSize: '24pt', fontWeight: 'bold', color: '#2a7de1', margin: '0' }}>
+                Reporte de Asistencia de Maestros
+              </h1>
+              <p style={{ fontSize: '12pt', color: '#555', margin: '5px 0 0 0' }}>
+                Desde: {filtros.desde ? new Date(filtros.desde + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Todas'} • Hasta: {filtros.hasta ? new Date(filtros.hasta + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Todas'} • Turno: {filtros.turno || 'Todos'} • Rol: {filtros.rol || 'Todos'} • Total: {datosAsistenciaMaestros.length} registros
+              </p>
+            </div>
+            <table className="print-table">
+              <thead>
+                <tr>
+                  <th style={{ width: '12%' }}>Fecha</th>
+                  <th style={{ width: '14%' }}>Turno</th>
+                  <th style={{ width: '26%' }}>Personal</th>
+                  <th style={{ width: '12%' }}>Rol</th>
+                  <th style={{ width: '12%' }}>Grupo</th>
+                  <th style={{ width: '10%' }}>Hora</th>
+                  <th style={{ width: '14%' }}>Estado</th>
+                </tr>
+              </thead>
+              <tbody>
+                {datosAsistenciaMaestros.map((row) => (
+                  <tr key={row.idAsistencia}>
+                    <td>{row.fecha}</td>
+                    <td>{row.turno}</td>
+                    <td><strong>{row.nombrePersonal}</strong></td>
+                    <td>{row.rol}</td>
+                    <td>{row.grupo || '-'}</td>
+                    <td>{row.horaLlegada || '-'}</td>
+                    <td>{row.estado}{row.razonAusencia ? ` (${row.razonAusencia})` : ''}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
 
         {/* Cumpleaños */}
         {reporteSeleccionado?.id === 'cumpleanos' && datosCumpleanos.length > 0 && (

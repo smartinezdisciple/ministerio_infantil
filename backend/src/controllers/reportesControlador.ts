@@ -116,6 +116,70 @@ const consultasPorTipo: Record<string, string> = {
   `,
 };
 
+/** Opciones de filtro para el reporte de asistencia de maestros */
+interface FiltrosAsistenciaMaestros {
+  desde?: string;
+  hasta?: string;
+  turno?: string;
+  rol?: string;
+}
+
+/**
+ * Construye la consulta SQL de Asistencia_Maestros con filtros opcionales
+ * de rango de fechas (desde/hasta), turno y rol. Los filtros vacíos se omiten.
+ */
+const consultaAsistenciaMaestros = (opts: FiltrosAsistenciaMaestros): { sql: string; params: unknown[] } => {
+  const params: unknown[] = [];
+  let sql = `
+    SELECT am.Fecha AS "Fecha",
+           t.Nombre AS "Turno",
+           p.Nombres || ' ' || p.Apellidos AS "Personal",
+           r.Nombre_Rol AS "Rol",
+           COALESCE(g.Nombre, '') AS "Grupo",
+           to_char(am.Hora_Llegada - INTERVAL '6 hours', 'HH12:MI AM') AS "Hora Llegada",
+           am.Estado_Llegada AS "Estado",
+           COALESCE(am.Razon_Ausencia, '') AS "Razón Ausencia"
+    FROM Asistencia_Maestros am
+    JOIN Personal_Sistema ps ON am.ID_Personal = ps.ID_Persona
+    JOIN Personas p ON ps.ID_Persona = p.ID_Persona
+    JOIN Roles r ON ps.ID_Rol = r.ID_Rol
+    JOIN Turnos t ON am.ID_Turno = t.ID_Turno
+    LEFT JOIN Grupos g ON am.ID_Grupo = g.ID_Grupo
+    WHERE 1=1
+  `;
+
+  if (opts.desde) {
+    params.push(opts.desde);
+    sql += ` AND am.Fecha >= $${params.length}::date`;
+  }
+  if (opts.hasta) {
+    params.push(opts.hasta);
+    sql += ` AND am.Fecha <= $${params.length}::date`;
+  }
+  if (opts.turno && opts.turno !== 'Todos') {
+    params.push(normalizarTurno(opts.turno));
+    sql += ` AND t.Nombre = $${params.length}`;
+  }
+  if (opts.rol && opts.rol !== 'Todos') {
+    params.push(opts.rol);
+    sql += ` AND r.Nombre_Rol = $${params.length}`;
+  }
+
+  sql += ` ORDER BY am.Fecha DESC, p.Apellidos LIMIT 5000`;
+  return { sql, params };
+};
+
+/**
+ * Devuelve la consulta (SQL + parámetros) para un tipo de reporte.
+ * El tipo 'asistencia-maestros' acepta filtros dinámicos; el resto son estáticos.
+ */
+const construirConsulta = (tipo: string, query?: Record<string, unknown>): { sql: string; params: unknown[] } => {
+  if (tipo === 'asistencia-maestros') {
+    return consultaAsistenciaMaestros((query ?? {}) as FiltrosAsistenciaMaestros);
+  }
+  return { sql: consultasPorTipo[tipo], params: [] };
+};
+
 /** Tipos de reporte válidos */
 const tiposValidos = Object.keys(consultasPorTipo);
 
@@ -132,7 +196,8 @@ export const exportarCSV = async (req: Request, res: Response): Promise<void> =>
   }
 
   try {
-    const { rows } = await pool.query(consultasPorTipo[tipo]);
+    const { sql, params } = construirConsulta(tipo, req.query as Record<string, unknown>);
+    const { rows } = await pool.query(sql, params);
     const csv = generarCSV(rows);
     const nombreArchivo = `reporte-${tipo}-${new Date().toISOString().split('T')[0]}.csv`;
 
@@ -159,7 +224,8 @@ export const exportarExcel = async (req: Request, res: Response): Promise<void> 
   }
 
   try {
-    const { rows } = await pool.query(consultasPorTipo[tipo]);
+    const { sql, params } = construirConsulta(tipo, req.query as Record<string, unknown>);
+    const { rows } = await pool.query(sql, params);
 
     // Importación dinámica de exceljs
     let exceljs: typeof import('exceljs');
@@ -527,6 +593,66 @@ export const obtenerAsistenciaNinosReporteDatos = async (req: Request, res: Resp
     respuestaExito(res, rows);
   } catch (err) {
     console.error('Error al obtener datos de asistencia de niños:', err);
+    respuestaError(res, 'Error al generar los datos del reporte.', 500);
+  }
+};
+
+/**
+ * GET /api/reportes/asistencia-maestros/datos
+ * Retorna los registros de asistencia de maestros filtrados por rango de fechas
+ * (desde/hasta), turno y rol. Se usa para la vista previa en pantalla del reporte.
+ */
+export const obtenerAsistenciaMaestrosReporteDatos = async (req: Request, res: Response): Promise<void> => {
+  const { desde, hasta, turno, rol } = req.query;
+  const desdeStr = (desde as string) || '';
+  const hastaStr = (hasta as string) || '';
+  const turnoStr = (turno as string) || 'Todos';
+  const rolStr = (rol as string) || 'Todos';
+
+  try {
+    let sql = `
+      SELECT am.ID_Asistencia AS "idAsistencia",
+             TO_CHAR(am.Fecha, 'YYYY-MM-DD') AS "fecha",
+             t.Nombre AS "turno",
+             CONCAT(p.Nombres, ' ', p.Apellidos) AS "nombrePersonal",
+             r.Nombre_Rol AS "rol",
+             COALESCE(g.Nombre, '') AS "grupo",
+             to_char(am.Hora_Llegada - INTERVAL '6 hours', 'HH12:MI AM') AS "horaLlegada",
+             am.Estado_Llegada AS "estado",
+             COALESCE(am.Razon_Ausencia, '') AS "razonAusencia"
+      FROM Asistencia_Maestros am
+      JOIN Personal_Sistema ps ON am.ID_Personal = ps.ID_Persona
+      JOIN Personas p ON ps.ID_Persona = p.ID_Persona
+      JOIN Roles r ON ps.ID_Rol = r.ID_Rol
+      JOIN Turnos t ON am.ID_Turno = t.ID_Turno
+      LEFT JOIN Grupos g ON am.ID_Grupo = g.ID_Grupo
+      WHERE 1=1
+    `;
+    const params: unknown[] = [];
+
+    if (desdeStr) {
+      params.push(desdeStr);
+      sql += ` AND am.Fecha >= $${params.length}::date`;
+    }
+    if (hastaStr) {
+      params.push(hastaStr);
+      sql += ` AND am.Fecha <= $${params.length}::date`;
+    }
+    if (turnoStr && turnoStr !== 'Todos') {
+      params.push(normalizarTurno(turnoStr));
+      sql += ` AND t.Nombre = $${params.length}`;
+    }
+    if (rolStr && rolStr !== 'Todos') {
+      params.push(rolStr);
+      sql += ` AND r.Nombre_Rol = $${params.length}`;
+    }
+
+    sql += ` ORDER BY am.Fecha DESC, p.Apellidos LIMIT 5000`;
+
+    const { rows } = await pool.query(sql, params);
+    respuestaExito(res, rows);
+  } catch (err) {
+    console.error('Error al obtener datos de asistencia de maestros:', err);
     respuestaError(res, 'Error al generar los datos del reporte.', 500);
   }
 };

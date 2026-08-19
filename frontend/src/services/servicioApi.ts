@@ -992,6 +992,28 @@ export const obtenerAsistenciaNinosDatos = (fecha?: string, turno?: string, esta
   return get<DatosAsistenciaNinoReporte[]>(`/reportes/asistencia-ninos/datos${query}`);
 };
 
+export interface DatosAsistenciaMaestroReporte {
+  idAsistencia: number;
+  fecha: string;
+  turno: string;
+  nombrePersonal: string;
+  rol: string;
+  grupo: string;
+  horaLlegada: string | null;
+  estado: string;
+  razonAusencia: string;
+}
+
+export const obtenerAsistenciaMaestrosDatos = (desde?: string, hasta?: string, turno?: string, rol?: string) => {
+  const params = new URLSearchParams();
+  if (desde) params.append('desde', desde);
+  if (hasta) params.append('hasta', hasta);
+  if (turno) params.append('turno', turno);
+  if (rol) params.append('rol', rol);
+  const query = params.toString() ? `?${params.toString()}` : '';
+  return get<DatosAsistenciaMaestroReporte[]>(`/reportes/asistencia-maestros/datos${query}`);
+};
+
 
 // ══════════════════════════════════════════════════════════════════
 // TURNOS Y EVENTOS (Spec §9.13)
