@@ -40,6 +40,12 @@ const formatearFecha = (fechaStr: string) => {
   return `${dd}/${mm}/${yyyy}`;
 };
 
+// Fecha local de hoy en formato YYYY-MM-DD
+const fechaLocalHoy = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+
 interface TurnoSimple {
   idTurno: number;
   nombre: string;
@@ -57,6 +63,7 @@ const PaginaIncidencias: React.FC = () => {
   // ── Formulario ─────────────────────────────────────────────────
   const [tipoSeleccionado, setTipoSeleccionado] = useState<TipoIncidencia>('Ninos');
   const [descripcion, setDescripcion] = useState('');
+  const [fecha, setFecha] = useState(fechaLocalHoy());
   const [enviando, setEnviando] = useState(false);
 
   // ── Listado ────────────────────────────────────────────────────
@@ -120,9 +127,11 @@ const PaginaIncidencias: React.FC = () => {
         idTurno: turnoIdFormulario,
         tipo: tipoSeleccionado,
         descripcion: descripcion.trim(),
+        fecha: fecha || undefined,
       });
       toast.success('Incidencia registrada.');
       setDescripcion('');
+      setFecha(fechaLocalHoy());
       await mutate();
     } catch (err: any) {
       console.error('Error registrando incidencia:', err);
@@ -288,12 +297,20 @@ const PaginaIncidencias: React.FC = () => {
                 </div>
               </div>
 
-              {/* Fecha (informativa) */}
+              {/* Fecha de la incidencia */}
               <div className="flex flex-col">
-                <span className="text-label-sm font-label-sm text-on-surface mb-1.5">Fecha</span>
-                <div className="w-full bg-surface-container-low border border-outline-variant rounded-xl px-3 py-2 text-[13px] h-[38px] flex items-center text-on-surface-variant">
-                  {new Date().toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })}
-                </div>
+                <label htmlFor="inc-fecha" className="text-label-sm font-label-sm text-on-surface mb-1.5">
+                  Fecha <span className="text-error">*</span>
+                </label>
+                <input
+                  id="inc-fecha"
+                  type="date"
+                  value={fecha}
+                  max={fechaLocalHoy()}
+                  disabled={!puedeRegistrar || enviando}
+                  onChange={(e) => setFecha(e.target.value)}
+                  className="w-full bg-surface-container-low border border-outline-variant rounded-xl px-3 py-2 text-[13px] h-[38px] focus:ring-2 focus:ring-primary focus:outline-none transition-all disabled:opacity-60"
+                />
               </div>
             </div>
 

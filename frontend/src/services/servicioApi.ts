@@ -1355,7 +1355,12 @@ export const listarIncidencias = (turno?: string) => {
   return get<IncidenciaApi[]>(`/incidencias${params}`);
 };
 
-export const crearIncidencia = (datos: { idTurno: number; tipo: TipoIncidenciaApi; descripcion: string }) =>
+export const crearIncidencia = (datos: {
+  idTurno: number;
+  tipo: TipoIncidenciaApi;
+  descripcion: string;
+  fecha?: string;
+}) =>
   post<IncidenciaApi>('/incidencias', datos);
 
 export const eliminarIncidencia = (id: number) =>
