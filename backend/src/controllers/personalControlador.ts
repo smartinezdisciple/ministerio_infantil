@@ -10,15 +10,14 @@ import bcrypt from 'bcryptjs';
  * GET /api/personal/asistencia-hoy
  * Lista el personal con su estado en Asistencia_Maestros para una fecha.
  * Query params: ?fecha=YYYY-MM-DD (opcional, defaults a hoy)
- * - Si fecha = hoy: LEFT JOIN (todo el personal activo, con/sin registro)
- * - Si fecha ≠ hoy: INNER JOIN (solo personal con registro ese día)
+ * Siempre usa LEFT JOIN: devuelve TODO el personal activo; quienes ya tienen
+ * registro muestran su estado y los demás quedan disponibles en el selector
+ * del frontend (habilita el registro/corrección retroactiva).
  */
 export const listarPersonalHoy = async (req: Request, res: Response) => {
   const ahoraNicaragua = new Date(Date.now() - 6 * 60 * 60 * 1000);
   const hoy = ahoraNicaragua.toISOString().split('T')[0];
   const fecha = (req.query.fecha as string) || hoy;
-  const esHoy = fecha === hoy;
-  const joinTipo = esHoy ? 'LEFT' : 'INNER';
   const nivelUsuario = req.usuario?.nivelJerarquico ?? 4;
   const idStaff = req.usuario?.idPersona;
   try {
@@ -30,12 +29,12 @@ export const listarPersonalHoy = async (req: Request, res: Response) => {
         CONCAT(p.Nombres, ' ', p.Apellidos)              AS "nombreCompleto",
         r.Nombre_Rol                                     AS "rol",
         r.Nivel_Jerarquico                               AS "nivelJerarquico",
-        ${esHoy ? 'g.Nombre' : 'NULL::text'}             AS "grupoAsignado",
-        ${esHoy ? 'ps.Fecha_Ingreso_Servicio' : 'NULL::date'} AS "fechaIngreso",
+        g.Nombre                                         AS "grupoAsignado",
+        ps.Fecha_Ingreso_Servicio                        AS "fechaIngreso",
         am.Estado_Llegada                                AS "estadoLlegada",
         to_char(am.Hora_Llegada - INTERVAL '6 hours', 'HH12:MI AM') AS "horaLlegada",
-        ${esHoy ? `tp.Numero` : 'NULL::varchar'}         AS "telefono",
-        ${esHoy ? `tp.Tiene_Whatsapp` : 'NULL::boolean'} AS "tieneWhatsapp",
+        tp.Numero                                        AS "telefono",
+        tp.Tiene_Whatsapp                                AS "tieneWhatsapp",
         (SELECT json_agg(json_build_object(
           'idTurno', pt.ID_Turno, 'turno', t.Nombre
         ))
@@ -45,13 +44,13 @@ export const listarPersonalHoy = async (req: Request, res: Response) => {
       FROM   Personal_Sistema ps
       JOIN   Personas         p  ON p.ID_Persona  = ps.ID_Persona
       JOIN   Roles            r  ON r.ID_Rol      = ps.ID_Rol
-      ${joinTipo} JOIN Asistencia_Maestros am
+      LEFT JOIN Asistencia_Maestros am
              ON am.ID_Personal = ps.ID_Persona AND am.Fecha = $1
-      ${esHoy ? `LEFT JOIN Personal_Grupos pg ON pg.ID_Personal = ps.ID_Persona
+      LEFT JOIN Personal_Grupos pg ON pg.ID_Personal = ps.ID_Persona
       LEFT JOIN Grupos          g  ON g.ID_Grupo    = pg.ID_Grupo
       LEFT JOIN Telefonos_Personas tp
              ON tp.ID_Persona = ps.ID_Persona
-            AND tp.Es_Principal = TRUE AND tp.Activo = TRUE` : ''}
+            AND tp.Es_Principal = TRUE AND tp.Activo = TRUE
       WHERE  ps.Activo = TRUE
         AND  r.Nivel_Jerarquico < 4
         AND  (${nivelUsuario} >= 4
@@ -102,15 +101,46 @@ export const misTurnos = async (req: Request, res: Response) => {
 /**
  * POST /api/personal/asistencia
  * UPSERT en Asistencia_Maestros.
+ * Body: { idPersona, estadoLlegada, idTurno, idGrupo?, razonAusencia?, fecha?, hora? }
+ * - fecha (YYYY-MM-DD): opcional; default hoy (Nicaragua). Se rechazan fechas futuras
+ *   para permitir registrar/corregir asistencia de días anteriores.
+ * - hora (HH:MM o HH:MM:SS): opcional; default hora actual. Se interpreta en hora
+ *   Nicaragua y se almacena en UTC (+6h), igual que el registro automático.
  */
 export const registrarAsistenciaPersonal = async (req: Request, res: Response) => {
-  const { idPersona, estadoLlegada, idTurno, idGrupo, razonAusencia } = req.body;
+  const { idPersona, estadoLlegada, idTurno, idGrupo, razonAusencia, fecha, hora } = req.body;
   const ahoraNicaragua = new Date(Date.now() - 6 * 60 * 60 * 1000);
   const hoy  = ahoraNicaragua.toISOString().split('T')[0];
-  const hora = new Date().toISOString().slice(11, 19);
+  const horaActualUtc = new Date().toISOString().slice(11, 19);
 
   if (!idPersona || !estadoLlegada || !idTurno) {
     return res.status(400).json({ exito: false, mensaje: 'Faltan idPersona, estadoLlegada e idTurno.' });
+  }
+
+  // Validación de fecha retroactiva (solo se bloquean fechas futuras)
+  let fechaRegistro = hoy;
+  if (fecha !== undefined && fecha !== null && fecha !== '') {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha) || isNaN(Date.parse(fecha))) {
+      return res.status(400).json({ exito: false, mensaje: 'Formato de fecha inválido. Use YYYY-MM-DD.' });
+    }
+    if (fecha > hoy) {
+      return res.status(400).json({ exito: false, mensaje: 'No se puede registrar asistencia de una fecha futura.' });
+    }
+    fechaRegistro = fecha;
+  }
+
+  // Validación de hora manual (se recibe HH:MM Nicaragua; se guarda +6h para mantener
+  // la convención UTC que usa la lectura `Hora_Llegada - INTERVAL '6 hours'`)
+  let horaLlegada = horaActualUtc;
+  if (hora !== undefined && hora !== null && hora !== '') {
+    const m = /^(\d{2}):(\d{2})(?::(\d{2}))?$/.exec(String(hora));
+    const h = m ? Number(m[1]) : NaN;
+    const min = m ? Number(m[2]) : NaN;
+    if (!m || h > 23 || min > 59) {
+      return res.status(400).json({ exito: false, mensaje: 'Formato de hora inválido. Use HH:MM.' });
+    }
+    const hh = String((h + 6) % 24).padStart(2, '0');
+    horaLlegada = `${hh}:${String(min).padStart(2, '0')}:${m[3] ?? '00'}`;
   }
 
   const estadosValidos = ['Temprano', 'Tarde', 'Justificado', 'Injustificado'];
@@ -141,7 +171,7 @@ export const registrarAsistenciaPersonal = async (req: Request, res: Response) =
                 Fecha                  AS "fecha",
                 to_char(Hora_Llegada - INTERVAL '6 hours', 'HH12:MI AM') AS "horaLlegada",
                 Estado_Llegada         AS "estadoLlegada"
-    `, [hoy, idTurno, idPersona, grupoId, estadoLlegada, hora, razonAusencia ?? null]);
+    `, [fechaRegistro, idTurno, idPersona, grupoId, estadoLlegada, horaLlegada, razonAusencia ?? null]);
 
     res.json({ exito: true, datos: rows[0] });
   } catch (err) {

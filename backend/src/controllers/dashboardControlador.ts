@@ -294,7 +294,7 @@ export const obtenerDashboard = async (_req: Request, res: Response): Promise<vo
                EXTRACT(DAY FROM p.Fecha_Nacimiento)::INT AS "diaCumpleanos",
                COALESCE(g.Nombre, 'Sin grupo') AS "grupo"
         FROM Ninos n JOIN Personas p ON n.ID_Persona = p.ID_Persona
-        LEFT JOIN Ninos_Grupos ng ON ng.ID_Nino = n.ID_Persona
+        LEFT JOIN Ninos_Grupos ng ON ng.ID_Nino = n.ID_Persona AND ng.Activo = TRUE
         LEFT JOIN Grupos g ON g.ID_Grupo = ng.ID_Grupo
         WHERE EXTRACT(MONTH FROM p.Fecha_Nacimiento) = EXTRACT(MONTH FROM CURRENT_DATE)
         ORDER BY "diaCumpleanos" ASC
@@ -400,6 +400,83 @@ export const obtenerNinosTransicion = async (_req: Request, res: Response): Prom
   } catch (err) {
     console.error('Error obteniendo niños en transición:', err);
     res.status(500).json({ exito: false, mensaje: 'Error interno del servidor.' });
+  }
+};
+
+/**
+ * POST /api/dashboard/ninos-transicion/:idPersona/transicionar
+ * Ejecuta la transición de grupo de un niño marcado como 'Debe_Transicionar':
+ * cierra su asignación activa actual e inserta una nueva fila activa en el
+ * grupo sugerido por la vista (histórico en Ninos_Grupos).
+ */
+export const transicionarNino = async (req: Request, res: Response): Promise<void> => {
+  const idPersona = Number(req.params.idPersona);
+  if (!Number.isInteger(idPersona) || idPersona <= 0) {
+    res.status(400).json({ exito: false, mensaje: 'ID de niño inválido.' });
+    return;
+  }
+
+  const cliente = await pool.connect();
+  try {
+    await cliente.query('BEGIN');
+
+    // 1. Validar que el niño esté pendiente de transición y obtener el grupo sugerido
+    const { rows: pendientes } = await cliente.query(`
+      SELECT ID_Persona   AS "idPersona",
+             Nombres      AS "nombres",
+             Apellidos    AS "apellidos",
+             Grupo_Actual AS "grupoActual",
+             Grupo_Sugerido AS "grupoSugerido"
+      FROM v_ninos_transicion_grupo_mes
+      WHERE ID_Persona = $1 AND Estado_Transicion = 'Debe_Transicionar'
+    `, [idPersona]);
+
+    if (pendientes.length === 0) {
+      await cliente.query('ROLLBACK');
+      res.status(404).json({ exito: false, mensaje: 'El niño no está pendiente de transición o no existe.' });
+      return;
+    }
+    const nino = pendientes[0];
+
+    // 2. Resolver el ID del grupo sugerido por nombre (activo)
+    const { rows: grupos } = await cliente.query(
+      `SELECT ID_Grupo AS "idGrupo" FROM Grupos WHERE Nombre = $1 AND Activo = TRUE LIMIT 1`,
+      [nino.grupoSugerido]
+    );
+    if (grupos.length === 0) {
+      await cliente.query('ROLLBACK');
+      res.status(409).json({ exito: false, mensaje: `El grupo sugerido "${nino.grupoSugerido}" no existe o está inactivo.` });
+      return;
+    }
+    const idGrupoSugerido = grupos[0].idGrupo;
+
+    // 3. Cerrar la asignación activa actual
+    await cliente.query(
+      `UPDATE Ninos_Grupos SET Activo = FALSE WHERE ID_Nino = $1 AND Activo = TRUE`,
+      [idPersona]
+    );
+
+    // 4. Insertar la nueva asignación activa (o reactivarla si ya existía en el histórico)
+    await cliente.query(
+      `INSERT INTO Ninos_Grupos (ID_Nino, ID_Grupo, Es_Excepcion, Motivo_Excepcion, Fecha_Asignacion, Activo)
+       VALUES ($1, $2, FALSE, NULL, CURRENT_DATE, TRUE)
+       ON CONFLICT (ID_Nino, ID_Grupo)
+       DO UPDATE SET Activo = TRUE, Fecha_Asignacion = CURRENT_DATE, Es_Excepcion = FALSE, Motivo_Excepcion = NULL`,
+      [idPersona, idGrupoSugerido]
+    );
+
+    await cliente.query('COMMIT');
+    res.json({
+      exito: true,
+      mensaje: `${nino.nombres} ${nino.apellidos} transitó de "${nino.grupoActual ?? 'Sin grupo'}" a "${nino.grupoSugerido}".`,
+      datos: { idPersona, grupoAnterior: nino.grupoActual ?? null, grupoNuevo: nino.grupoSugerido },
+    });
+  } catch (err) {
+    await cliente.query('ROLLBACK');
+    console.error('Error transicionando niño:', err);
+    res.status(500).json({ exito: false, mensaje: 'Error interno del servidor.' });
+  } finally {
+    cliente.release();
   }
 };
 

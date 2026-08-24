@@ -49,7 +49,7 @@ export const listarContactos = async (_req: Request, res: Response) => {
         g.Nombre                                       AS "grupo"
       FROM Tutores_Ninos tn
       JOIN Personas p ON p.ID_Persona = tn.ID_Nino
-      LEFT JOIN Ninos_Grupos ng ON ng.ID_Nino = tn.ID_Nino
+      LEFT JOIN Ninos_Grupos ng ON ng.ID_Nino = tn.ID_Nino AND ng.Activo = TRUE
       LEFT JOIN Grupos       g  ON g.ID_Grupo = ng.ID_Grupo
       WHERE tn.ID_Tutor = ANY($1)
       ORDER BY tn.ID_Tutor, p.ID_Persona
@@ -97,7 +97,7 @@ export const fichaContactoNino = async (req: Request, res: Response) => {
         g.Edad_Maxima                                  AS "edadMaxima"
       FROM   Ninos      ni
       JOIN   Personas   p  ON p.ID_Persona = ni.ID_Persona
-      LEFT JOIN Ninos_Grupos ng ON ng.ID_Nino   = ni.ID_Persona
+      LEFT JOIN Ninos_Grupos ng ON ng.ID_Nino   = ni.ID_Persona AND ng.Activo = TRUE
       LEFT JOIN Grupos       g  ON g.ID_Grupo   = ng.ID_Grupo
       WHERE  ni.ID_Persona = $1
     `, [idNino]);

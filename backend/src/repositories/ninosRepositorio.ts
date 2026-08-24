@@ -240,7 +240,7 @@ export const obtenerNinos = async (): Promise<unknown[]> => {
         g.Edad_Maxima                                    AS "edadMaxima"
       FROM Personas p
       JOIN Ninos n ON n.ID_Persona = p.ID_Persona
-      LEFT JOIN Ninos_Grupos ng ON ng.ID_Nino = p.ID_Persona
+      LEFT JOIN Ninos_Grupos ng ON ng.ID_Nino = p.ID_Persona AND ng.Activo = TRUE
       LEFT JOIN Grupos g ON g.ID_Grupo = COALESCE(ng.ID_Grupo, (
         SELECT ID_Grupo FROM Grupos 
         WHERE Activo = TRUE 
@@ -356,16 +356,16 @@ export const actualizarNino = async (idPersona: number, datos: {
       [datos.nombres, datos.apellidos, datos.fechaNacimiento, datos.sexo ?? null, idPersona]
     );
 
-    // 3. Actualizar grupo (upsert en Ninos_Grupos)
+    // 3. Actualizar grupo (upsert solo de la fila ACTIVA — preserva el histórico en Ninos_Grupos)
     const grupoExistente = await cliente.query(
-      `SELECT 1 FROM Ninos_Grupos WHERE ID_Nino = $1`,
+      `SELECT 1 FROM Ninos_Grupos WHERE ID_Nino = $1 AND Activo = TRUE`,
       [idPersona]
     );
     if ((grupoExistente.rowCount ?? 0) > 0) {
       await cliente.query(
-        `UPDATE Ninos_Grupos 
-         SET ID_Grupo = $1, Es_Excepcion = $2, Motivo_Excepcion = $3 
-         WHERE ID_Nino = $4`,
+        `UPDATE Ninos_Grupos
+         SET ID_Grupo = $1, Es_Excepcion = $2, Motivo_Excepcion = $3
+         WHERE ID_Nino = $4 AND Activo = TRUE`,
         [
           datos.idGrupo,
           datos.motivoExcepcion ? true : false,
@@ -459,7 +459,7 @@ export const obtenerNinoCompleto = async (idPersona: number): Promise<unknown | 
           ng.Motivo_Excepcion                              AS "motivoExcepcion"
         FROM Personas p
         JOIN Ninos n ON n.ID_Persona = p.ID_Persona
-        LEFT JOIN Ninos_Grupos ng ON ng.ID_Nino = p.ID_Persona
+        LEFT JOIN Ninos_Grupos ng ON ng.ID_Nino = p.ID_Persona AND ng.Activo = TRUE
         LEFT JOIN Grupos g ON g.ID_Grupo = COALESCE(ng.ID_Grupo, (
           SELECT ID_Grupo FROM Grupos 
           WHERE Activo = TRUE 

@@ -392,8 +392,21 @@ export const listarPersonalPorFecha = (fecha: string) => {
   return get<PersonalAsistenciaApi[]>(`/personal/asistencia-hoy?${params}`);
 };
 
-export const registrarAsistenciaPersonal = (idPersona: number, estadoLlegada: string, idTurno: number, razonAusencia?: string) =>
-  post<PersonalAsistenciaApi>('/personal/asistencia', { idPersona, estadoLlegada, idTurno, ...(razonAusencia ? { razonAusencia } : {}) });
+export const registrarAsistenciaPersonal = (
+  idPersona: number,
+  estadoLlegada: string,
+  idTurno: number,
+  razonAusencia?: string,
+  opciones?: { fecha?: string; hora?: string }
+) =>
+  post<PersonalAsistenciaApi>('/personal/asistencia', {
+    idPersona,
+    estadoLlegada,
+    idTurno,
+    ...(razonAusencia ? { razonAusencia } : {}),
+    ...(opciones?.fecha ? { fecha: opciones.fecha } : {}),
+    ...(opciones?.hora ? { hora: opciones.hora } : {}),
+  });
 
 // ══════════════════════════════════════════════════════════════════
 // CONTACTOS / DIRECTORIO — GET /api/contactos  |  GET /api/ninos/:id/contactos
@@ -1303,6 +1316,11 @@ export interface PersonalDisponibleApi {
 
 export const obtenerNinosGraduacion = () => get<NinoGraduacionApi[]>('/dashboard/ninos-graduacion');
 export const obtenerNinosTransicion = () => get<NinoTransicionApi[]>('/dashboard/ninos-transicion');
+export const transicionarNino = (idPersona: number) =>
+  post<{ idPersona: number; grupoAnterior: string | null; grupoNuevo: string | null }>(
+    `/dashboard/ninos-transicion/${idPersona}/transicionar`,
+    {}
+  );
 export const obtenerPersonalDisponibleDashboard = () => get<PersonalDisponibleApi[]>('/dashboard/personal-disponible');
 
 // ── Historial de Solicitud y Perfil Completo ──────────────────────

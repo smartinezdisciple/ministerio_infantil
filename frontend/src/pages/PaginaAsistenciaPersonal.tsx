@@ -53,24 +53,27 @@ const PaginaAsistenciaPersonal: React.FC = () => {
   const [busquedaPersonal, setBusquedaPersonal] = useState('');
   const [mostrarDropdown, setMostrarDropdown] = useState(false);
   const [motivoInjustificado, setMotivoInjustificado] = useState('');
+  const [horaManual, setHoraManual] = useState('');
+
+  // Los turnos no dependen de la fecha: se cargan una sola vez al montar
+  useEffect(() => {
+    listarTurnos()
+      .then((datos) => setTurnos(datos.filter((t) => t.activo)))
+      .catch((err) => { console.error('Error cargando turnos:', err); setTurnos([]); });
+  }, []);
 
   const cargarPersonal = useCallback(async () => {
     setCargando(true);
     try {
       const datos = await listarPersonalPorFecha(filtroFecha);
       setPersonal(datos as unknown as PersonalAsistencia[]);
-      if (esHoy) {
-        const turnosData = await listarTurnos();
-        setTurnos(turnosData.filter((t) => t.activo));
-      }
     } catch (err) {
       console.error('Error cargando personal:', err);
       setPersonal([]);
-      if (esHoy) setTurnos([]);
     } finally {
       setCargando(false);
     }
-  }, [filtroFecha, esHoy]);
+  }, [filtroFecha]);
 
   useEffect(() => { cargarPersonal(); }, [cargarPersonal]);
 
@@ -139,11 +142,16 @@ const PaginaAsistenciaPersonal: React.FC = () => {
 
   const handleRegistrar = async () => {
     if (!idSeleccionado || !estadoSeleccionado || !idTurnoSeleccionado) return;
+    if (!esHoy && !horaManual) return;
     setEnviando(true);
     try {
       const razon = estadoSeleccionado === 'Injustificado' ? motivoInjustificado : undefined;
-      await registrarAsistenciaPersonal(Number(idSeleccionado), estadoSeleccionado, Number(idTurnoSeleccionado), razon);
-      const hora = new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+      // Para fechas pasadas se envían fecha y hora manual; para hoy las deduce el backend
+      const opciones = esHoy ? undefined : { fecha: filtroFecha, hora: horaManual };
+      await registrarAsistenciaPersonal(Number(idSeleccionado), estadoSeleccionado, Number(idTurnoSeleccionado), razon, opciones);
+      const hora = esHoy
+        ? new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
+        : horaManual;
       setPersonal((prev) => prev.map((p) =>
         p.idPersona === idSeleccionado
           ? { ...p, estadoLlegada: estadoSeleccionado, horaLlegada: hora }
@@ -154,6 +162,7 @@ const PaginaAsistenciaPersonal: React.FC = () => {
       setIdSeleccionado('');
       setEstadoSeleccionado(null);
       setMotivoInjustificado('');
+      setHoraManual('');
     } catch (err) {
       console.error('Error registrando asistencia:', err);
       toast.error(err instanceof Error ? err.message : 'Error al registrar. Intente nuevamente.');
@@ -179,7 +188,8 @@ const PaginaAsistenciaPersonal: React.FC = () => {
               id="filtro-fecha-personal"
               type="date"
               value={filtroFecha}
-              onChange={(e) => { setFiltroFecha(e.target.value); setIdSeleccionado(''); setEstadoSeleccionado(null); setBusquedaPersonal(''); setMostrarDropdown(false); }}
+              max={hoyLocal}
+              onChange={(e) => { setFiltroFecha(e.target.value); setIdSeleccionado(''); setEstadoSeleccionado(null); setBusquedaPersonal(''); setMostrarDropdown(false); setHoraManual(''); }}
               className="w-full bg-surface-container-low border border-outline-variant rounded-lg px-4 py-2.5 text-body-sm text-on-surface focus:ring-2 focus:ring-primary focus:border-primary focus:outline-none"
             />
           </div>
@@ -192,15 +202,6 @@ const PaginaAsistenciaPersonal: React.FC = () => {
                 </span>
                 <p className="text-body-sm text-on-surface-variant">
                   Solo Staff y Coordinadores pueden registrar la asistencia del personal.
-                </p>
-              </div>
-            ) : !esHoy ? (
-              <div className="flex flex-col items-center gap-3 py-8 text-center">
-                <span className="material-symbols-outlined text-[40px] text-on-surface-variant/40" aria-hidden="true">
-                  calendar_month
-                </span>
-                <p className="text-body-sm text-on-surface-variant">
-                  Solo se puede registrar asistencia para el día de hoy.
                 </p>
               </div>
             ) : (
@@ -301,6 +302,23 @@ const PaginaAsistenciaPersonal: React.FC = () => {
                   </div>
                 </div>
 
+                {/* Hora de llegada manual (solo para fechas pasadas; hoy la deduce el backend) */}
+                {!esHoy && (
+                  <div className="space-y-stack-sm">
+                    <label htmlFor="hora-llegada" className="text-label-md font-label-md text-on-surface-variant ml-1 block">
+                      Hora de llegada <span className="text-error">*</span>
+                    </label>
+                    <input
+                      id="hora-llegada"
+                      type="time"
+                      value={horaManual}
+                      onChange={(e) => setHoraManual(e.target.value)}
+                      required
+                      className="w-full h-12 bg-transparent border border-outline rounded-lg px-4 focus:border-primary focus:ring-2 focus:ring-primary/20 text-body-md text-on-surface outline-none"
+                    />
+                  </div>
+                )}
+
                 {/* Selector de estado (grid 2×2) */}
                 <div className="space-y-stack-sm">
                   <p className="text-label-md font-label-md text-on-surface-variant ml-1">
@@ -348,7 +366,7 @@ const PaginaAsistenciaPersonal: React.FC = () => {
 
                 <button
                   type="submit"
-                  disabled={!idSeleccionado || !estadoSeleccionado || !idTurnoSeleccionado || enviando || (estadoSeleccionado === 'Injustificado' && !motivoInjustificado.trim())}
+                  disabled={!idSeleccionado || !estadoSeleccionado || !idTurnoSeleccionado || enviando || (estadoSeleccionado === 'Injustificado' && !motivoInjustificado.trim()) || (!esHoy && !horaManual)}
                   className="w-full h-12 bg-primary text-on-primary rounded-lg text-label-md font-label-md shadow-md active:scale-95 transition-transform hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   {enviando ? (

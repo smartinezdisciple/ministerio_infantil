@@ -5,6 +5,7 @@ import LayoutPrincipal from '../components/LayoutPrincipal';
 import TarjetaEstadistica from '../components/TarjetaEstadistica';
 import TarjetaAcceso from '../components/TarjetaAcceso';
 import ItemCumpleanero from '../components/ItemCumpleanero';
+import BotonTransicionar from '../components/BotonTransicionar';
 import GraficaBarras from '../components/GraficaBarras';
 import GraficaDona from '../components/GraficaDona';
 import GraficaBarrasApiladas from '../components/GraficaBarrasApiladas';
@@ -426,8 +427,8 @@ const PaginaDashboard: React.FC = () => {
                     <div className="h-10 bg-surface-container-high rounded" />
                   </div>
                 ) : ninosTransicion.length > 0 ? (
-                  ninosTransicion.map((n, i) => (
-                    <div key={i} className="p-2 bg-surface-container-low rounded-lg text-body-sm text-on-surface space-y-1">
+                  ninosTransicion.map((n) => (
+                    <div key={n.idPersona} className="p-2 bg-surface-container-low rounded-lg text-body-sm text-on-surface space-y-1">
                       <div className="flex justify-between items-center">
                         <p className="font-semibold truncate">{n.nombres} {n.apellidos}</p>
                         <span className={`text-label-sm px-2 py-0.5 rounded-full font-semibold ${
@@ -442,12 +443,25 @@ const PaginaDashboard: React.FC = () => {
                         <span>Edad: {n.edadEsteMes} años</span>
                         <span>{n.grupoActual || 'Sin Grupo'} → <strong className="text-primary">{n.grupoSugerido || 'N/A'}</strong></span>
                       </div>
-                      {n.estadoTransicion === 'Debe_Transicionar' && n.fechaTransicion && (
-                        <div className="text-label-sm text-secondary font-medium pt-1 mt-1 border-t border-outline-variant/20 flex justify-between items-center">
-                          <span>Fecha de transición:</span>
-                          <span className="font-semibold">{formatearFechaVisual(n.fechaTransicion)}</span>
-                        </div>
-                      )}
+                      <div className="pt-1 mt-1 border-t border-outline-variant/20 flex justify-between items-center gap-2">
+                        {n.estadoTransicion === 'Debe_Transicionar' && n.fechaTransicion ? (
+                          <>
+                            <span className="text-label-sm text-secondary font-medium">Fecha de transición: <strong>{formatearFechaVisual(n.fechaTransicion)}</strong></span>
+                            <BotonTransicionar
+                              idPersona={n.idPersona}
+                              nombreCompleto={`${n.nombres} ${n.apellidos}`}
+                              onExito={(id, mensaje) => {
+                                setNinosTransicion(prev => prev.filter(x => x.idPersona !== id));
+                                toast.success(mensaje);
+                              }}
+                            />
+                          </>
+                        ) : (
+                          <span className="text-label-sm text-on-surface-variant">
+                            {n.fechaTransicion ? formatearFechaVisual(n.fechaTransicion) : 'Sin fecha'}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   ))
                 ) : (

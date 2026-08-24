@@ -13,6 +13,7 @@ import {
   obtenerSolicitudesPendientes,
   obtenerNinosGraduacion,
   obtenerNinosTransicion,
+  transicionarNino,
   obtenerPersonalDisponibleDashboard,
 } from '../controllers/dashboardControlador.js';
 import { verificarToken, requerirNivel, restringirSiSoloLectura } from '../middlewares/autenticacion.js';
@@ -54,6 +55,9 @@ enrutador.get('/ninos-graduacion', requerirNivel(3), obtenerNinosGraduacion);
 
 /** GET /api/dashboard/ninos-transicion — Niños que deben cambiar de grupo */
 enrutador.get('/ninos-transicion', requerirNivel(3), obtenerNinosTransicion);
+
+/** POST /api/dashboard/ninos-transicion/:idPersona/transicionar — Ejecuta la transición de grupo */
+enrutador.post('/ninos-transicion/:idPersona/transicionar', requerirNivel(3), transicionarNino);
 
 /** GET /api/dashboard/personal-disponible — Personal activo sin suspensión vigente */
 enrutador.get('/personal-disponible', requerirNivel(3), obtenerPersonalDisponibleDashboard);
