@@ -76,7 +76,7 @@ const PaginaPremiados: React.FC = () => {
     try {
       const [g, n] = await Promise.all([listarGrupos(), listarNinos()]);
       setGrupos(g);
-      setNinos(n.filter((x) => x.activo !== false && x.grupo?.idGrupo));
+      setNinos(n.filter((x) => x.activo !== false && (x as unknown as { idGrupo?: number }).idGrupo));
     } catch (err) {
       console.error('Error cargando datos base:', err);
       toast.error('No se pudieron cargar los datos.');
@@ -193,11 +193,11 @@ const PaginaPremiados: React.FC = () => {
     }
   };
 
-  // Niños disponibles por grupo (para los dropdowns)
+  // Niños disponibles por grupo (para los dropdowns) — el backend devuelve idGrupo plano
   const ninosPorGrupo = useMemo(() => {
     const mapa: Record<number, NinoApi[]> = {};
     grupos.forEach((g) => {
-      mapa[g.idGrupo] = ninos.filter((n) => Number(n.grupo?.idGrupo) === g.idGrupo);
+      mapa[g.idGrupo] = ninos.filter((n) => Number((n as unknown as { idGrupo?: number }).idGrupo) === g.idGrupo);
     });
     return mapa;
   }, [grupos, ninos]);
