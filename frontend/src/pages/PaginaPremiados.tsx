@@ -57,6 +57,10 @@ const PaginaPremiados: React.FC = () => {
   // Selección actual por turno sobre grupo
   const [seleccion, setSeleccion] = useState<Record<string, number>>({});
 
+  // Texto de búsqueda por clave "turno-grupo" + dropdown abierto
+  const [busquedas, setBusquedas] = useState<Record<string, string>>({});
+  const [abiertos, setAbiertos] = useState<Record<string, boolean>>({});
+
   // Calcular fechas del último domingo/miércoles del mes seleccionado
   useEffect(() => {
     const [aa, mm] = mesSeleccion.split('-').map(Number);
@@ -205,6 +209,20 @@ const PaginaPremiados: React.FC = () => {
       else next[clave] = Number(idNino);
       return next;
     });
+    setAbiertos((prev) => ({ ...prev, [clave]: false }));
+    if (idNino !== '') {
+      const nino = ninos.find((n) => n.idPersona === Number(idNino));
+      setBusquedas((prev) => ({ ...prev, [clave]: nino?.nombreCompleto ?? '' }));
+    }
+  };
+
+  /** Filtra los niños de un grupo según el texto de búsqueda (sin acentos) */
+  const buscarNinos = (clave: string, opciones: NinoApi[]): NinoApi[] => {
+    const q = (busquedas[clave] ?? '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+    if (!q) return opciones;
+    return opciones.filter((n) =>
+      n.nombreCompleto.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').includes(q)
+    );
   };
 
   return (
@@ -285,7 +303,11 @@ const PaginaPremiados: React.FC = () => {
                   {grupos.map((grupo) => {
                     const opciones = ninosPorGrupo[grupo.idGrupo] ?? [];
                     const clave = `${sesion.idTurno}-${grupo.idGrupo}`;
-                    const valor = seleccion[clave] ?? '';
+                    const valor = seleccion[clave];
+                    const ninoSeleccionado = valor != null ? ninos.find((n) => n.idPersona === valor) : undefined;
+                    const texto = busquedas[clave] ?? ninoSeleccionado?.nombreCompleto ?? '';
+                    const abierto = abiertos[clave] ?? false;
+                    const resultados = buscarNinos(clave, opciones);
                     const premiado = premiados.find((p) => p.idTurno === sesion.idTurno && p.idGrupo === grupo.idGrupo);
                     return (
                       <div key={grupo.idGrupo} className="space-y-stack-sm">
@@ -293,21 +315,49 @@ const PaginaPremiados: React.FC = () => {
                           {grupo.nombre}
                         </label>
                         <div className="relative">
-                          <select
-                            value={valor}
-                            onChange={(e) => cambiarSeleccion(clave, e.target.value)}
-                            className="w-full h-12 bg-transparent border border-outline rounded-lg px-4 pr-10 focus:border-primary focus:ring-2 focus:ring-primary/20 appearance-none text-body-md text-on-surface outline-none"
-                          >
-                            <option value="">— Seleccionar —</option>
-                            {opciones.map((n) => (
-                              <option key={n.idPersona} value={n.idPersona}>
-                                {n.nombreCompleto}
-                              </option>
-                            ))}
-                          </select>
-                          <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-on-surface-variant" aria-hidden="true">
-                            expand_more
-                          </span>
+                          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline" aria-hidden="true">search</span>
+                          <input
+                            type="text"
+                            value={texto}
+                            placeholder="Buscar niño..."
+                            onChange={(e) => {
+                              setBusquedas((prev) => ({ ...prev, [clave]: e.target.value }));
+                              setAbiertos((prev) => ({ ...prev, [clave]: true }));
+                              if (e.target.value === '') cambiarSeleccion(clave, '');
+                            }}
+                            onFocus={() => setAbiertos((prev) => ({ ...prev, [clave]: true }))}
+                            onBlur={() => setTimeout(() => setAbiertos((prev) => ({ ...prev, [clave]: false })), 150)}
+                            className="w-full pl-10 pr-4 py-3 border border-outline-variant rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all text-body-md text-on-surface"
+                          />
+                          {abierto && (
+                            <div className="absolute z-10 mt-1 w-full bg-surface-container-lowest border border-outline-variant rounded-xl shadow-lg overflow-hidden">
+                              {resultados.length === 0 ? (
+                                <div className="px-4 py-3 text-body-sm text-on-surface-variant">Sin resultados</div>
+                              ) : (
+                                <ul role="listbox" className="max-h-56 overflow-y-auto">
+                                  {resultados.map((n) => {
+                                    const activo = valor === n.idPersona;
+                                    return (
+                                      <li key={n.idPersona}>
+                                        <button
+                                          type="button"
+                                          onMouseDown={(e) => { e.preventDefault(); cambiarSeleccion(clave, n.idPersona); }}
+                                          className={`w-full text-left px-4 py-2.5 hover:bg-surface-container-high transition-colors flex items-center justify-between gap-2 ${
+                                            activo ? 'bg-primary/10' : ''
+                                          }`}
+                                        >
+                                          <span className="text-label-md font-label-md text-on-surface">{n.nombreCompleto}</span>
+                                          {activo && (
+                                            <span className="material-symbols-outlined text-primary text-[18px]" aria-hidden="true">check</span>
+                                          )}
+                                        </button>
+                                      </li>
+                                    );
+                                  })}
+                                </ul>
+                              )}
+                            </div>
+                          )}
                         </div>
                         {premiado && (
                           <div className="flex items-center justify-between gap-2 bg-tertiary/10 border border-tertiary/30 rounded-lg px-3 py-2">
