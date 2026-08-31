@@ -356,27 +356,40 @@ export const actualizarNino = async (idPersona: number, datos: {
       [datos.nombres, datos.apellidos, datos.fechaNacimiento, datos.sexo ?? null, idPersona]
     );
 
-    // 3. Actualizar grupo (upsert solo de la fila ACTIVA — preserva el histórico en Ninos_Grupos)
-    const grupoExistente = await cliente.query(
-      `SELECT 1 FROM Ninos_Grupos WHERE ID_Nino = $1 AND Activo = TRUE`,
+    // 3. Actualizar grupo (reactiva el histórico; no rompe el PK compuesto ID_Nino + ID_Grupo).
+    //    Leer la fila ACTIVA actual para saber si el grupo objetivo ya es el activo.
+    const filaActiva = await cliente.query<{ id_grupo: number }>(
+      `SELECT ID_Grupo AS id_grupo
+       FROM Ninos_Grupos WHERE ID_Nino = $1 AND Activo = TRUE
+       LIMIT 1`,
       [idPersona]
     );
-    if ((grupoExistente.rowCount ?? 0) > 0) {
+    const grupoActivoActual = filaActiva.rows[0]?.id_grupo ?? null;
+
+    if (grupoActivoActual === datos.idGrupo) {
+      // El niño ya está en el grupo objetivo: solo actualizar la excepción,
+      // sin tocar Activo ni Fecha_Asignacion.
       await cliente.query(
         `UPDATE Ninos_Grupos
-         SET ID_Grupo = $1, Es_Excepcion = $2, Motivo_Excepcion = $3
-         WHERE ID_Nino = $4 AND Activo = TRUE`,
-        [
-          datos.idGrupo,
-          datos.motivoExcepcion ? true : false,
-          datos.motivoExcepcion ?? null,
-          idPersona
-        ]
+         SET Es_Excepcion = $1, Motivo_Excepcion = $2
+         WHERE ID_Nino = $3 AND Activo = TRUE`,
+        [datos.motivoExcepcion ? true : false, datos.motivoExcepcion ?? null, idPersona]
       );
     } else {
+      // Cambio de grupo: cerrar la(s) fila(s) activa(s) y reactivar/insertar la nueva.
+      // ON CONFLICT evita la violación de unicidad cuando el grupo objetivo ya existe
+      // como fila histórica (p. ej. tras una transición — repro: Samuel Pérez).
       await cliente.query(
-        `INSERT INTO Ninos_Grupos (ID_Nino, ID_Grupo, Es_Excepcion, Motivo_Excepcion)
-         VALUES ($1, $2, $3, $4)`,
+        `UPDATE Ninos_Grupos SET Activo = FALSE WHERE ID_Nino = $1 AND Activo = TRUE`,
+        [idPersona]
+      );
+      await cliente.query(
+        `INSERT INTO Ninos_Grupos (ID_Nino, ID_Grupo, Es_Excepcion, Motivo_Excepcion, Fecha_Asignacion, Activo)
+         VALUES ($1, $2, $3, $4, CURRENT_DATE, TRUE)
+         ON CONFLICT (ID_Nino, ID_Grupo)
+         DO UPDATE SET Activo = TRUE, Fecha_Asignacion = CURRENT_DATE,
+                       Es_Excepcion = EXCLUDED.Es_Excepcion,
+                       Motivo_Excepcion = EXCLUDED.Motivo_Excepcion`,
         [
           idPersona,
           datos.idGrupo,
