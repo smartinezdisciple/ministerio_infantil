@@ -1384,3 +1384,43 @@ export const crearIncidencia = (datos: {
 export const eliminarIncidencia = (id: number) =>
   delete_<IncidenciaApi>(`/incidencias/${id}`);
 
+// ══════════════════════════════════════════════════════════════════
+// PREMIADOS — GET /api/premiados  |  POST /api/premiados/guardar
+// ══════════════════════════════════════════════════════════════════
+
+export interface PremiadoApi {
+  idPremiado: number;
+  mes: string;
+  fechaPremiacion: string;
+  idTurno: number;
+  turnoNombre: string;
+  idGrupo: number;
+  grupoNombre: string;
+  idNino: number;
+  nombreNino: string;
+  fechaNacimientoNino: string;
+  creadoEn: string;
+}
+
+export interface RegistroPremiadoInput {
+  idTurno: number;
+  idGrupo: number;
+  idNino: number;
+  fechaPremiacion: string;
+}
+
+/** Lista premiados. `mes` opcional (YYYY-MM-01) para filtrar por mes. */
+export const listarPremiados = (mes?: string) => {
+  const params = mes ? `?mes=${encodeURIComponent(mes)}` : '';
+  return get<PremiadoApi[]>(`/premiados${params}`);
+};
+
+/** Guarda (UPSERT) los premiados de un mes. */
+export const guardarPremiados = (mes: string, registros: RegistroPremiadoInput[]) =>
+  post<PremiadoApi[]>('/premiados/guardar', { mes, registros });
+
+/** Elimina un premiado por ID. */
+export const eliminarPremiado = (id: number) =>
+  delete_<PremiadoApi>(`/premiados/${id}`);
+
+

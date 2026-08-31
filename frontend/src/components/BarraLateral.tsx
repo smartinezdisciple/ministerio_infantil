@@ -27,6 +27,7 @@ const ITEMS_MENU: ItemMenu[] = [
   { ruta: '/redes', etiqueta: 'Redes', icono: 'hub', nivelMinimo: 4 },
   { ruta: '/suspensiones', etiqueta: 'Suspensiones', icono: 'gavel', nivelMinimo: 3 },
   { ruta: '/incidencias', etiqueta: 'Incidencias', icono: 'report', nivelMinimo: 3 },
+  { ruta: '/premiados', etiqueta: 'Premiados', icono: 'emoji_events', nivelMinimo: 3 },
   { ruta: '/reportes', etiqueta: 'Reportes', icono: 'assessment', nivelMinimo: 3 },
   { ruta: '/usuarios', etiqueta: 'Usuarios', icono: 'manage_accounts', nivelMinimo: 4 },
 ];
