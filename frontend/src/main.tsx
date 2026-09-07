@@ -30,6 +30,7 @@ const PaginaSuspensiones = lazy(() => import('./pages/PaginaSuspensiones'));
 const PaginaUsuarios = lazy(() => import('./pages/PaginaUsuarios'));
 const PaginaIncidencias = lazy(() => import('./pages/PaginaIncidencias'));
 const PaginaPremiados = lazy(() => import('./pages/PaginaPremiados'));
+const PaginaLigaBiblica = lazy(() => import('./pages/PaginaLigaBiblica'));
 
 /** Indicador de carga mientras se descarga un chunk de ruta */
 const CargandoPagina: React.FC = () => (
@@ -122,6 +123,9 @@ ReactDOM.createRoot(elementoRaiz).render(
             } />
             <Route path="/premiados" element={
               <RutaProtegida nivelMinimo={3}><PaginaPremiados /></RutaProtegida>
+            } />
+            <Route path="/liga-biblica" element={
+              <RutaProtegida nivelMinimo={2}><PaginaLigaBiblica /></RutaProtegida>
             } />
 
             {/* ── Nivel ≥ 4 (Coordinador General) ─────── */}

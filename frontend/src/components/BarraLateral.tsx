@@ -28,6 +28,7 @@ const ITEMS_MENU: ItemMenu[] = [
   { ruta: '/suspensiones', etiqueta: 'Suspensiones', icono: 'gavel', nivelMinimo: 3 },
   { ruta: '/incidencias', etiqueta: 'Incidencias', icono: 'report', nivelMinimo: 3 },
   { ruta: '/premiados', etiqueta: 'Premiados', icono: 'emoji_events', nivelMinimo: 3 },
+  { ruta: '/liga-biblica', etiqueta: 'Liga Bíblica', icono: 'menu_book', nivelMinimo: 2 },
   { ruta: '/reportes', etiqueta: 'Reportes', icono: 'assessment', nivelMinimo: 3 },
   { ruta: '/usuarios', etiqueta: 'Usuarios', icono: 'manage_accounts', nivelMinimo: 4 },
 ];

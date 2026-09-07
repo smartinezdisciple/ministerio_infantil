@@ -200,6 +200,7 @@ export interface NinoRawApi {
   edadMinima?: number;
   edadMaxima?: number;
   activo?: boolean;
+  sexo?: 'Masculino' | 'Femenino' | null;
 }
 
 export const listarNinosRaw = () => get<NinoRawApi[]>('/ninos').then((rows) =>
@@ -211,6 +212,7 @@ export const listarNinosRaw = () => get<NinoRawApi[]>('/ninos').then((rows) =>
     fechaNacimiento: r.fechaNacimiento,
     observacionesGenerales: r.observacionesGenerales,
     activo: r.activo ?? true,
+    sexo: r.sexo ?? null,
     grupo: {
       idGrupo: r.idGrupo ?? 0,
       nombre: r.nombreGrupo ?? '',
@@ -1422,5 +1424,51 @@ export const guardarPremiados = (mes: string, registros: RegistroPremiadoInput[]
 /** Elimina un premiado por ID. */
 export const eliminarPremiado = (id: number) =>
   delete_<PremiadoApi>(`/premiados/${id}`);
+
+// ══════════════════════════════════════════════════════════════════
+// LIGA BÍBLICA — GET /api/liga-biblica | POST /api/liga-biblica
+//                PATCH /api/liga-biblica/:id | DELETE /api/liga-biblica/:id
+// ══════════════════════════════════════════════════════════════════
+
+export interface ParticipanteLigaApi {
+  idLiga: number;
+  fechaLiga: string;
+  idTurno: number;
+  turnoNombre: string;
+  idNino: number;
+  nombreNino: string;
+  sexo: 'Masculino' | 'Femenino' | null;
+  idGrupo: number | null;
+  nombreGrupo: string | null;
+  idTutor: number;
+  nombreTutor: string;
+  telefonoTutor: string | null;
+  creadoEn: string;
+}
+
+export interface DatosInscripcionLiga {
+  mes: string;
+  idNino: number;
+  idTurno: number;
+  idTutor: number;
+}
+
+/** Lista participantes de la Liga Bíblica. `mes` opcional (YYYY-MM) para filtrar. */
+export const listarLigaBiblica = (mes?: string) => {
+  const params = mes ? `?mes=${encodeURIComponent(mes)}` : '';
+  return get<ParticipanteLigaApi[]>(`/liga-biblica${params}`);
+};
+
+/** Inscribe un niño en la Liga Bíblica (turno según el usuario que lo ingresa). */
+export const inscribirParticipanteLiga = (datos: DatosInscripcionLiga) =>
+  post<ParticipanteLigaApi[]>('/liga-biblica', datos);
+
+/** Actualiza el tutor seleccionado de un participante. */
+export const actualizarParticipanteLiga = (id: number, idTutor: number) =>
+  patch<{ actualizado: boolean }>(`/liga-biblica/${id}`, { idTutor });
+
+/** Elimina un participante de la Liga Bíblica por ID. */
+export const eliminarParticipanteLiga = (id: number) =>
+  delete_<{ eliminado: boolean }>(`/liga-biblica/${id}`);
 
 

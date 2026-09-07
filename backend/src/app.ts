@@ -27,6 +27,8 @@ import telefonosDireccionesRutas from './routes/telefonosDireccionesRutas.js';
 import incidenciasRutas from './routes/incidenciasRutas.js';
 // v11 — módulo de premiados
 import premiadosRutas from './routes/premiadosRutas.js';
+// v12 — módulo de liga bíblica
+import ligaBiblicaRutas from './routes/ligaBiblicaRutas.js';
 
 const app = express();
 
@@ -96,6 +98,7 @@ app.use('/api/personas', telefonosDireccionesRutas);
 // v10 — módulo de incidencias
 app.use('/api/incidencias', incidenciasRutas);
 app.use('/api/premiados', premiadosRutas);
+app.use('/api/liga-biblica', ligaBiblicaRutas);
 
 // ── Ruta no encontrada (404) ──────────────────────────────────────
 app.use((_req, res) => {
