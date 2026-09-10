@@ -304,6 +304,17 @@ const PLANTILLA_POR_DIA: Record<number, string> = {
   3: 'incidencias_miercoles.xlsx',
 };
 
+/** Tipo de incidencia (debe coincidir con el enum de BD) */
+type TipoIncidencia = 'Ninos' | 'Maestros' | 'Infraestructura' | 'Observaciones';
+
+/** Mapeo tipo de incidencia → fila en la plantilla (sección REPORTE DE INCIDENCIAS) */
+const FILA_POR_TIPO_INCIDENCIA: Record<TipoIncidencia, number> = {
+  'Ninos': 22,
+  'Maestros': 23,
+  'Infraestructura': 24,
+  'Observaciones': 26,
+};
+
 /**
  * GET /api/reportes/incidencias/excel
  * Descarga el archivo incidencias.xlsx con los conteos de asistencia por edad y turno.
@@ -384,6 +395,43 @@ export const exportarIncidenciasExcel = async (req: Request, res: Response): Pro
     }
     const totalServidores = turnosActivos.reduce((acc, t) => acc + ((ws[`${t.columna}19`]?.v as number) || 0), 0);
     ws['E19'] = { t: 'n', v: totalServidores };
+
+    // Incidencias por tipo y turno
+    const { rows: incidenciasRows } = await pool.query(`
+      SELECT i.Tipo, t.ID_Turno, COUNT(*) as total
+      FROM Incidencias i
+      JOIN Turnos t ON t.ID_Turno = i.ID_Turno
+      WHERE i.Fecha = $1
+      GROUP BY i.Tipo, t.ID_Turno
+    `, [fechaStr]);
+
+    const incidenciasPorTipoYTurno: Record<string, Record<number, number>> = {};
+    for (const row of incidenciasRows) {
+      const tipo = row.tipo as TipoIncidencia;
+      const idTurno = row.id_turno as number;
+      const total = Number(row.total);
+      if (!incidenciasPorTipoYTurno[tipo]) incidenciasPorTipoYTurno[tipo] = {};
+      incidenciasPorTipoYTurno[tipo][idTurno] = total;
+    }
+
+    // Escribir incidencias por tipo en la columna de cada turno
+    for (const turno of turnosActivos) {
+      for (const [tipo, fila] of Object.entries(FILA_POR_TIPO_INCIDENCIA)) {
+        const count = incidenciasPorTipoYTurno[tipo]?.[turno.idTurno] ?? 0;
+        const celda = `${turno.columna}${fila}`;
+        const actual = (ws[celda]?.v as number) || 0;
+        ws[celda] = { t: 'n', v: actual + count };
+      }
+    }
+
+    // Totales por tipo en columna E
+    for (const [tipo, fila] of Object.entries(FILA_POR_TIPO_INCIDENCIA)) {
+      let suma = 0;
+      for (const t of turnosActivos) {
+        suma += (ws[`${t.columna}${fila}`]?.v as number) || 0;
+      }
+      if (ws[`E${fila}`]) ws[`E${fila}`].v = suma;
+    }
 
     const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
     const nombreArchivo = `incidencias-${fechaStr}.xlsx`;
