@@ -278,8 +278,10 @@ export const exportarExcel = async (req: Request, res: Response): Promise<void> 
 /**
  * Mapeo edad → fila en la plantilla incidencias.xlsx (filas 8-16)
  * Edad exacta → número de fila (1-indexed en Excel)
+ * '0-2' agrupa a menores de 3 años en la fila de "3 años" (fila 8)
  */
 const FILA_POR_EDAD: Record<string, number> = {
+  '0-2': 8,
   '3':  8,  '4':  9,  '5':  10,
   '6':  11, '7':  12, '8':  13,
   '9':  14,
@@ -356,8 +358,8 @@ export const exportarIncidenciasExcel = async (req: Request, res: Response): Pro
         conteo[e] = (conteo[e] || 0) + 1;
       }
 
-      for (let edad = 3; edad <= 14; edad++) {
-        const key = edad <= 9 ? String(edad) : (edad <= 11 ? '10-11' : '12-14');
+      for (let edad = 0; edad <= 14; edad++) {
+        const key = edad <= 2 ? '0-2' : (edad <= 9 ? String(edad) : (edad <= 11 ? '10-11' : '12-14'));
         if (key === '10-11' && edad > 11) continue;
         if (key === '12-14' && edad < 12) continue;
 
